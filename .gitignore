@@ -1,0 +1,15 @@
+node_modules/
+vendor/
+
+# 环境文件
+.env
+.env.local
+
+# 日志文件
+*.log
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+EOF
