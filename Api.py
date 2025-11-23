@@ -3,25 +3,29 @@ from typing import List
 
 import talib
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
-
+from dotenv import load_dotenv
 
 from urlibs import *
 # import plotly.graph_objects as go
 
 from Config import *
 
+load_dotenv()
 
 
 class Api:
     def __init__(self):
         # 获得账户信息
-        self.api_key = 'nwiIxe5M8nnNspyJSrwI61WHyIq173KB7sHe8hId9tGehioPwznWwvCFIw4vWCyK'
-        self.api_secret = 'f1bToOm4j4kOqip5oTnb6tBYc1h8VJM0yBddnNo8uwyfO0QXBhMKUV4rbK79VYVv'
-        self.client = Client(api_key=self.api_key, api_secret=self.api_secret)
+        self.api_key = os.getenv("API_KEY")
+        self.api_secret = os.getenv("API_SECRET")
+        requests_params = {
+            'timeout': Config.CUSTOM_TIMEOUT
+        }
+        self.client = Client(api_key=self.api_key, api_secret=self.api_secret,requests_params=requests_params)
         self.symbol = 'BTCUSDT'
         self.limit=100
 
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITNG_TIME),
+    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
     def get_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=100) -> pd.DataFrame | None:
         """
@@ -38,7 +42,7 @@ class Api:
                  start_ms=int(pd.to_datetime(start_time).timestamp()*1000)
                  end_ms=int(pd.to_datetime(end_time).timestamp()*1000)
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
-                                                     startTime=start_ms, endTime=end_ms)
+                                                     startTime=start_ms, endTime=end_ms,timeout=2000)
              else:
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
              data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -50,7 +54,7 @@ class Api:
              print(f"Api>get_futures_data获取api数据失败:{e}")
              return None
 
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITNG_TIME),
+    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
     def get_standard_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=100) -> pd.DataFrame:
         """
@@ -88,7 +92,7 @@ class Api:
         data = data.dropna(subset=['MACD', 'MACD_SIGNAL', 'MACD_HIST'])
         return data
 
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITNG_TIME),
+    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
     def get_backtest_data(self, number: int, interval: str = Client.KLINE_INTERVAL_30MINUTE, limit: int = 100) ->pd.DataFrame | None:
         """
@@ -135,11 +139,11 @@ class Api:
             print(f"API>BackTest>get_backtest_data>获取回测数据错误:{e}")
             return None
 
-    def get_csv_data(self, number, file_path='data.csv') -> pd.DataFrame | None:
+    def get_csv_data(self, number:int, file_path:str='data.csv') -> pd.DataFrame | None:
         number += Config.MACD_GET_COUNT
         if os.path.exists(file_path):
             try:
-                # 读取 CSV 文件
+                #csv
                 pd_f = pd.read_csv(
                     file_path,
                     index_col='timestamp',
@@ -149,8 +153,16 @@ class Api:
                 return pd_f
             except Exception as e:
                 print(f"Api>get_csv_data获取本地数据失败:{e},切换至api实时查询")
-                return self.get_backtest_data(number)
+                return self.get_backtest_data(number=number)
         return None
 
-    def update_local_csv(self,number:int)->None:
-        pass
+    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
+           retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
+    def update_local_csv(self,number:int,file_path='data.csv')->None:
+        data=self.get_backtest_data(number=number)
+        data.to_csv(file_path)
+        print(f"更新成功,数据量:{number},包含预留实际数据量:{len(data.index)},最新时间:{data.index[-1]}")
+
+if __name__ == '__main__':
+    api=Api()
+    api.update_local_csv(number=int(input('选择更新数据量:')))

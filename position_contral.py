@@ -1,3 +1,5 @@
+import pandas as pd
+
 from Config import *
 
 class PositionControl:
@@ -119,7 +121,7 @@ class PositionControl:
 
                 "close_price": price,
 
-                "size": self.size,
+                f"size({self.symbol.replace('USDT','')})": self.size,
 
                 "position": PositionSignal.CLOSE,
 
@@ -145,13 +147,13 @@ class PositionControl:
         except Exception as e:
             print(f"PositionControl>close_position_Error平仓错误:{e}")
 
-    def print(self,k_num):
+    def print(self,k_num,cl_k_time:str):
         for i in self.position_history:
             print(i)
 
         npnl_percent = round((self.usdt - self.init_usdt) / self.init_usdt * 100, 3)
         print('='*40)
-        print(f"回测k线数量:{k_num}\t回测时长:{pd.Timedelta(minutes=k_num*30)}")
+        print(f"回测k线数量:{k_num}({cl_k_time})\t回测时长:{pd.Timedelta(minutes=k_num*30)}")
         print(f"模拟投入(usd/usdt):{self.init_usdt}\t\t回测结果(usd/usdt):{self.usdt:.4f}")
         print(f"策略总回报率:{npnl_percent}%")
         print('=' * 40)

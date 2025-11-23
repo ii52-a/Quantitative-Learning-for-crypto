@@ -11,13 +11,14 @@ from requests.exceptions import SSLError
 class Config:
     """RETRY参数"""
     MAX_RETRY=20
-    WAITNG_TIME=1.5
+    WAITING_TIME=1.5
     RETRY_ERROR_ACCEPT=(RequestException, ConnectionAbortedError, SSLError)
+    CUSTOM_TIMEOUT=(10,30)
 
     """数据误差值去除"""
     #macd策略
     MACD_PADDING_COUNT=300   #增加n条数据以平衡macd指数线偏差,减少前期macd指标的巨大误差
-    MACD_CALCULATE_BASECOUNT=50  #macd计算基础数据量:50条数据为nan删除数据，需要额外增加
+    MACD_CALCULATE_BASECOUNT=50  #macd计算基础数据量:50条数据为nan删除数据
     MACD_GET_COUNT=MACD_PADDING_COUNT+MACD_CALCULATE_BASECOUNT #请求数据总值
 
 
