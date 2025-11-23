@@ -2,6 +2,8 @@ from datetime import datetime
 
 import pandas as pd
 
+from Config import PositionSignal
+
 
 class urlibs:
     @staticmethod
@@ -27,6 +29,8 @@ class urlibs:
             data['?']=data['?'].dt.tz_localize('Asia/Shanghai')
             data.set_index('?', inplace=True)
         """
+        if data.index.name == 'timestamp':
+            data = data.reset_index()
         if not pd.api.types.is_datetime64_any_dtype(data['timestamp']):
             data['timestamp'] = pd.to_datetime(data['timestamp'], unit='ms', utc=True)
         if not pd.api.types.is_datetime64_any_dtype(data['close_time']):
@@ -35,3 +39,9 @@ class urlibs:
         data['close_time'] = data['close_time'].dt.tz_convert('Asia/Shanghai')  # 转换为北京时间
         data.set_index('timestamp', inplace=True)
         return data
+
+    @staticmethod
+    def standard_open_position_print(symbol:str,size:float,leverage,open_price,positionSignal:PositionSignal):
+        print("="*10+f"[开仓]:{symbol}"+'='*15)
+        print(f"开仓价格:{open_price}USDT\t\t占用保险金:{size:.2f}")
+        print("开仓数量:{size}"+symbol.replace('USDT',''))
