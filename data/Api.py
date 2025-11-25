@@ -5,10 +5,10 @@ import talib
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from dotenv import load_dotenv
 
-from urlibs import *
+from data.urlibs import *
 # import plotly.graph_objects as go
 
-from Config import *
+from data.Config import *
 
 load_dotenv()
 
@@ -164,5 +164,8 @@ class Api:
         print(f"更新成功,数据量:{number},包含预留实际数据量:{len(data.index)},最新时间:{data.index[-1]}")
 
 if __name__ == '__main__':
-    api=Api()
-    api.update_local_csv(number=int(input('选择更新数据量:')))
+    try:
+        api=Api()
+        api.update_local_csv(number=int(input('选择更新数据量:')))
+    except Exception as e:
+        print(f"<UNK>:{e}")

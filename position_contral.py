@@ -1,6 +1,8 @@
 import pandas as pd
 
-from Config import *
+from data.Config import *
+from data.type import PositionSignal
+
 
 class PositionControl:
     def __init__(self, symbol: str, init_usdt: float = Config.ORIGIN_USDT, leverage=Config.SET_LEVERAGE):
@@ -8,12 +10,11 @@ class PositionControl:
         self.init_usdt: float = init_usdt
         self.usdt: float = init_usdt
 
-        # 统一使用 self.margin_used 追踪已占用保证金
+        # 追踪已占用保证金
         self.margin_used: float = 0
 
-        self.position: PositionSignal = PositionSignal.EMPTY
-        # 统一使用 self.size 追踪合约数量 (BTC 数量)
-        self.size: float = 0
+        self.position: int = PositionSignal.EMPTY
+        self.size: float = 0.0
         self.open_price: float | None = None
         self.leverage: int = leverage
 
@@ -21,9 +22,10 @@ class PositionControl:
         self.position_change_history = []
 
         self.open_first=None
+        self.fee:float = 0.0
 
 
-    def open_position(self, size_ratio: float, price: float, time, leverage=Config.SET_LEVERAGE):
+    def open_position(self, size_ratio: float, price: float, time, leverage=Config.SET_LEVERAGE)->None:
         """
         开仓
         :param time: 时间
@@ -41,8 +43,11 @@ class PositionControl:
 
             # 2. 计算合约数量
             # 合约数量 (e_size) = (保证金 * 杠杆) / 开仓价格
-            e_size = round(margin_usdt * leverage / price, 4)
+            e_size:float = round(margin_usdt * leverage / price, Config.ROUND_RADIO)
+            notional_value_open:float = e_size * price   #名义价值
 
+            open_fee:float=round(notional_value_open*Config.OPEN_FEE_RADIO,Config.ROUND_RADIO)  #开仓手续费
+            self.fee +=open_fee
             # 3. 更新资金和保证金占用
             self.margin_used += margin_usdt  # 占用保证金
             self.usdt -= margin_usdt  # 从可用资金中扣除保证金 (最关键的修正)
@@ -65,11 +70,12 @@ class PositionControl:
                     "position": "more",
                     "leverage": leverage,
                     "open_time": time,
+                    "open_fee": open_fee,
                 })
         except Exception as e:
             print(f"PositionControl>open_position_Error开仓错误:{e}")
 
-    def close_position(self, price: float, time):
+    def close_position(self, price: float, time)->None:
         """平仓"""
         try:
             if self.position == PositionSignal.EMPTY:
@@ -77,14 +83,17 @@ class PositionControl:
                 return
 
             # 计算盈亏 pnl
-            pnl_usdt = self.size * (price - self.open_price)
+            national_value=self.size*price
+            close_fee:float=Config.CLOSE_FEE_RADIO*national_value
+            self.fee += close_fee
+            pnl_usdt = round(self.size * (price - self.open_price)-self.fee,Config.ROUND_RADIO)
 
             # 计算回报率
             # 保证金
             margin_used_for_calc = self.margin_used
 
             pnl = round(pnl_usdt, 5)  # 盈亏金额
-            pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, 5)
+            pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, Config.ROUND_RADIO)
 
             # 格式化输出：使用 pnl 盈亏金额
             print(f"[平仓] 平仓价格:{price}usdt 回报:{pnl}USDT @ 回报率:{pnl_percent:.2f}%")
@@ -117,9 +126,9 @@ class PositionControl:
 
                 "symbol": self.symbol,
 
-                "open_price": self.open_price,
+                "open_price": round(self.open_price,2),
 
-                "close_price": price,
+                "close_price": round(price,2),
 
                 f"size({self.symbol.replace('USDT','')})": self.size,
 
@@ -133,7 +142,8 @@ class PositionControl:
 
                 "pnl": pnl,
 
-                "pnl_percent": pnl_percent
+                "pnl_percent": pnl_percent,
+                "fee": -round(self.fee,Config.ROUND_RADIO),
 
             })
 
@@ -143,6 +153,8 @@ class PositionControl:
             self.open_price = None
             self.margin_used = 0 # 清空占用的保证金
             self.leverage = Config.SET_LEVERAGE
+            self.fee =0
+            self.open_first = None
 
         except Exception as e:
             print(f"PositionControl>close_position_Error平仓错误:{e}")

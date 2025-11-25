@@ -1,10 +1,7 @@
-
-from Config import  *
+from data.type import StrategyResult, PositionSignal
 
 
 class Strategy:
-
-
 
     @staticmethod
     def strategy_macd30min(setting:dict)-> StrategyResult:

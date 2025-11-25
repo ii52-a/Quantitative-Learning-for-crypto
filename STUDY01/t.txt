@@ -1,0 +1,7 @@
+布局嵌套： 将一个布局 (QHBoxLayout) 作为容器，再在其中添加另一个布局 (QVBoxLayout)，这是实现复杂界面的核心。
+
+QGroupBox： 用于给一组相关的控件添加一个带标题的边框，使界面结构更清晰。
+
+layout.addStretch(factor)： 伸展器，它会占用布局中所有剩余的空间。如果您在布局末尾添加它，所有控件会被推到顶部。
+
+layout.addWidget(widget, stretch)： 可以为控件（或子布局）分配空间比例。例如，layout.addWidget(widget, 3) 会让这个控件占据三份空间，而另一个占据一份的控件则只占总宽度的四分之一。

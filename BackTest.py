@@ -1,9 +1,11 @@
 
 
-from Api import *
+from data.Api import *
 from position_contral import PositionControl
-from strategy import Strategy
+from strategy.macd30min_strategy import Strategy
 from typing import Optional, Dict, Any, Hashable
+
+from data.type import StrategyResult, PositionSignal
 
 
 class BackTest:
@@ -34,7 +36,7 @@ class BackTest:
             self.data=self.api.get_csv_data(number=data_number)
 
 
-        # 检查数据是否成功获取
+        # 检查数据
         if self.data is None:
             print("数据获取失败，回测终止。")
             return
@@ -53,11 +55,15 @@ class BackTest:
 
             # 2. 获取当前 K 线数据用于执行价
             current_candle: pd.Series = self.data.iloc[i - 1]
-            execution_price: float = float(current_candle['open'])  # 以当前K线(i-1)的开盘价作为执行价
+            execution_price: float = float(current_candle['close']/2+current_candle['open']/2)  # 以当前K线(i-1)的开盘价作为执行价
             execution_time: Hashable = current_candle.name  # K线时间
 
             # 3. 策略产生信号
-            signals: StrategyResult = Strategy.strategy_macd30min(setting)  # 假设返回 StrategyResult
+            try:
+                signals: StrategyResult = Strategy.strategy_macd30min(setting)  # 假设返回 StrategyResult
+            except Exception as e:
+                print(f"strategy_loop>Strategy策略错误:{e}")
+                return
 
             # 4. 执行交易操作
             if signals.signal == PositionSignal.OPEN:
@@ -65,12 +71,12 @@ class BackTest:
             elif signals.signal == PositionSignal.CLOSE:
                 self.position.close_position(price=execution_price, time=execution_time)
 
-        # 循环结束，若仍有持仓，则平仓
+        # 有持仓就平仓
         if self.position.position != PositionSignal.EMPTY:
             self.position.close_position(price=execution_price, time=execution_time)
 
 
-        self.position.print(data_len - Config.MACD_PADDING_COUNT)
+        self.position.print(data_len - Config.MACD_PADDING_COUNT,cl_k_time="30min/per")
 
         # 重置仓位
         self.position = PositionControl(self.symbol, self.usdt)
@@ -85,7 +91,7 @@ def main() -> None:
         bt: BackTest = BackTest(Api())
         while True:
             try:
-                #选择
+                #选择 TODO:使用UI界面
                 chose: int = int(input("回测数据量"))
 
                 try:
@@ -94,7 +100,7 @@ def main() -> None:
                 except Exception as e:
                     print("回测循环错误<strategy_backtest_loop_error>:" + str(e))
 
-            except ValueError:  # 输入非数字处理
+            except ValueError:
                 print("输入数字")
             except Exception as e:
                 print("主循环内部错误<main_loop_internal_error>:" + str(e))

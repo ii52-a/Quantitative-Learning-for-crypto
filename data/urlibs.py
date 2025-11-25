@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from Config import PositionSignal
+from data.type import PositionSignal
 
 
 class urlibs:
@@ -41,7 +41,7 @@ class urlibs:
         return data
 
     @staticmethod
-    def standard_open_position_print(symbol:str,size:float,leverage,open_price,positionSignal:PositionSignal):
+    def standard_open_position_print(symbol:str,size:float,leverage,open_price):
         print("="*10+f"[开仓]:{symbol}"+'='*15)
         print(f"开仓价格:{open_price}USDT\t\t占用保险金:{size:.2f}")
         print("开仓数量:{size}"+symbol.replace('USDT',''))
