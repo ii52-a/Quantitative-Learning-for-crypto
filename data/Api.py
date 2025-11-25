@@ -2,13 +2,15 @@ import os
 from typing import List
 
 import talib
+from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from dotenv import load_dotenv
 
 from data.urlibs import *
 # import plotly.graph_objects as go
 
-from data.Config import *
+from Config import ApiConfig as Config
+from Config import TradeMapper
 
 load_dotenv()
 
@@ -94,7 +96,7 @@ class Api:
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_backtest_data(self, number: int, interval: str = Client.KLINE_INTERVAL_30MINUTE, limit: int = 100) ->pd.DataFrame | None:
+    def get_backtest_data(self,symbol:str, number: int, interval: str, limit: int = 100) ->pd.DataFrame | None:
         """
             获取历史K线数据
             :param number: 需要的数据总条数
@@ -105,13 +107,14 @@ class Api:
             all_data: List[pd.DataFrame] = []
 
             # 计算总请求次数 (考虑MACD所需额外数据量)
-            total_requests: int = ((number + Config.MACD_GET_COUNT) // limit) + (
-                1 if (number + Config.MACD_GET_COUNT) % limit != 0 else 0)
+            total_requests: int = ((number + Config.GET_COUNT) // limit) + (
+                1 if (number + Config.GET_COUNT) % limit != 0 else 0)
 
             current_time: pd.Timestamp = pd.to_datetime('now')  # 当前时间
 
             # 周期对应的分钟数
-            kline_interval: int = Config.ST_TIME_TRANSFORM[interval]
+            kline_interval: int = TradeMapper.K_LINE_TO_MINUTE[interval]
+            # print(kline_interval)
 
             for i in range(total_requests):
                 # 计算请求时间段 (倒推)
@@ -120,7 +123,7 @@ class Api:
                 # print(end_time, start_time)
 
                 # 调用API获取数据
-                data: pd.DataFrame = self.get_futures_data(start_time=start_time, end_time=end_time,
+                data: pd.DataFrame = self.get_futures_data(symbol=symbol,start_time=start_time, end_time=end_time,
                                                                interval=interval, limit=limit)
                 all_data.append(data)
 
@@ -136,11 +139,11 @@ class Api:
             data: pd.DataFrame = urlibs.standard_timestamp(all_data_df)
             return data
         except Exception as e:
-            print(f"API>BackTest>get_backtest_data>获取回测数据错误:{e}")
+            print(f"API>get_backtest_data>获取回测数据错误:{e}")
             return None
 
     def get_csv_data(self, number:int, file_path:str='data.csv') -> pd.DataFrame | None:
-        number += Config.MACD_GET_COUNT
+        number += Config.GET_COUNT
         if os.path.exists(file_path):
             try:
                 #csv

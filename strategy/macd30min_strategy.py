@@ -1,4 +1,4 @@
-from data.type import StrategyResult, PositionSignal
+from type import PositionSignal, StrategyResult
 
 
 class Strategy:

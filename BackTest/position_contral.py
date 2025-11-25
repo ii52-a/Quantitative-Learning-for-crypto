@@ -1,11 +1,12 @@
 import pandas as pd
 
-from data.Config import *
-from data.type import PositionSignal
+
+from Config import *
+from type import PositionSignal
 
 
 class PositionControl:
-    def __init__(self, symbol: str, init_usdt: float = Config.ORIGIN_USDT, leverage=Config.SET_LEVERAGE):
+    def __init__(self, symbol: str, init_usdt: float = BackConfig.ORIGIN_USDT, leverage=BackConfig.SET_LEVERAGE):
         self.symbol: str = symbol
         self.init_usdt: float = init_usdt
         self.usdt: float = init_usdt
@@ -25,7 +26,7 @@ class PositionControl:
         self.fee:float = 0.0
 
 
-    def open_position(self, size_ratio: float, price: float, time, leverage=Config.SET_LEVERAGE)->None:
+    def open_position(self, size_ratio: float, price: float, time, leverage=BackConfig.SET_LEVERAGE)->None:
         """
         开仓
         :param time: 时间
@@ -43,10 +44,10 @@ class PositionControl:
 
             # 2. 计算合约数量
             # 合约数量 (e_size) = (保证金 * 杠杆) / 开仓价格
-            e_size:float = round(margin_usdt * leverage / price, Config.ROUND_RADIO)
+            e_size:float = round(margin_usdt * leverage / price, BackConfig.ROUND_RADIO)
             notional_value_open:float = e_size * price   #名义价值
 
-            open_fee:float=round(notional_value_open*Config.OPEN_FEE_RADIO,Config.ROUND_RADIO)  #开仓手续费
+            open_fee:float=round(notional_value_open*BackConfig.OPEN_FEE_RADIO,BackConfig.ROUND_RADIO)  #开仓手续费
             self.fee +=open_fee
             # 3. 更新资金和保证金占用
             self.margin_used += margin_usdt  # 占用保证金
@@ -61,7 +62,7 @@ class PositionControl:
                 self.open_first = time
 
                 print(
-                    f"[开仓]:\t{self.symbol}\t[{leverage}x]\t开仓价:{price}usdt\t持有数量:{self.size}{self.symbol.replace('USDT', '')}")
+                    f"[开仓]:\t{self.symbol}\t[{leverage}x]\t开仓价:{round(price,2)}usdt\t持有数量:{self.size}{self.symbol.replace('USDT', '')}")
 
                 self.position_change_history.append({
                     "symbol": self.symbol,
@@ -84,19 +85,19 @@ class PositionControl:
 
             # 计算盈亏 pnl
             national_value=self.size*price
-            close_fee:float=Config.CLOSE_FEE_RADIO*national_value
+            close_fee:float=BackConfig.CLOSE_FEE_RADIO*national_value
             self.fee += close_fee
-            pnl_usdt = round(self.size * (price - self.open_price)-self.fee,Config.ROUND_RADIO)
+            pnl_usdt = round(self.size * (price - self.open_price)-self.fee,BackConfig.ROUND_RADIO)
 
             # 计算回报率
             # 保证金
             margin_used_for_calc = self.margin_used
 
             pnl = round(pnl_usdt, 5)  # 盈亏金额
-            pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, Config.ROUND_RADIO)
+            pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, BackConfig.ROUND_RADIO)
 
             # 格式化输出：使用 pnl 盈亏金额
-            print(f"[平仓] 平仓价格:{price}usdt 回报:{pnl}USDT @ 回报率:{pnl_percent:.2f}%")
+            print(f"[平仓] 平仓价格:{round(price,2)}usdt 回报:{pnl}USDT @ 回报率:{pnl_percent:.2f}%")
             print('=' * 40)
 
             # 更新资金
@@ -143,7 +144,7 @@ class PositionControl:
                 "pnl": pnl,
 
                 "pnl_percent": pnl_percent,
-                "fee": -round(self.fee,Config.ROUND_RADIO),
+                "fee": -round(self.fee,BackConfig.ROUND_RADIO),
 
             })
 
@@ -152,20 +153,20 @@ class PositionControl:
             self.size = 0
             self.open_price = None
             self.margin_used = 0 # 清空占用的保证金
-            self.leverage = Config.SET_LEVERAGE
+            self.leverage = BackConfig.SET_LEVERAGE
             self.fee =0
             self.open_first = None
 
         except Exception as e:
             print(f"PositionControl>close_position_Error平仓错误:{e}")
 
-    def print(self,k_num,cl_k_time:str):
+    def print(self,k_num,cl_k_time:str,interval):
         for i in self.position_history:
             print(i)
 
         npnl_percent = round((self.usdt - self.init_usdt) / self.init_usdt * 100, 3)
         print('='*40)
-        print(f"回测k线数量:{k_num}({cl_k_time})\t回测时长:{pd.Timedelta(minutes=k_num*30)}")
+        print(f"回测k线数量:{k_num}({cl_k_time})\t回测时长:{pd.Timedelta(minutes=k_num*TradeMapper.K_LINE_TO_MINUTE[interval])}")
         print(f"模拟投入(usd/usdt):{self.init_usdt}\t\t回测结果(usd/usdt):{self.usdt:.4f}")
         print(f"策略总回报率:{npnl_percent}%")
         print('=' * 40)
