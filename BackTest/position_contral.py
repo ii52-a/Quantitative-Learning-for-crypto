@@ -94,6 +94,7 @@ class PositionControl:
             margin_used_for_calc = self.margin_used
 
             pnl = round(pnl_usdt, 5)  # 盈亏金额
+
             pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, BackConfig.ROUND_RADIO)
 
             # 格式化输出：使用 pnl 盈亏金额

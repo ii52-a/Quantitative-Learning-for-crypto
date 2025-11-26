@@ -17,6 +17,9 @@ class ApiConfig:
     CALCULATE_BASECOUNT=100  #计算基础数据量:50条数据为nan删除数据
     GET_COUNT=PADDING_COUNT+CALCULATE_BASECOUNT #请求数据总值
 
+    LOCAL_DATA_CSV_DIR='data_csv'
+    LOCAL_MAX_CSV_NUMBER=10000   #最大本地csv保存值
+
 
 
 class BackConfig:

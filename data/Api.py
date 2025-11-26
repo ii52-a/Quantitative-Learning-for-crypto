@@ -142,7 +142,7 @@ class Api:
             print(f"API>get_backtest_data>获取回测数据错误:{e}")
             return None
 
-    def get_csv_data(self, number:int, file_path:str='data.csv') -> pd.DataFrame | None:
+    def get_csv_data(self, number:int, file_path:str) -> pd.DataFrame | None:
         number += Config.GET_COUNT
         if os.path.exists(file_path):
             try:
@@ -152,19 +152,17 @@ class Api:
                     index_col='timestamp',
                     parse_dates=True  # 尝试将索引解析为日期时间类型
                 ).iloc[-number:]
-                print(f"使用本地数据,本地数据最新时间:{pd_f.index[-1]}")
                 return pd_f
             except Exception as e:
-                print(f"Api>get_csv_data获取本地数据失败:{e},切换至api实时查询")
-                return self.get_backtest_data(number=number)
+                raise e
         return None
+
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def update_local_csv(self,number:int,file_path='data.csv')->None:
-        data=self.get_backtest_data(number=number)
+    def update_local_csv(self,number:int,interval:str,symbol:str,file_path:str)->None:
+        data=self.get_backtest_data(number=number,interval=interval,symbol=symbol)
         data.to_csv(file_path)
-        print(f"更新成功,数据量:{number},包含预留实际数据量:{len(data.index)},最新时间:{data.index[-1]}")
 
 if __name__ == '__main__':
     try:

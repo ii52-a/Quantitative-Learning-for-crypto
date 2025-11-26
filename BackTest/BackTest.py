@@ -2,7 +2,7 @@
 
 from data.Api import *
 from BackTest.position_contral import PositionControl
-from strategy.macd30min_strategy import Strategy
+from strategy.macd_strategy import Strategy
 from typing import  Dict, Any, Hashable
 
 
@@ -51,37 +51,32 @@ class BackTest:
         data_len: int = len(data)
         # 策略参数设置字典
         setting: Dict[str, Any] = {'symbol': self.symbol, 'data': None, 'leverage': self.leverage, 'size': 0}
-        execution_price=0
-        execution_time=0
+        cur_price=data.iloc[-1]['close']
+        cur_time=data.index[-1]
+        # print(cur_price,cur_time)
         # 循环遍历K线数据进行回测
         # 从 预留数据量开始 (Config.PADDING_COUNT)
         for i in range(Config.PADDING_COUNT, data_len):
             # 1. 准备数据切片
             slice_data: pd.DataFrame = data.iloc[:i]
             setting['data'] = slice_data
-
-            # 2. 获取当前 K 线数据用于执行价
-            current_candle: pd.Series = data.iloc[i - 1]
-
-            execution_price: float = float(float(current_candle['close'])*4/5+float(current_candle['open'])/5)  # 以当前K线(i-1)的开盘价作为执行价
-            execution_time: Hashable = current_candle.name  # K线时间
-
             # 3. 策略产生信号
             try:
-                signals: StrategyResult = Strategy.strategy_macd30min(setting)  # 假设返回 StrategyResult
+                signals: StrategyResult = Strategy.strategy_macd30min(setting)  #  StrategyResult
             except Exception as e:
                 print(f"strategy_loop>Strategy策略错误:{e}")
                 return
 
             # 4. 执行交易操作
             if signals.signal == PositionSignal.OPEN:
-                self.position.open_position(size_ratio=signals.size, price=execution_price, time=execution_time)
+                self.position.open_position(size_ratio=signals.size, price=signals.execution_price, time=signals.execution_time)
             elif signals.signal == PositionSignal.CLOSE:
-                self.position.close_position(price=execution_price, time=execution_time)
+                self.position.close_position(price=signals.execution_price, time=signals.execution_time)
 
         # 有持仓就平仓
         if self.position.position != PositionSignal.EMPTY:
-            self.position.close_position(price=execution_price, time=execution_time)
+
+            self.position.close_position(price=cur_price, time=cur_time)
 
 
         self.position.print(data_len - Config.PADDING_COUNT,cl_k_time=f"{interval}/per",interval=interval)

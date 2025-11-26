@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Hashable
 
 import Config
 
@@ -30,8 +31,10 @@ class StrategyResult:
     signal:int | None
     size: float        # 开仓权重(%资金)
     leverage: int      # 杠杆调整
-    comment: str = ""  # TODO
+    execution_price: float | None   #确定开仓价格
+    execution_time: Hashable | None   #确定开仓日期
     more_less: int | None = PositionSignal.EMPTY
+    comment: str = ""
 
 
 @dataclass
