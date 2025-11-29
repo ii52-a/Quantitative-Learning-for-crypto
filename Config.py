@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import Type
+
 from binance import Client
 from requests import RequestException
 from requests.exceptions import SSLError
@@ -7,35 +9,58 @@ from requests.exceptions import SSLError
 @dataclass
 class ApiConfig:
     """RETRY参数"""
-    MAX_RETRY=20
-    WAITING_TIME=1.5
-    RETRY_ERROR_ACCEPT=(RequestException, ConnectionAbortedError, SSLError)
-    CUSTOM_TIMEOUT=(10,30)
-    LIMIT = 100  #最大单次请求
+    #最大尝试
+    MAX_RETRY:int=20
+    #最大等待时间
+    WAITING_TIME:float=1.5
+    # 允许错误类型
+    RETRY_ERROR_ACCEPT:tuple[Type[BaseException]]=(RequestException, ConnectionAbortedError, SSLError)
+    # 最大请求时长
+    CUSTOM_TIMEOUT:tuple[int]=(10,30)
+    # 最大单次请求,最大1000,不建议调低，将会增加api封禁可能
+    LIMIT:int = 1000
+    """LocalData模块参数"""
+    # 本地数据存储的文件夹地址
+    LOCAL_DATA_CSV_DIR: str = 'data_csv'
 
-    PADDING_COUNT=300   #增加n条数据以平衡指数线偏差,减少前期指标的巨大误差
-    CALCULATE_BASECOUNT=100  #计算基础数据量:50条数据为nan删除数据
-    GET_COUNT=PADDING_COUNT+CALCULATE_BASECOUNT #请求数据总值
+    #[可能面临废弃?]
+    # 尚且未知本地localdata建立对这堆常量有没有影响,可能要改
 
-    LOCAL_DATA_CSV_DIR='data_csv'
-    LOCAL_MAX_CSV_NUMBER=10000   #最大本地csv保存值
+    # 最大本地csv保存值
+    LOCAL_MAX_CSV_NUMBER: int = 10000
+
+
+    #增加n条数据以平衡指数线偏差,减少前期指标的巨大误差
+    PADDING_COUNT:int=300
+    # 计算基础数据量:50条数据为nan删除数据
+    CALCULATE_BASECOUNT:int=50
+    # 请求数据总值
+    GET_COUNT:int=PADDING_COUNT+CALCULATE_BASECOUNT
+
+
+
+    #允许最大初始化回测的历史跨度单位:日
+    LOCAL_MAX_HISTORY_ALLOW:int=1000
 
 
 
 class BackConfig:
     """默认投入参数"""
-    SET_LEVERAGE = 5  # 全局默认杠杆
-    ORIGIN_USDT = 100  # 默认策略初始usdt
+    # 全局默认杠杆
+    SET_LEVERAGE:int = 5
+    # 默认策略初始usdt
+    ORIGIN_USDT:float = 100
+    # 手续费占比
+    OPEN_FEE_RADIO:float = 0.0004
+    CLOSE_FEE_RADIO:float = 0.0004
+    # 回测数据近似小数位
+    ROUND_RADIO:int = 5
 
-    OPEN_FEE_RADIO = 0.0004  # 手续费占比
-    CLOSE_FEE_RADIO = 0.0004
-
-    ROUND_RADIO = 5  # 近似小数位
 
 
 
 
-
+"""TODO:移除，懒得改"""
 class TradeConfig:
     ORIGIN_USDT = 100
 
@@ -74,4 +99,6 @@ class TradeMapper:
         Client.KLINE_INTERVAL_1MONTH : 1440 * 30,
      }
     trade_pair:str=''
+    strategy:list=['CTA-macd']
+
 

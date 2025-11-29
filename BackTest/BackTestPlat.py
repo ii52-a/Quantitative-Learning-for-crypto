@@ -2,8 +2,8 @@
 
 from data.Api import *
 from BackTest.position_contral import PositionControl
-from strategy.macd_strategy import Strategy
-from typing import  Dict, Any, Hashable
+from strategy.cta_macd_strategy import Strategy
+from typing import  Dict, Any
 
 
 from type import BackTestSetting, StrategyResult, PositionSignal
@@ -75,8 +75,7 @@ class BackTest:
 
         # 有持仓就平仓
         if self.position.position != PositionSignal.EMPTY:
-
-            self.position.close_position(price=cur_price, time=cur_time)
+            self.position.close_position(price=float(cur_price), time=cur_time)
 
 
         self.position.print(data_len - Config.PADDING_COUNT,cl_k_time=f"{interval}/per",interval=interval)

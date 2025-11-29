@@ -1,41 +1,45 @@
-import os
+import logging
 import sys
 from pathlib import Path
 
-import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QComboBox, QPushButton, QTextEdit, QCheckBox
 )
-from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
-from BackTest.BackTest import BackTest
+from BackTest.BackTestPlat import BackTest
+from UI.QtheaderWork import ApiWorker, LoaclWorker
 from data.Api import Api
 from type import BackTestSetting
 from Config import *
+from urlibs import *
 
-
+logging.basicConfig(level=logging.DEBUG)
 class GetbackUi(QMainWindow):
     def __init__(self):
         super().__init__()
         self.api: Api | None = None
-        self.init_api()
         self.init_ui()
 
         # 将设置选项改为self对象属性
-        self.setting_kline = '30min'  # 默认值
-        self.setting_trading_pair = 'ETHUSDT'  # 默认值
-        self.setting_kline_num = 500  # 默认值
-        self.setting_use_local_data = True  # 默认值
+        self.setting_kline:str = '30min'  # 默认值
+        self.setting_trading_pair:str = 'ETHUSDT'  # 默认值
+        self.setting_kline_num:int = 500  # 默认值
+        self.setting_use_local_data:bool = True  # 默认值
 
     @retry(stop=stop_after_attempt(ApiConfig.MAX_RETRY), wait=wait_fixed(ApiConfig.WAITING_TIME),
            retry=retry_if_exception_type(ApiConfig.RETRY_ERROR_ACCEPT))
-    def init_api(self):
-        self.api = Api()
 
-    def init_ui(self):
+    def init_api(self) -> None:
+        if not self.api:
+            self.text_output.append("正在进行api链接:")
+            self.api = Api()
+            self.text_output.append("biance API链接成功")
+
+
+    def init_ui(self) -> None:
         self.setWindowTitle("BackTest回测")
         self.setGeometry(100, 100, 1000, 600)
 
@@ -56,7 +60,7 @@ class GetbackUi(QMainWindow):
         h_tb.addWidget(QLabel("回测图表"), 0)
 
         # TODO 图表 学习和使用
-        self.QLabel_line = QLabel("<UNK>")
+        self.QLabel_line = QLabel("None")
         self.QLabel_line.setStyleSheet("border:1px solid black;")
         h_tb.addWidget(self.QLabel_line, 1)
         result_layout.addLayout(h_tb, 3)
@@ -164,44 +168,58 @@ class GetbackUi(QMainWindow):
 
         # 禁用按钮
         self.button.setDisabled(True)
+        """本地数据加载"""
         if self.setting_use_local_data:
-            self.text_output.append("--- 正在检测本地csv ---")
-            local_path = ApiConfig.LOCAL_DATA_CSV_DIR
-            path = f"{local_path}/{self.setting_trading_pair}_{self.setting_kline}.csv"
-            #使用pathlib保证父文件夹存在和子文件存在
-            file_path=Path(path)
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            if not file_path.exists():
-                file_path.touch()
-
-            data_df:pd.DataFrame=pd.DataFrame()
-            try:
-                data_df = self.api.get_csv_data(number=self.setting_kline_num, file_path=path)
-            except pd.errors.EmptyDataError:
-
-                self.text_output.append("--- 本地csv获取失败 ---")
-                self.text_output.append(f"-- 准备更新本地csv --")
-
-                local_worker = LoaclWorker(api=self.api, data_number=ApiConfig.LOCAL_MAX_CSV_NUMBER,
-                                               symbol=self.setting_trading_pair, file_path=path,
-                                               interval=TradeMapper.K_LINE_TYPE[self.setting_kline])
-
-                local_worker.data_ready.connect(self.on_data_ready)
-                local_worker.start()
-
-                self.run_backtest(data_df)
-
-            else:
-                self.text_output.append("--- 本地csv加载成功 ---")
-                self.run_backtest(data_df)
-                return
+            self.load_local_data()
+        """不建议:直接api加载,次数多了就给吃api封禁"""
         if not self.setting_use_local_data:
             self.api_worker_start()
 
+    def load_local_data(self):
+        self.text_output.append("--- 正在检测本地csv ---")
+        local_path = ApiConfig.LOCAL_DATA_CSV_DIR
+        path = f"{local_path}/{self.setting_trading_pair}_{self.setting_kline}.csv"
+        """
+        :study:pathlib,Path(),parent(),mkdier(),touch()
+        """
+        file_path = Path(path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        if not file_path.exists():
+            file_path.touch()
+        # c()
+        data_df: pd.DataFrame = pd.DataFrame()
+        try:
+            # c()
+            data_df = FileUrlibs.get_csv_data(number=self.setting_kline_num, file_path=path)
+        except pd.errors.EmptyDataError:  #没有本地数据
+            # c()
+            self.text_output.append("--- 本地csv获取失败 ---")
+            self.text_output.append(f"-- 准备更新本地csv --")
+            self.init_api()
+            self.local_worker_start(path=path)
+            # c()
+            self.run_backtest(data_df)
+            # c()
+            return
+
+        else:
+            self.text_output.append("--- 本地csv加载成功 ---")
+            self.run_backtest(data_df)
+            return
     # 本地数据进行切片获取
 
+
+    # csv本地线程
+    def local_worker_start(self,path):
+        local_worker = LoaclWorker(api=self.api, data_number=ApiConfig.LOCAL_MAX_CSV_NUMBER,
+                                   symbol=self.setting_trading_pair, file_path=path,
+                                   interval=TradeMapper.K_LINE_TYPE[self.setting_kline])
+        local_worker.data_ready.connect(self.on_data_ready)
+        local_worker.start()
+    #  api线程
     def api_worker_start(self):
         # ApiWorker线程
+        self.init_api()
         self.api_worker = ApiWorker(api=self.api, data_number=self.setting_kline_num,
                                     interval=TradeMapper.K_LINE_TYPE[self.setting_kline], symbol=self.setting_trading_pair)
         # 关联线程信号
@@ -247,45 +265,8 @@ class GetbackUi(QMainWindow):
 
 
 
-class ApiWorker(QThread):
-    # 设置信号
-    data_ready = pyqtSignal(pd.DataFrame)
 
-    def __init__(self, api, data_number, interval, symbol):
-        super().__init__()
-        self.api = api
-        self.data_number = data_number
-        self.interval = interval
-        self.symbol = symbol
-
-    def run(self):
-        try:
-            data = self.api.get_backtest_data(symbol=self.symbol, number=self.data_number, interval=self.interval)
-            self.data_ready.emit(data)  # 发出信号
-        except Exception as e:
-            print(f"API 获取数据失败: {e}")
-            self.data_ready.emit(pd.DataFrame())  # 数据空
-
-
-class LoaclWorker(QThread):
-    data_ready = pyqtSignal(pd.DataFrame)
-
-    def __init__(self, api, data_number, interval, symbol, file_path):
-        super().__init__()
-        self.api = api
-        self.data_number = data_number
-        self.symbol = symbol
-        self.interval = interval
-        self.path = file_path
-
-    def run(self):
-        try:
-            self.api.update_local_csv(symbol=self.symbol, number=self.data_number, interval=self.interval, file_path=self.path)
-            data_qp=self.api.get_csv_data(number=self.data_number, file_path=self.path)
-            self.data_ready.emit(data_qp)
-        except Exception as e:
-            print(f"API 本地数据更新失败: {e}")
-            self.data_ready.emit(pd.DataFrame())
+#TODO:学习使用logging替代插print来寻找错误
 n=0
 def c():
     global n

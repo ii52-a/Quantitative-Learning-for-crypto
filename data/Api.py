@@ -1,15 +1,18 @@
-import os
+import math
+from pathlib import Path
 from typing import List
 
+import pandas as pd
 import talib
 from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from dotenv import load_dotenv
 
-from data.urlibs import *
+
+from urlibs import *
 # import plotly.graph_objects as go
 
-from Config import ApiConfig as Config
+from Config import ApiConfig as Config, ApiConfig
 from Config import TradeMapper
 
 load_dotenv()
@@ -24,29 +27,27 @@ class Api:
             'timeout': Config.CUSTOM_TIMEOUT
         }
         self.client = Client(api_key=self.api_key, api_secret=self.api_secret,requests_params=requests_params)
-        self.symbol = 'BTCUSDT'
-        self.limit=100
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=100) -> pd.DataFrame | None:
+    def get_futures_data(self,start_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
         """
             美国标准时间期货数据获取，时间未转换，无macd数据
-            @retry 最大尝试5,间隔等待1s,允许的异常类型()
-            :symbol: 期货类型
-            :interval: 获取的k线类型
-            :limit: 获取的k线数量
+            @retry 最大尝试,间隔等待,允许的异常类型()
+            :param start_time: 需要使用pd.Timestamp格式
+            :param symbol: 期货类型
+            :param interval: 获取的k线类型
+            :param limit: 获取的k线数量
             :return<DataFrame>:含有columns为列的k线信息
         """
         try:
              # 根据配置获得k线
-             if start_time and end_time:
+             if start_time:
                  start_ms=int(pd.to_datetime(start_time).timestamp()*1000)
-                 end_ms=int(pd.to_datetime(end_time).timestamp()*1000)
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
-                                                     startTime=start_ms, endTime=end_ms,timeout=2000)
+                                                     startTime=start_ms,timeout=2000)
              else:
-                 klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
+                 klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,timeout=2000)
              data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                                   'quote_asset_volume', 'number_of_trades',
                                                   'taker_buy_base_asset_volume',
@@ -58,18 +59,18 @@ class Api:
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_standard_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=100) -> pd.DataFrame:
+    def get_standard_futures_data(self,start_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
         """
             标准的集成的合约数据,时间为北京时间，含有macd数据
             @retry 最大尝试5,间隔等待1s,允许的异常类型()
-            :symbol<string>: 期货类型
-            :interval: 获取的k线类型
-            :limit<int>: 获取的k线数量
+            :param symbol<string>: 期货类型
+            :param interval: 获取的k线类型
+            :param limit<int>: 获取的k线数量
             :return<DataFrame>:含有columns为列的k线信息,时间为北京时间,含有macd数据
         """
         try:
-            data= self.get_futures_data(start_time=start_time,end_time=end_time,symbol=symbol, interval=interval, limit=limit)
-            data = urlibs.standard_timestamp(data)
+            data= self.get_futures_data(start_time=start_time,symbol=symbol, interval=interval, limit=limit)
+            data = FormatUrlibs.standard_timestamp(data)
             data = self.get_standard_macd(data)
         except Exception as e:
             print(f"Api>get_standard_futures_data获取api数据失败:{e}")
@@ -77,15 +78,14 @@ class Api:
         return data
 
 
-    """
-    macd指标获取
-    :param data:k线数据集
-    :return 含有macd指标的k线数据集
-    """
-
 
     @staticmethod
     def get_standard_macd(data:pd.DataFrame) ->pd.DataFrame:
+        """
+        macd指标获取
+        :param data:k线数据集
+        :return 含有macd指标的k线数据集
+        """
         macd, macd_signal, macd_hist = talib.MACD(data['close'], fastperiod=12, slowperiod=26, signalperiod=9)
         ##添加指标至data数据
         data['MACD'] = macd
@@ -94,9 +94,11 @@ class Api:
         data = data.dropna(subset=['MACD', 'MACD_SIGNAL', 'MACD_HIST'])
         return data
 
+
+
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_backtest_data(self,symbol:str, number: int, interval: str, limit: int = 100) ->pd.DataFrame | None:
+    def get_backtest_data(self,symbol:str, number: int, interval: str, limit: int = ApiConfig.LIMIT) ->pd.DataFrame | None:
         """
             获取历史K线数据
             :param number: 需要的数据总条数
@@ -104,11 +106,11 @@ class Api:
             :param limit: 单次请求最大条数
         """
         try:
+            # TODO面临废弃[所有k线行为可能通过k线组合进行]
             all_data: List[pd.DataFrame] = []
 
             # 计算总请求次数 (考虑MACD所需额外数据量)
-            total_requests: int = ((number + Config.GET_COUNT) // limit) + (
-                1 if (number + Config.GET_COUNT) % limit != 0 else 0)
+            total_requests: int = math.ceil((number + Config.GET_COUNT) / limit)
 
             current_time: pd.Timestamp = pd.to_datetime('now')  # 当前时间
 
@@ -117,45 +119,32 @@ class Api:
             # print(kline_interval)
 
             for i in range(total_requests):
-                # 计算请求时间段 (倒推)
-                end_time: pd.Timestamp = current_time - pd.Timedelta(minutes=i * limit * kline_interval)
-                start_time: pd.Timestamp = end_time - pd.Timedelta(minutes=limit * kline_interval)
+                # 计算请求时间段
+                start_time: pd.Timestamp = current_time- pd.Timedelta(minutes=limit * kline_interval*(total_requests - i))
                 # print(end_time, start_time)
 
                 # 调用API获取数据
-                data: pd.DataFrame = self.get_futures_data(symbol=symbol,start_time=start_time, end_time=end_time,
+                data: pd.DataFrame = self.get_futures_data(symbol=symbol,start_time=start_time,
                                                                interval=interval, limit=limit)
                 all_data.append(data)
 
             # 合并所有数据
             all_data_df: pd.DataFrame = pd.concat(all_data, ignore_index=True)
-            # 按时间戳排序
-            all_data_df.sort_values(by='timestamp', ascending=True, inplace=True)
+
+            # 按时间戳排序 out
+            # all_data_df.sort_values(by='timestamp', ascending=True, inplace=True)
 
             # 计算MACD指标
             all_data_df = self.get_standard_macd(all_data_df)
 
             # 标准化时间戳并设为索引
-            data: pd.DataFrame = urlibs.standard_timestamp(all_data_df)
+            data: pd.DataFrame = FormatUrlibs.standard_timestamp(all_data_df)
             return data
         except Exception as e:
             print(f"API>get_backtest_data>获取回测数据错误:{e}")
             return None
 
-    def get_csv_data(self, number:int, file_path:str) -> pd.DataFrame | None:
-        number += Config.GET_COUNT
-        if os.path.exists(file_path):
-            try:
-                #csv
-                pd_f = pd.read_csv(
-                    file_path,
-                    index_col='timestamp',
-                    parse_dates=True  # 尝试将索引解析为日期时间类型
-                ).iloc[-number:]
-                return pd_f
-            except Exception as e:
-                raise e
-        return None
+
 
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
@@ -164,7 +153,54 @@ class Api:
         data=self.get_backtest_data(number=number,interval=interval,symbol=symbol)
         data.to_csv(file_path)
 
+
+    def update_local_data(self,symbol:str)->None:
+        base_path = ApiConfig.LOCAL_DATA_CSV_DIR
+        file_path = Path(f"{base_path}/{symbol}_base.csv")
+
+        if not file_path.exists():
+            self._init_base_k_line_data(symbol=symbol)
+
+    def _init_base_k_line_data(self,symbol:str):
+        base_path=ApiConfig.LOCAL_DATA_CSV_DIR
+        file_path=Path(f"{base_path}/{symbol}_base.csv")
+
+        #检测文件是否存在不存在就创建
+        FileUrlibs.check_local_path(file_path)
+
+
+        #获取无指标最原始数据
+        all_data: List[pd.DataFrame] = []
+        #计算最大基础数据获取数量
+        get_time_min:int=ApiConfig.LOCAL_MAX_HISTORY_ALLOW * 24 * 60
+        start_time:pd.Timestamp=pd.to_datetime('now')-pd.Timedelta(minutes=ApiConfig.LIMIT)
+
+        #用动态循环向前推进数据，避免数据重复
+        while len(all_data)* ApiConfig.LIMIT < get_time_min:
+            data_df=self.get_futures_data(start_time=start_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
+            all_data.insert(0, data_df)
+            start_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(minutes=ApiConfig.LIMIT)
+            if data_df is None or data_df.empty:
+                break
+
+
+        data:pd.DataFrame=pd.concat(all_data, ignore_index=True)
+        # data.sort_values(by='timestamp', ascending=True, inplace=True)
+
+        data=FormatUrlibs.standard_timestamp(data)
+        data.to_csv(file_path)
+
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
+    #TODO: 改为base数据更新
     try:
         api=Api()
         api.update_local_csv(number=int(input('选择更新数据量:')))

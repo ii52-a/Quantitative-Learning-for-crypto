@@ -1,11 +1,14 @@
+import os
 from datetime import datetime
 
 import pandas as pd
 
+from Config import ApiConfig
 
 
+class FormatUrlibs:
 
-class urlibs:
+    """内容格式化区"""
     @staticmethod
     def get_bianstr_time(value) -> str:
         if isinstance(value, (pd.Timestamp, datetime)):
@@ -26,7 +29,7 @@ class urlibs:
         """
             标准时区转换,转换为北京时区，并设置时间为表头
             data['?']=pd.to_datetime(data['?'], unit='ms',utc=True)
-            data['?']=data['?'].dt.tz_localize('Asia/Shanghai')
+            data['?']=data['?'].dt.tz_convert('Asia/Shanghai')
             data.set_index('?', inplace=True)
         """
         if data.index.name == 'timestamp':
@@ -40,8 +43,39 @@ class urlibs:
         data.set_index('timestamp', inplace=True)
         return data
 
+
     @staticmethod
     def standard_open_position_print(symbol:str,size:float,leverage,open_price):
         print("="*10+f"[开仓]:{symbol}"+'='*15)
         print(f"开仓价格:{open_price}USDT\t\t占用保险金:{size:.2f}")
         print("开仓数量:{size}"+symbol.replace('USDT',''))
+
+
+
+class FileUrlibs:
+    """文件调用区"""
+
+    @staticmethod
+    def check_local_path(path):
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.touch()
+
+
+    #获取本地csv数据
+    @staticmethod
+    def get_csv_data(number:int, file_path:str) -> pd.DataFrame | None:
+        number += ApiConfig.GET_COUNT
+        if os.path.exists(file_path):
+            try:
+                #csv
+                pd_f = pd.read_csv(
+                    file_path,
+                    index_col='timestamp',
+                    parse_dates=True  # 尝试将索引解析为日期时间类型
+                ).iloc[-number:]
+                return pd_f
+            except Exception as e:
+                raise e
+        return None
