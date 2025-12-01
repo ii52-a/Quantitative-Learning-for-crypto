@@ -175,6 +175,8 @@ class GetbackUi(QMainWindow):
         if not self.setting_use_local_data:
             self.api_worker_start()
 
+
+    #TODO
     def load_local_data(self):
         self.text_output.append("--- 正在检测本地csv ---")
         local_path = ApiConfig.LOCAL_DATA_CSV_DIR
@@ -182,10 +184,7 @@ class GetbackUi(QMainWindow):
         """
         :study:pathlib,Path(),parent(),mkdier(),touch()
         """
-        file_path = Path(path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        if not file_path.exists():
-            file_path.touch()
+        FileUrlibs.check_local_path(path)
         # c()
         data_df: pd.DataFrame = pd.DataFrame()
         try:
@@ -216,6 +215,7 @@ class GetbackUi(QMainWindow):
                                    interval=TradeMapper.K_LINE_TYPE[self.setting_kline])
         local_worker.data_ready.connect(self.on_data_ready)
         local_worker.start()
+
     #  api线程
     def api_worker_start(self):
         # ApiWorker线程

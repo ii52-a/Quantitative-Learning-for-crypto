@@ -19,6 +19,10 @@ class ApiConfig:
     CUSTOM_TIMEOUT:tuple[int]=(10,30)
     # 最大单次请求,最大1000,不建议调低，将会增加api封禁可能
     LIMIT:int = 1000
+
+    #请求间隔，调高将减少api封禁可能，但会加长请求时间
+    API_BASE_GET_INTERVAL=0.2
+
     """LocalData模块参数"""
     # 本地数据存储的文件夹地址
     LOCAL_DATA_CSV_DIR: str = 'data_csv'

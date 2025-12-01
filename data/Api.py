@@ -1,8 +1,9 @@
 import math
 from pathlib import Path
+from time import sleep
 from typing import List
 
-import pandas as pd
+
 import talib
 from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
@@ -28,13 +29,15 @@ class Api:
         }
         self.client = Client(api_key=self.api_key, api_secret=self.api_secret,requests_params=requests_params)
 
+        self.update_local_csv_count=0
+
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_futures_data(self,start_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
+    def get_futures_data(self,end_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
         """
             美国标准时间期货数据获取，时间未转换，无macd数据
             @retry 最大尝试,间隔等待,允许的异常类型()
-            :param start_time: 需要使用pd.Timestamp格式
+            :param end_time: 需要使用pd.Timestamp格式
             :param symbol: 期货类型
             :param interval: 获取的k线类型
             :param limit: 获取的k线数量
@@ -42,10 +45,10 @@ class Api:
         """
         try:
              # 根据配置获得k线
-             if start_time:
-                 start_ms=int(pd.to_datetime(start_time).timestamp()*1000)
+             if end_time:
+                 end_ms=int(pd.to_datetime(end_time).timestamp()*1000)
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
-                                                     startTime=start_ms,timeout=2000)
+                                                     endTime=end_ms,timeout=2000)
              else:
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,timeout=2000)
              data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -59,7 +62,7 @@ class Api:
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_standard_futures_data(self,start_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
+    def get_standard_futures_data(self,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
         """
             标准的集成的合约数据,时间为北京时间，含有macd数据
             @retry 最大尝试5,间隔等待1s,允许的异常类型()
@@ -69,7 +72,7 @@ class Api:
             :return<DataFrame>:含有columns为列的k线信息,时间为北京时间,含有macd数据
         """
         try:
-            data= self.get_futures_data(start_time=start_time,symbol=symbol, interval=interval, limit=limit)
+            data= self.get_futures_data(end_time=end_time,symbol=symbol, interval=interval, limit=limit)
             data = FormatUrlibs.standard_timestamp(data)
             data = self.get_standard_macd(data)
         except Exception as e:
@@ -146,49 +149,63 @@ class Api:
 
 
 
-
+    """最小数据获取程序"""
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
+
     def update_local_csv(self,number:int,interval:str,symbol:str,file_path:str)->None:
+        """废弃"""
         data=self.get_backtest_data(number=number,interval=interval,symbol=symbol)
         data.to_csv(file_path)
 
 
-    def update_local_data(self,symbol:str)->None:
-        base_path = ApiConfig.LOCAL_DATA_CSV_DIR
+    def update_local_data(self,symbol:str)->None | bool:
+        base_path=ApiConfig.LOCAL_DATA_CSV_DIR
         file_path = Path(f"{base_path}/{symbol}_base.csv")
-
+        print("a")
         if not file_path.exists():
+            print("<UNK>")
             self._init_base_k_line_data(symbol=symbol)
+        return False
 
     def _init_base_k_line_data(self,symbol:str):
         base_path=ApiConfig.LOCAL_DATA_CSV_DIR
         file_path=Path(f"{base_path}/{symbol}_base.csv")
+        setting_path=Path(f"{base_path}/settings.csv")
 
         #检测文件是否存在不存在就创建
         FileUrlibs.check_local_path(file_path)
+        FileUrlibs.check_local_path(setting_path)
 
 
         #获取无指标最原始数据
         all_data: List[pd.DataFrame] = []
         #计算最大基础数据获取数量
         get_time_min:int=ApiConfig.LOCAL_MAX_HISTORY_ALLOW * 24 * 60
-        start_time:pd.Timestamp=pd.to_datetime('now')-pd.Timedelta(minutes=ApiConfig.LIMIT)
-
+        end_time:pd.Timestamp=pd.to_datetime('now')
         #用动态循环向前推进数据，避免数据重复
-        while len(all_data)* ApiConfig.LIMIT < get_time_min:
-            data_df=self.get_futures_data(start_time=start_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
+        while self.update_local_csv_count < get_time_min:
+            data_df=self.get_futures_data(end_time=end_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
             all_data.insert(0, data_df)
-            start_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(minutes=ApiConfig.LIMIT)
+
+            #获取过程数量
+            self.update_local_csv_count +=len(data_df)
+            print(f"已获取数据:{self.update_local_csv_count}")
+            end_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(milliseconds=1)
             if data_df is None or data_df.empty:
                 break
 
-
+            sleep(ApiConfig.API_BASE_GET_INTERVAL)
         data:pd.DataFrame=pd.concat(all_data, ignore_index=True)
         # data.sort_values(by='timestamp', ascending=True, inplace=True)
 
         data=FormatUrlibs.standard_timestamp(data)
         data.to_csv(file_path)
+
+    # def get_base_csv_num(self)->int:
+    #     return self.update_local_csv_count
+
+
 
 
 
@@ -203,6 +220,8 @@ if __name__ == '__main__':
     #TODO: 改为base数据更新
     try:
         api=Api()
-        api.update_local_csv(number=int(input('选择更新数据量:')))
+        api.update_local_data("BTCUSDT")
+
+
     except Exception as e:
         print(f"<UNK>:{e}")
