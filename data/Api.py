@@ -1,8 +1,6 @@
 import math
-from pathlib import Path
 from time import sleep
 from typing import List
-
 
 import talib
 from binance import Client
@@ -33,7 +31,7 @@ class Api:
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_futures_data(self,end_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
+    def get_futures_data(self,start_time=None,end_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
         """
             美国标准时间期货数据获取，时间未转换，无macd数据
             @retry 最大尝试,间隔等待,允许的异常类型()
@@ -45,16 +43,22 @@ class Api:
         """
         try:
              # 根据配置获得k线
-             if end_time:
+             if start_time and not end_time:
+                 start_ms = int(pd.to_datetime(start_time).timestamp()*1000)
+                 klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
+                                                     startTime=start_ms, timeout=2000)
+             elif end_time and not start_time:
                  end_ms=int(pd.to_datetime(end_time).timestamp()*1000)
                  klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
                                                      endTime=end_ms,timeout=2000)
              else:
-                 klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,timeout=2000)
+                 start_ms = int(pd.to_datetime(start_time).timestamp() * 1000)
+                 end_ms = int(pd.to_datetime(end_time).timestamp() * 1000)
+                 klines = self.client.futures_klines(startTime=start_ms,endTime=end_ms,symbol=symbol, interval=interval, limit=limit,timeout=2000)
              data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                                   'quote_asset_volume', 'number_of_trades',
                                                   'taker_buy_base_asset_volume',
-                                                  'taker_buy_quote_asset_volume', 'ignore'])
+                                                  'taker_buy_quote_asset_volume','ignore'])
              return data
         except Exception as e:
              print(f"Api>get_futures_data获取api数据失败:{e}")
@@ -62,7 +66,7 @@ class Api:
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_standard_futures_data(self,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
+    def get_standard_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
         """
             标准的集成的合约数据,时间为北京时间，含有macd数据
             @retry 最大尝试5,间隔等待1s,允许的异常类型()
@@ -72,7 +76,7 @@ class Api:
             :return<DataFrame>:含有columns为列的k线信息,时间为北京时间,含有macd数据
         """
         try:
-            data= self.get_futures_data(end_time=end_time,symbol=symbol, interval=interval, limit=limit)
+            data= self.get_futures_data(start_time=start_time,end_time=end_time,symbol=symbol, interval=interval, limit=limit)
             data = FormatUrlibs.standard_timestamp(data)
             data = self.get_standard_macd(data)
         except Exception as e:
@@ -149,24 +153,16 @@ class Api:
 
 
 
-    """最小数据获取程序"""
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
-           retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
+    """最小数据获取部分"""
 
-    def update_local_csv(self,number:int,interval:str,symbol:str,file_path:str)->None:
-        """废弃"""
-        data=self.get_backtest_data(number=number,interval=interval,symbol=symbol)
-        data.to_csv(file_path)
-
-
-    def update_local_data(self,symbol:str)->None | bool:
+    def local_data_main(self,symbol,data=None):
         base_path=ApiConfig.LOCAL_DATA_CSV_DIR
         file_path = Path(f"{base_path}/{symbol}_base.csv")
-        print("a")
-        if not file_path.exists():
-            print("<UNK>")
+
+        if not file_path.exists() and data is None:
             self._init_base_k_line_data(symbol=symbol)
-        return False
+        elif data is not None:
+            self._check_base_csv(symbol=symbol,data=data)
 
     def _init_base_k_line_data(self,symbol:str):
         base_path=ApiConfig.LOCAL_DATA_CSV_DIR
@@ -202,25 +198,56 @@ class Api:
         data=FormatUrlibs.standard_timestamp(data)
         data.to_csv(file_path)
 
-    # def get_base_csv_num(self)->int:
-    #     return self.update_local_csv_count
 
 
 
+    """用于检测并更新数据"""
+    def _check_base_csv(self,symbol:str,data:pd.DataFrame) -> bool:
+        print(1)
+        if data.empty:
+            raise Exception("数据为空")
+        now=pd.to_datetime('now',utc=True)
 
+        #数据更新
+        if now-data.index[-1]>pd.Timedelta(minutes=60*60*24*ApiConfig.LOCAL_BASE_DATA_UPDATE_INTERVAL):
+            print("数据更新")
+            self._update_base_k_line_data(symbol=symbol,data=data)
+            return True
+        print("数据一是最新")
+        return False
 
+    """更新k线"""
 
+    def _update_base_k_line_data(self, symbol: str, data) -> None:
 
+        add_data: List[pd.DataFrame] = []
 
+        start_time: pd.Timestamp = data.index[-1]
+        while True:
+            data_df = self.get_futures_data(start_time=start_time, symbol=symbol)
+            start_time:pd.Timestamp= pd.to_datetime(data_df['timestamp'].iloc[-1], unit='ms')
+            if data_df is None or data_df.empty:
+                break
 
-
+            add_data.append(data_df)
+            #数据小于限制,停止更新
+            if len(data_df) < ApiConfig.LIMIT:
+                break
+            sleep(ApiConfig.API_BASE_GET_INTERVAL)
+        data: pd.DataFrame = pd.concat([data]+add_data, ignore_index=True)
+        path = ApiConfig.LOCAL_DATA_CSV_DIR
+        file_path = Path(f"{path}/{symbol}_base.csv")
+        data.to_csv(file_path)
 
 
 if __name__ == '__main__':
     #TODO: 改为base数据更新
     try:
+        path = ApiConfig.LOCAL_DATA_CSV_DIR
+        file_path = Path(f"{path}/BTCUSDT_base.csv")
         api=Api()
-        api.update_local_data("BTCUSDT")
+        data=FileUrlibs.get_csv_data(file_path)
+        api.local_data_main(symbol='BTCUSDT',data=data)
 
 
     except Exception as e:

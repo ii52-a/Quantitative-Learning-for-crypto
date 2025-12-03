@@ -1,6 +1,5 @@
 import logging
 import sys
-from pathlib import Path
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget,

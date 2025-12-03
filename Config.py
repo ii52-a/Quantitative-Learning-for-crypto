@@ -27,11 +27,11 @@ class ApiConfig:
     # 本地数据存储的文件夹地址
     LOCAL_DATA_CSV_DIR: str = 'data_csv'
 
-    #[可能面临废弃?]
-    # 尚且未知本地localdata建立对这堆常量有没有影响,可能要改
-
     # 最大本地csv保存值
     LOCAL_MAX_CSV_NUMBER: int = 10000
+
+    #本地数据库更新频率 /天
+    LOCAL_BASE_DATA_UPDATE_INTERVAL=3
 
 
     #增加n条数据以平衡指数线偏差,减少前期指标的巨大误差

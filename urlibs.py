@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 
@@ -65,8 +66,8 @@ class FileUrlibs:
 
     #获取本地csv数据
     @staticmethod
-    def get_csv_data(number:int, file_path:str) -> pd.DataFrame | None:
-        number += ApiConfig.GET_COUNT
+    def get_csv_data( file_path:str | Path,number:int| None=None) -> pd.DataFrame | None:
+
         if os.path.exists(file_path):
             try:
                 #csv
@@ -74,7 +75,10 @@ class FileUrlibs:
                     file_path,
                     index_col='timestamp',
                     parse_dates=True  # 尝试将索引解析为日期时间类型
-                ).iloc[-number:]
+                )
+                if number is not None:
+                    number += ApiConfig.GET_COUNT
+                    pd_f = pd_f.iloc[-number:]
                 return pd_f
             except Exception as e:
                 raise e
