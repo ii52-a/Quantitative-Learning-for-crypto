@@ -9,33 +9,35 @@ from requests.exceptions import SSLError
 @dataclass
 class ApiConfig:
     """RETRY参数"""
-    #最大尝试
+    #最大尝试,不建议调低,调高也没有必要
     MAX_RETRY:int=20
-    #最大等待时间
+    #最大等待时间，应该没有必要调整
     WAITING_TIME:float=1.5
-    # 允许错误类型
+    # 允许错误类型,当下无需调整
     RETRY_ERROR_ACCEPT:tuple[Type[BaseException]]=(RequestException, ConnectionAbortedError, SSLError)
-    # 最大请求时长
+    # 最大请求时长,没必要调整
     CUSTOM_TIMEOUT:tuple[int]=(10,30)
     # 最大单次请求,最大1000,不建议调低，将会增加api封禁可能
     LIMIT:int = 1000
 
-    #请求间隔，调高将减少api封禁可能，但会加长请求时间，请勿调至0.4以下
-    API_BASE_GET_INTERVAL=0.4
+    #请求间隔，调高将减少网络问题造成的api封禁可能，但会增加数据初始化和更新时间，请勿调至0.3以下
+    API_BASE_GET_INTERVAL:float=0.3
 
     """LocalData模块参数"""
     # 本地数据存储的文件夹地址
+    #csv废弃
     LOCAL_DATA_CSV_DIR: str = 'data_csv'
     LOCAL_DATA_SQLITE_DIR: str = 'LocalData'
 
-    # 最大本地csv保存值
-    LOCAL_MAX_CSV_NUMBER: int = 10000
+    # 最大本地csv保存值,废弃
+    LOCAL_MAX_CSV_NUMBER: int = 1000
 
     #本地数据库更新频率 /天
-    LOCAL_BASE_DATA_UPDATE_INTERVAL=3
+    LOCAL_BASE_DATA_UPDATE_INTERVAL=1
 
 
     #增加n条数据以平衡指数线偏差,减少前期指标的巨大误差
+    #暂时没啥用，等待sqlite的数据处理
     PADDING_COUNT:int=300
     # 计算基础数据量:50条数据为nan删除数据
     CALCULATE_BASECOUNT:int=50
@@ -45,7 +47,8 @@ class ApiConfig:
 
 
     #允许最大初始化回测的历史跨度单位:日
-    LOCAL_MAX_HISTORY_ALLOW:int=1
+    #调错可以改小看客d
+    LOCAL_MAX_HISTORY_ALLOW:int=1000
 
     #默认时区
     LOCAL_DATE_PLACE="Asia/Shanghai"
@@ -72,6 +75,8 @@ class BackConfig:
 class TradeConfig:
     ORIGIN_USDT = 100
 
+
+"""api交互"""
 class TradeMapper:
     K_LINE_TYPE:dict[str,str]={
     # '1s':Client.KLINE_INTERVAL_1SECOND,

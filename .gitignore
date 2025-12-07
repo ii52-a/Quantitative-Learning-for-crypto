@@ -7,7 +7,9 @@ vendor/
 
 # 日志文件
 *.log
-logs/
+STUDY01/app_logger/logs/
+
+#数据文件
 *.csv
 *.db
 
