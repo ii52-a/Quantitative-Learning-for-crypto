@@ -175,7 +175,7 @@ class GetbackUi(QMainWindow):
             self.api_worker_start()
 
 
-    #TODO
+    #TODO:废弃
     def load_local_data(self):
         self.text_output.append("--- 正在检测本地csv ---")
         local_path = ApiConfig.LOCAL_DATA_CSV_DIR

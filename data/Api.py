@@ -2,6 +2,7 @@ import math
 from time import sleep
 from typing import List
 
+import pandas as pd
 import talib
 from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
@@ -11,8 +12,10 @@ from dotenv import load_dotenv
 from urlibs import *
 # import plotly.graph_objects as go
 
-from Config import ApiConfig as Config, ApiConfig
+from Config import ApiConfig as Config
 from Config import TradeMapper
+
+from data.sqlite_oper import *
 
 load_dotenv()
 
@@ -25,9 +28,13 @@ class Api:
         requests_params = {
             'timeout': Config.CUSTOM_TIMEOUT
         }
+        self.local_data_api:SqliteOper | None=None
         self.client = Client(api_key=self.api_key, api_secret=self.api_secret,requests_params=requests_params)
 
         self.update_local_csv_count=0
+
+    def _init_local_data(self):
+        self.local_data_api=SqliteOper()
 
     @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
            retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
@@ -155,100 +162,103 @@ class Api:
 
     """最小数据获取部分"""
 
-    def local_data_main(self,symbol,data=None):
-        base_path=ApiConfig.LOCAL_DATA_CSV_DIR
-        file_path = Path(f"{base_path}/{symbol}_base.csv")
+    #TODO ing:升级csv改为sqlite存储
+    #TODO 保存数据改为sqlite
 
-        if not file_path.exists() and data is None:
-            self._init_base_k_line_data(symbol=symbol)
-        elif data is not None:
-            self._check_base_csv(symbol=symbol,data=data)
 
+    #数据更新主程序入口
+    def local_data_main(self,symbol):
+        path=Path(f"LocalData/{symbol}_base.db")
+        if not self.local_data_api:
+            #仅在使用时初始化本地数据库对象,初始化初始数据
+            self._init_local_data()
+        if not path.exists():
+            try:
+                self._init_base_k_line_data(symbol=symbol)
+            except Exception as e:
+                print(f"Api>>local_data_main>>基础数据集初始化错误:{e}")
+        try:
+            self._update_base_k_line_data(symbol=symbol)
+        except Exception as e:
+            print(f"Api>>local_data_main>>基础数据集更新错误:{e}")
+
+
+    #基础数据保存，创建数据库提供基础数据
     def _init_base_k_line_data(self,symbol:str):
-        base_path=ApiConfig.LOCAL_DATA_CSV_DIR
-        file_path=Path(f"{base_path}/{symbol}_base.csv")
-        setting_path=Path(f"{base_path}/settings.csv")
-
-        #检测文件是否存在不存在就创建
-        FileUrlibs.check_local_path(file_path)
-        FileUrlibs.check_local_path(setting_path)
-
-
         #获取无指标最原始数据
         all_data: List[pd.DataFrame] = []
         #计算最大基础数据获取数量
         get_time_min:int=ApiConfig.LOCAL_MAX_HISTORY_ALLOW * 24 * 60
         end_time:pd.Timestamp=pd.to_datetime('now')
-        #用动态循环向前推进数据，避免数据重复
+        link_count=0
+        #
         while self.update_local_csv_count < get_time_min:
-            data_df=self.get_futures_data(end_time=end_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
-            all_data.insert(0, data_df)
+            try:
+                data_df=self.get_futures_data(end_time=end_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
+                all_data.insert(0, data_df)
 
-            #获取过程数量
-            self.update_local_csv_count +=len(data_df)
-            print(f"已获取数据:{self.update_local_csv_count}")
-            end_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(milliseconds=1)
-            if data_df is None or data_df.empty:
-                break
+                #获取过程数量
+                if not data_df.empty:
+                    self.update_local_csv_count +=len(data_df)
+                    print(f"已获取数据:{self.update_local_csv_count}")
 
-            sleep(ApiConfig.API_BASE_GET_INTERVAL)
+                end_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(milliseconds=1)
+                if data_df is None or data_df.empty:
+                    break
+
+                sleep(ApiConfig.API_BASE_GET_INTERVAL)
+            except Exception as e:
+                print(f"API>>_init_base_k_line_data>>基础数据初始化失败:{e}")
+                print("启动链接,等待3秒后重试")
+                sleep(3)
+                link_count+=1
+                if link_count>=5:
+                    raise Exception("API>>_init_base_k_line_data>>链接次数过多，请寻找错误或调高时间间隔")
+                continue
+
         data:pd.DataFrame=pd.concat(all_data, ignore_index=True)
-        # data.sort_values(by='timestamp', ascending=True, inplace=True)
-
         data=FormatUrlibs.standard_timestamp(data)
-        data.to_csv(file_path)
+        #使用数据库操作对象
+        self.local_data_api.update_base_kline(symbol=symbol,data=data)
 
 
 
 
-    """用于检测并更新数据"""
-    def _check_base_csv(self,symbol:str,data:pd.DataFrame) -> bool:
-        print(1)
-        if data.empty:
-            raise Exception("数据为空")
-        now=pd.to_datetime('now',utc=True)
 
-        #数据更新
-        if now-data.index[-1]>pd.Timedelta(minutes=60*60*24*ApiConfig.LOCAL_BASE_DATA_UPDATE_INTERVAL):
-            print("数据更新")
-            self._update_base_k_line_data(symbol=symbol,data=data)
-            return True
-        print("数据一是最新")
-        return False
 
     """更新k线"""
-
-    def _update_base_k_line_data(self, symbol: str, data) -> None:
+    #基础数据更新
+    def _update_base_k_line_data(self, symbol: str) -> None:
 
         add_data: List[pd.DataFrame] = []
 
-        start_time: pd.Timestamp = data.index[-1]
+        start_time: pd.Timestamp =pd.to_datetime(self.local_data_api.read_newest_timestamp(symbol=symbol),unit='ms')
         while True:
-            data_df = self.get_futures_data(start_time=start_time, symbol=symbol)
-            start_time:pd.Timestamp= pd.to_datetime(data_df['timestamp'].iloc[-1], unit='ms')
+            data_df:pd.DataFrame = self.get_futures_data(start_time=start_time, symbol=symbol)
             if data_df is None or data_df.empty:
-                break
-
+                print(f"{symbol}数据集已是最新")
+                return
+            start_time:pd.Timestamp= pd.to_datetime(data_df['timestamp'].iloc[-1], unit='ms')
+            self.update_local_csv_count += len(data_df)
+            print(f"更新中,数据量:{self.update_local_csv_count}")
+            print(start_time)
             add_data.append(data_df)
-            #数据小于限制,停止更新
+            if start_time >= pd.to_datetime('now'):
+                break
+            #数据小于限制:--stop
             if len(data_df) < ApiConfig.LIMIT:
                 break
             sleep(ApiConfig.API_BASE_GET_INTERVAL)
-        data: pd.DataFrame = pd.concat([data]+add_data, ignore_index=True)
-        path = ApiConfig.LOCAL_DATA_CSV_DIR
-        file_path = Path(f"{path}/{symbol}_base.csv")
-        data.to_csv(file_path)
+        data_t=pd.concat(add_data, ignore_index=True)
+        data_t=FormatUrlibs.standard_timestamp(data_t)
+        #
+        self.local_data_api.update_base_kline(symbol=symbol,data=data_t)
 
 
 if __name__ == '__main__':
     #TODO: 改为base数据更新
-    try:
-        path = ApiConfig.LOCAL_DATA_CSV_DIR
-        file_path = Path(f"{path}/BTCUSDT_base.csv")
         api=Api()
-        data=FileUrlibs.get_csv_data(file_path)
-        api.local_data_main(symbol='BTCUSDT',data=data)
+        api.local_data_main(symbol='BTCUSDT')
 
 
-    except Exception as e:
-        print(f"<UNK>:{e}")
+

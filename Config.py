@@ -20,12 +20,13 @@ class ApiConfig:
     # 最大单次请求,最大1000,不建议调低，将会增加api封禁可能
     LIMIT:int = 1000
 
-    #请求间隔，调高将减少api封禁可能，但会加长请求时间
-    API_BASE_GET_INTERVAL=0.2
+    #请求间隔，调高将减少api封禁可能，但会加长请求时间，请勿调至0.4以下
+    API_BASE_GET_INTERVAL=0.4
 
     """LocalData模块参数"""
     # 本地数据存储的文件夹地址
     LOCAL_DATA_CSV_DIR: str = 'data_csv'
+    LOCAL_DATA_SQLITE_DIR: str = 'LocalData'
 
     # 最大本地csv保存值
     LOCAL_MAX_CSV_NUMBER: int = 10000
@@ -44,7 +45,10 @@ class ApiConfig:
 
 
     #允许最大初始化回测的历史跨度单位:日
-    LOCAL_MAX_HISTORY_ALLOW:int=1000
+    LOCAL_MAX_HISTORY_ALLOW:int=1
+
+    #默认时区
+    LOCAL_DATE_PLACE="Asia/Shanghai"
 
 
 

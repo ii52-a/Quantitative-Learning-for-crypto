@@ -8,7 +8,8 @@ vendor/
 # 日志文件
 *.log
 logs/
-data.csv
+*.csv
+*.db
 
 # 系统文件
 .DS_Store
