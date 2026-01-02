@@ -12,7 +12,7 @@ def setup_logger(logger_name, console_level=logging.INFO, file_level=logging.DEB
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
 
-    # 避免重复添加 handler
+
     if logger.handlers:
         logger.handlers.clear()
 
@@ -23,8 +23,9 @@ def setup_logger(logger_name, console_level=logging.INFO, file_level=logging.DEB
     log_file = module_dir / f"{logger_name}.log"
 
     formatter = logging.Formatter(
-        '%(asctime)s (%(filename)s:%(lineno)d): %(message)s  <%(levelname)s> '
+        ' (%(filename)s:%(lineno)d): %(message)s  <%(levelname)s> %(asctime)s'
     )
+
 
     # 控制台输出
     console_handler = logging.StreamHandler()

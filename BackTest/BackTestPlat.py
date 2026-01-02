@@ -3,11 +3,9 @@
 from data.Api import *
 from BackTest.position_contral import PositionControl
 from strategy.cta_macd_strategy import Strategy
-from typing import  Dict, Any
 
 
-from type import BackTestSetting, StrategyResult, PositionSignal
-
+from type import BackTestSetting, StrategyResult, PositionSignal, StaSetting
 
 
 class BackTest:
@@ -29,66 +27,42 @@ class BackTest:
         # 回测K线数据
         self.data: pd.DataFrame | None = None
 
-    def strategy_backtest_loop(self, interval:str,data:pd.DataFrame) -> None:
-        """
-        策略回测循环
-        :param interval<biance str>: 周期数,输入biance常量str，解耦self形参,变化的参数不要放在绑定的类属性上,容易与单个对象耦合
-        :param data: 数据
-        """
-        #TODO 修改为UI控制
-        # chose=input("输入x调用api获取实时数据,其他使用本地csv")
-        # if chose=='x':
-        #     self.data=self.api.get_backtest_data(number=data_number,interval=interval)
-        # else:
-        #     self.data=self.api.get_csv_data(number=data_number)
+    def strategy_backtest_loop(self,
+                               number: int,
+                               end_time:pd.Timestamp=pd.to_datetime('now', unit='ms')
+                               ) -> None:
 
-
-        # 检查数据
-        if data is None:
-            print("数据获取失败，回测终止。")
-            return
-
-        data_len: int = len(data)
         # 策略参数设置字典
-        setting: Dict[str, Any] = {'symbol': self.symbol, 'data': None, 'leverage': self.leverage, 'size': 0}
-        cur_price=data.iloc[-1]['close']
-        cur_time=data.index[-1]
-        # print(cur_price,cur_time)
-        # 循环遍历K线数据进行回测
-        # 从 预留数据量开始 (Config.PADDING_COUNT)
-        for i in range(Config.PADDING_COUNT, data_len):
-            # 1. 准备数据切片
-            slice_data: pd.DataFrame = data.iloc[:i]
-            setting['data'] = slice_data
-            # 3. 策略产生信号
-            try:
-                signals: StrategyResult = Strategy.strategy_macd30min(setting)  #  StrategyResult
-            except Exception as e:
-                print(f"strategy_loop>Strategy策略错误:{e}")
-                return
+        setting: StaSetting=StaSetting(
+            symbol=self.symbol,
+            leverage=self.leverage,
+            size=0,
+            end_time=end_time,
+            number=number,
+        )
 
-            # 4. 执行交易操作
-            if signals.signal == PositionSignal.OPEN:
-                self.position.open_position(size_ratio=signals.size, price=signals.execution_price, time=signals.execution_time)
-            elif signals.signal == PositionSignal.CLOSE:
-                self.position.close_position(price=signals.execution_price, time=signals.execution_time)
-
-        # 有持仓就平仓
-        if self.position.position != PositionSignal.EMPTY:
-            self.position.close_position(price=float(cur_price), time=cur_time)
-
-
-        self.position.print(data_len - Config.PADDING_COUNT,cl_k_time=f"{interval}/per",interval=interval)
-
-        # 重置仓位
-        self.position = PositionControl(self.symbol, self.usdt)
+        #     # 4. 执行交易操作
+        #     if signals.signal == PositionSignal.OPEN:
+        #         self.position.open_position(size_ratio=signals.size, price=signals.execution_price, time=signals.execution_time)
+        #     elif signals.signal == PositionSignal.CLOSE:
+        #         self.position.close_position(price=signals.execution_price, time=signals.execution_time)
+        #
+        # # 有持仓就平仓
+        # if self.position.position != PositionSignal.EMPTY:
+        #     self.position.close_position(price=float(cur_price), time=cur_time)
+        #
+        #
+        # self.position.print(data_len - Config.PADDING_COUNT,cl_k_time=f"{interval}/per",interval=interval)
+        #
+        # # 重置仓位
+        # self.position = PositionControl(self.symbol, self.usdt)
 
 
 
 
 
 
-def main() -> None:
+def main():
     # try:
     #     bt: BackTest = BackTest()
     #     while True:

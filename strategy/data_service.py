@@ -1,0 +1,49 @@
+from logging import Logger
+from typing import List
+
+import pandas as pd
+
+import Config
+from data.sqlite_oper import SqliteOper
+from decorator import catch_and_log
+
+logger=Logger(__name__)
+class Dataservice:
+    data_list:List[str]=Config.TradeMapper.data_time
+
+
+    @classmethod
+    @catch_and_log(logger=logger,return_default=None)
+    def _get_data_time(cls,symbol:str,
+                       kline:str,
+                       start:pd.Timestamp | None,
+                       length:int):
+        logger.info(f"begin get {symbol} {kline}")
+        data_df=SqliteOper.with_open_and_func(symbol=symbol,kline_str=kline,func=SqliteOper.read_range_kline,kline=kline,start_time=start,number=length)
+        return data_df
+
+    @classmethod
+    @catch_and_log(logger=logger,return_default=None)
+    def get_data(cls,symbol,time:str,length:int,start_time:pd.Timestamp| None=None):
+        """
+        :param symbol: 类型
+        :param time:  k线类型
+        :param start_time: 开始时间
+        :param length: 长度
+        :return:  DataFrame形式数据
+        """
+        if time not in cls.data_list:
+            logger.error(f"{time} not in data_list!")
+        kline=f"kline_{time}"
+        data_df=cls._get_data_time(symbol=symbol,kline=kline,start=start_time,length=length)
+        if data_df is None or data_df.empty:
+            logger.error("data获取失败")
+        return data_df
+
+
+if __name__ == '__main__':
+    start=pd.Timestamp("2025-07-30")
+    n=1000
+    data=Dataservice.get_data("ETHUSDT","15min",start_time=start,length=n)
+    print(data)
+

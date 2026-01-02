@@ -28,6 +28,8 @@ class GetbackUi(QMainWindow):
         self.setting_kline_num:int = 500  # 默认值
         self.setting_use_local_data:bool = True  # 默认值
 
+        self.main_layout:QVBoxLayout | None = None
+
     @retry(stop=stop_after_attempt(ApiConfig.MAX_RETRY), wait=wait_fixed(ApiConfig.WAITING_TIME),
            retry=retry_if_exception_type(ApiConfig.RETRY_ERROR_ACCEPT))
 

@@ -12,11 +12,11 @@ class ApiConfig:
     #最大尝试,不建议调低,调高也没有必要
     MAX_RETRY:int=20
     #最大等待时间，应该没有必要调整
-    WAITING_TIME:float=1.5
+    WAITING_TIME:float=3
     # 允许错误类型,当下无需调整
     RETRY_ERROR_ACCEPT:tuple[Type[BaseException]]=(RequestException, ConnectionAbortedError, SSLError)
     # 最大请求时长,没必要调整
-    CUSTOM_TIMEOUT:tuple[int]=(10,30)
+    CUSTOM_TIMEOUT:tuple[int]=(12,32)
     # 最大单次请求,最大1000,不建议调低，将会增加api封禁可能
     LIMIT:int = 1000
 
@@ -47,7 +47,7 @@ class ApiConfig:
 
 
     #允许最大初始化回测的历史跨度单位:日
-    #调错可以改小看客d
+    #调错可以改小看客d,调大将增加内存占用，和初始化时间,将会获得更大的回测范围
     LOCAL_MAX_HISTORY_ALLOW:int=1000
 
     #默认时区
@@ -71,9 +71,6 @@ class BackConfig:
 
 
 
-"""TODO:移除，懒得改"""
-class TradeConfig:
-    ORIGIN_USDT = 100
 
 
 """api交互"""
@@ -113,5 +110,10 @@ class TradeMapper:
      }
     trade_pair:str=''
     strategy:list=['CTA-macd']
+
+    #默认k线组合库，可以调整,需要符合min,h,d,W星期,ME月
+    data_time: list[str] = ['3min', '5min', '15min', '30min', '1h',
+                            '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1W',
+                            '1ME']
 
 

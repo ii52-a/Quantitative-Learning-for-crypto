@@ -44,7 +44,7 @@ class FormatUrlibs:
         data.set_index('timestamp', inplace=True)
         return data
 
-
+    #废弃
     @staticmethod
     def standard_open_position_print(symbol:str,size:float,leverage,open_price):
         print("="*10+f"[开仓]:{symbol}"+'='*15)

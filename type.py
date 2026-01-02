@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Hashable
 
+import pandas as pd
+
 import Config
 
 
@@ -21,6 +23,14 @@ class PositionSignal:
     LESS=-2
 
 
+"""策略输入setting"""
+@dataclass
+class StaSetting:
+    symbol: str
+    leverage: int
+    size: int
+    number:int
+    end_time: pd.Timestamp=pd.Timestamp.now()
 
 """
 策略返回信号

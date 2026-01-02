@@ -1,0 +1,905 @@
+2025-12-09 10:09:38,199 (Api.py:23): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 
+2025-12-09 10:09:39,993 (Api.py:34): Api 初始化完成，开始数据操作  <DEBUG> 
+2025-12-09 10:09:39,993 (Api.py:118): 启动本地数据主程序 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:09:39,993 (Api.py:37): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 
+2025-12-09 10:09:39,993 (Api.py:124): 未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:09:39,993 (Api.py:136): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 
+2025-12-09 10:09:39,997 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-09 10:09:39.995397, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:40,865 (Api.py:152): 已获取数据:1000  <DEBUG> 
+2025-12-09 10:09:41,173 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-08 09:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:41,446 (Api.py:152): 已获取数据:2000  <DEBUG> 
+2025-12-09 10:09:41,747 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-07 16:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:41,975 (Api.py:152): 已获取数据:3000  <DEBUG> 
+2025-12-09 10:09:42,277 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-07 00:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:42,709 (Api.py:152): 已获取数据:4000  <DEBUG> 
+2025-12-09 10:09:43,010 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-06 07:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:43,236 (Api.py:152): 已获取数据:5000  <DEBUG> 
+2025-12-09 10:09:43,537 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-05 14:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:43,795 (Api.py:152): 已获取数据:6000  <DEBUG> 
+2025-12-09 10:09:44,096 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-04 22:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:44,335 (Api.py:152): 已获取数据:7000  <DEBUG> 
+2025-12-09 10:09:44,636 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-04 05:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:44,862 (Api.py:152): 已获取数据:8000  <DEBUG> 
+2025-12-09 10:09:45,163 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-03 12:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:45,432 (Api.py:152): 已获取数据:9000  <DEBUG> 
+2025-12-09 10:09:45,734 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-02 20:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:45,969 (Api.py:152): 已获取数据:10000  <DEBUG> 
+2025-12-09 10:09:45,969 (Api.py:154): 已获得数据:10000  <INFO> 
+2025-12-09 10:09:46,270 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-02 03:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:46,704 (Api.py:152): 已获取数据:11000  <DEBUG> 
+2025-12-09 10:09:47,006 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-12-01 10:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:47,265 (Api.py:152): 已获取数据:12000  <DEBUG> 
+2025-12-09 10:09:47,566 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-30 18:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:47,792 (Api.py:152): 已获取数据:13000  <DEBUG> 
+2025-12-09 10:09:48,093 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-30 01:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:48,320 (Api.py:152): 已获取数据:14000  <DEBUG> 
+2025-12-09 10:09:48,621 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-29 08:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:48,961 (Api.py:152): 已获取数据:15000  <DEBUG> 
+2025-12-09 10:09:49,262 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-28 16:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:49,492 (Api.py:152): 已获取数据:16000  <DEBUG> 
+2025-12-09 10:09:49,793 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-27 23:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:50,034 (Api.py:152): 已获取数据:17000  <DEBUG> 
+2025-12-09 10:09:50,336 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-27 06:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:50,575 (Api.py:152): 已获取数据:18000  <DEBUG> 
+2025-12-09 10:09:50,876 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-26 14:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:51,108 (Api.py:152): 已获取数据:19000  <DEBUG> 
+2025-12-09 10:09:51,409 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-25 21:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:51,627 (Api.py:152): 已获取数据:20000  <DEBUG> 
+2025-12-09 10:09:51,627 (Api.py:154): 已获得数据:20000  <INFO> 
+2025-12-09 10:09:51,929 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-25 04:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:52,148 (Api.py:152): 已获取数据:21000  <DEBUG> 
+2025-12-09 10:09:52,449 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-24 12:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:52,682 (Api.py:152): 已获取数据:22000  <DEBUG> 
+2025-12-09 10:09:52,984 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-23 19:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:53,212 (Api.py:152): 已获取数据:23000  <DEBUG> 
+2025-12-09 10:09:53,513 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-23 02:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:53,729 (Api.py:152): 已获取数据:24000  <DEBUG> 
+2025-12-09 10:09:54,031 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-22 10:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:54,261 (Api.py:152): 已获取数据:25000  <DEBUG> 
+2025-12-09 10:09:54,562 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-21 17:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:54,798 (Api.py:152): 已获取数据:26000  <DEBUG> 
+2025-12-09 10:09:55,099 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-21 00:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:55,342 (Api.py:152): 已获取数据:27000  <DEBUG> 
+2025-12-09 10:09:55,644 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-20 08:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:55,867 (Api.py:152): 已获取数据:28000  <DEBUG> 
+2025-12-09 10:09:56,168 (Api.py:44): 获取期货数据 start_time=None, end_time=2025-11-19 15:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:09:56,389 (Api.py:152): 已获取数据:29000  <DEBUG> 
+2025-12-09 10:09:56,913 (Api.py:172): 获取未保存数据:29000  <INFO> 
+2025-12-09 10:09:57,711 (Api.py:174): 基础 K 线初始化完成并写入数据库  <DEBUG> 
+2025-12-09 10:09:57,716 (Api.py:128): 准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 
+2025-12-09 10:09:58,027 (Api.py:131): Api>>local_data_main>>k线数据聚合失败:no such table: kline_3min  <ERROR> 
+2025-12-09 10:26:29,690 (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 
+2025-12-09 10:26:31,878 (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 
+2025-12-09 10:26:31,879 (Api.py:119): 启动本地数据主程序 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:26:31,879 (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 
+2025-12-09 10:26:31,879 (Api.py:125): 未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:26:31,879 (Api.py:139): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 
+2025-12-09 10:26:31,880 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 10:26:31.879757, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:34,212 (Api.py:155): 已获取数据:1000  <DEBUG> 
+2025-12-09 10:26:34,514 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 09:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:34,973 (Api.py:155): 已获取数据:2000  <DEBUG> 
+2025-12-09 10:26:35,275 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 17:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:35,576 (Api.py:155): 已获取数据:3000  <DEBUG> 
+2025-12-09 10:26:35,878 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 00:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:36,305 (Api.py:155): 已获取数据:4000  <DEBUG> 
+2025-12-09 10:26:36,606 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 07:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:37,044 (Api.py:155): 已获取数据:5000  <DEBUG> 
+2025-12-09 10:26:37,345 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 15:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:37,748 (Api.py:155): 已获取数据:6000  <DEBUG> 
+2025-12-09 10:26:38,049 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 22:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:38,493 (Api.py:155): 已获取数据:7000  <DEBUG> 
+2025-12-09 10:26:38,795 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 05:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:39,283 (Api.py:155): 已获取数据:8000  <DEBUG> 
+2025-12-09 10:26:39,584 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 13:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:40,024 (Api.py:155): 已获取数据:9000  <DEBUG> 
+2025-12-09 10:26:40,326 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 20:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:40,819 (Api.py:155): 已获取数据:10000  <DEBUG> 
+2025-12-09 10:26:40,819 (Api.py:157): 已获得数据:10000  <INFO> 
+2025-12-09 10:26:41,120 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 03:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:41,549 (Api.py:155): 已获取数据:11000  <DEBUG> 
+2025-12-09 10:26:41,850 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 11:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:42,327 (Api.py:155): 已获取数据:12000  <DEBUG> 
+2025-12-09 10:26:42,628 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 18:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:43,038 (Api.py:155): 已获取数据:13000  <DEBUG> 
+2025-12-09 10:26:43,340 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 01:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:43,740 (Api.py:155): 已获取数据:14000  <DEBUG> 
+2025-12-09 10:26:44,041 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 09:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:44,437 (Api.py:155): 已获取数据:15000  <DEBUG> 
+2025-12-09 10:26:44,739 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 16:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:45,132 (Api.py:155): 已获取数据:16000  <DEBUG> 
+2025-12-09 10:26:45,433 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 23:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:45,812 (Api.py:155): 已获取数据:17000  <DEBUG> 
+2025-12-09 10:26:46,114 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 07:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:46,524 (Api.py:155): 已获取数据:18000  <DEBUG> 
+2025-12-09 10:26:46,825 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 14:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:47,190 (Api.py:155): 已获取数据:19000  <DEBUG> 
+2025-12-09 10:26:47,491 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 21:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:47,873 (Api.py:155): 已获取数据:20000  <DEBUG> 
+2025-12-09 10:26:47,873 (Api.py:157): 已获得数据:20000  <INFO> 
+2025-12-09 10:26:48,175 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 05:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:48,567 (Api.py:155): 已获取数据:21000  <DEBUG> 
+2025-12-09 10:26:48,869 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 12:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:49,249 (Api.py:155): 已获取数据:22000  <DEBUG> 
+2025-12-09 10:26:49,551 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 19:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:50,039 (Api.py:155): 已获取数据:23000  <DEBUG> 
+2025-12-09 10:26:50,341 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 03:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:50,753 (Api.py:155): 已获取数据:24000  <DEBUG> 
+2025-12-09 10:26:51,054 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 10:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:51,473 (Api.py:155): 已获取数据:25000  <DEBUG> 
+2025-12-09 10:26:51,774 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 17:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:52,280 (Api.py:155): 已获取数据:26000  <DEBUG> 
+2025-12-09 10:26:52,581 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 01:06:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:53,004 (Api.py:155): 已获取数据:27000  <DEBUG> 
+2025-12-09 10:26:53,305 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 08:26:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:53,759 (Api.py:155): 已获取数据:28000  <DEBUG> 
+2025-12-09 10:26:54,060 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 15:46:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:26:54,558 (Api.py:155): 已获取数据:29000  <DEBUG> 
+2025-12-09 10:26:55,009 (Api.py:175): 获取未保存数据:29000  <INFO> 
+2025-12-09 10:30:11,021 (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 
+2025-12-09 10:30:13,243 (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 
+2025-12-09 10:30:13,243 (Api.py:119): 启动本地数据主程序 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:30:13,243 (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 
+2025-12-09 10:30:13,243 (Api.py:125): 未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:30:13,243 (Api.py:139): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 
+2025-12-09 10:30:13,244 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 10:30:13.243529, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:15,390 (Api.py:155): 已获取数据:1000  <DEBUG> 
+2025-12-09 10:30:15,691 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 09:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:16,000 (Api.py:155): 已获取数据:2000  <DEBUG> 
+2025-12-09 10:30:16,301 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 17:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:16,601 (Api.py:155): 已获取数据:3000  <DEBUG> 
+2025-12-09 10:30:16,903 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 00:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:17,188 (Api.py:155): 已获取数据:4000  <DEBUG> 
+2025-12-09 10:30:17,490 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 07:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:17,790 (Api.py:155): 已获取数据:5000  <DEBUG> 
+2025-12-09 10:30:18,092 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 15:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:18,491 (Api.py:155): 已获取数据:6000  <DEBUG> 
+2025-12-09 10:30:18,793 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 22:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:19,197 (Api.py:155): 已获取数据:7000  <DEBUG> 
+2025-12-09 10:30:19,498 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 05:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:19,941 (Api.py:155): 已获取数据:8000  <DEBUG> 
+2025-12-09 10:30:20,242 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 13:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:20,724 (Api.py:155): 已获取数据:9000  <DEBUG> 
+2025-12-09 10:30:21,026 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 20:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:21,660 (Api.py:155): 已获取数据:10000  <DEBUG> 
+2025-12-09 10:30:21,660 (Api.py:157): 已获得数据:10000  <INFO> 
+2025-12-09 10:30:21,961 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 03:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:22,325 (Api.py:155): 已获取数据:11000  <DEBUG> 
+2025-12-09 10:30:22,626 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 11:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:22,992 (Api.py:155): 已获取数据:12000  <DEBUG> 
+2025-12-09 10:30:23,293 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 18:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:23,672 (Api.py:155): 已获取数据:13000  <DEBUG> 
+2025-12-09 10:30:23,973 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 01:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:24,425 (Api.py:155): 已获取数据:14000  <DEBUG> 
+2025-12-09 10:30:24,726 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 09:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:25,181 (Api.py:155): 已获取数据:15000  <DEBUG> 
+2025-12-09 10:30:25,482 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 16:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:25,864 (Api.py:155): 已获取数据:16000  <DEBUG> 
+2025-12-09 10:30:26,166 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 23:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:26,532 (Api.py:155): 已获取数据:17000  <DEBUG> 
+2025-12-09 10:30:26,833 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 07:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:27,203 (Api.py:155): 已获取数据:18000  <DEBUG> 
+2025-12-09 10:30:27,504 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 14:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:27,897 (Api.py:155): 已获取数据:19000  <DEBUG> 
+2025-12-09 10:30:28,198 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 21:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:28,566 (Api.py:155): 已获取数据:20000  <DEBUG> 
+2025-12-09 10:30:28,566 (Api.py:157): 已获得数据:20000  <INFO> 
+2025-12-09 10:30:28,867 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 05:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:29,223 (Api.py:155): 已获取数据:21000  <DEBUG> 
+2025-12-09 10:30:29,525 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 12:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:29,894 (Api.py:155): 已获取数据:22000  <DEBUG> 
+2025-12-09 10:30:30,196 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 19:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:30,540 (Api.py:155): 已获取数据:23000  <DEBUG> 
+2025-12-09 10:30:30,841 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 03:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:31,266 (Api.py:155): 已获取数据:24000  <DEBUG> 
+2025-12-09 10:30:31,567 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 10:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:31,947 (Api.py:155): 已获取数据:25000  <DEBUG> 
+2025-12-09 10:30:32,249 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 17:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:32,641 (Api.py:155): 已获取数据:26000  <DEBUG> 
+2025-12-09 10:30:32,943 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 01:10:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:33,325 (Api.py:155): 已获取数据:27000  <DEBUG> 
+2025-12-09 10:30:33,625 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 08:30:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:33,982 (Api.py:155): 已获取数据:28000  <DEBUG> 
+2025-12-09 10:30:34,285 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 15:50:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:30:34,653 (Api.py:155): 已获取数据:29000  <DEBUG> 
+2025-12-09 10:30:35,072 (Api.py:175): 获取未保存数据:29000  <INFO> 
+2025-12-09 10:58:36,261 (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 
+2025-12-09 10:58:39,032 (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 
+2025-12-09 10:58:39,032 (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:58:39,032 (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 
+2025-12-09 10:58:39,032 (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 
+2025-12-09 10:58:39,032 (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 
+2025-12-09 10:58:39,032 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 10:58:39.032092, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:40,326 (Api.py:149): 已获取数据:1000  <DEBUG> 
+2025-12-09 10:58:40,627 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:40,872 (Api.py:149): 已获取数据:2000  <DEBUG> 
+2025-12-09 10:58:41,174 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 17:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:41,415 (Api.py:149): 已获取数据:3000  <DEBUG> 
+2025-12-09 10:58:41,716 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 00:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:42,017 (Api.py:149): 已获取数据:4000  <DEBUG> 
+2025-12-09 10:58:42,318 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:42,570 (Api.py:149): 已获取数据:5000  <DEBUG> 
+2025-12-09 10:58:42,871 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 15:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:43,126 (Api.py:149): 已获取数据:6000  <DEBUG> 
+2025-12-09 10:58:43,427 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 22:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:43,661 (Api.py:149): 已获取数据:7000  <DEBUG> 
+2025-12-09 10:58:43,962 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:44,228 (Api.py:149): 已获取数据:8000  <DEBUG> 
+2025-12-09 10:58:44,530 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 13:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:44,780 (Api.py:149): 已获取数据:9000  <DEBUG> 
+2025-12-09 10:58:45,082 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 20:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:45,352 (Api.py:149): 已获取数据:10000  <DEBUG> 
+2025-12-09 10:58:45,352 (Api.py:151): 已获得数据:10000  <INFO> 
+2025-12-09 10:58:45,652 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:45,874 (Api.py:149): 已获取数据:11000  <DEBUG> 
+2025-12-09 10:58:46,175 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 11:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:46,389 (Api.py:149): 已获取数据:12000  <DEBUG> 
+2025-12-09 10:58:46,691 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 18:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:46,935 (Api.py:149): 已获取数据:13000  <DEBUG> 
+2025-12-09 10:58:47,237 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:47,481 (Api.py:149): 已获取数据:14000  <DEBUG> 
+2025-12-09 10:58:47,781 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 09:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:48,030 (Api.py:149): 已获取数据:15000  <DEBUG> 
+2025-12-09 10:58:48,332 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 16:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:48,574 (Api.py:149): 已获取数据:16000  <DEBUG> 
+2025-12-09 10:58:48,877 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:49,120 (Api.py:149): 已获取数据:17000  <DEBUG> 
+2025-12-09 10:58:49,422 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 07:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:49,659 (Api.py:149): 已获取数据:18000  <DEBUG> 
+2025-12-09 10:58:49,959 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 14:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:50,230 (Api.py:149): 已获取数据:19000  <DEBUG> 
+2025-12-09 10:58:50,532 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:50,796 (Api.py:149): 已获取数据:20000  <DEBUG> 
+2025-12-09 10:58:50,796 (Api.py:151): 已获得数据:20000  <INFO> 
+2025-12-09 10:58:51,097 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 05:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:51,328 (Api.py:149): 已获取数据:21000  <DEBUG> 
+2025-12-09 10:58:51,630 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 12:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:51,864 (Api.py:149): 已获取数据:22000  <DEBUG> 
+2025-12-09 10:58:52,165 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:52,397 (Api.py:149): 已获取数据:23000  <DEBUG> 
+2025-12-09 10:58:52,698 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 03:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:52,930 (Api.py:149): 已获取数据:24000  <DEBUG> 
+2025-12-09 10:58:53,231 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 10:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:53,491 (Api.py:149): 已获取数据:25000  <DEBUG> 
+2025-12-09 10:58:53,792 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:54,035 (Api.py:149): 已获取数据:26000  <DEBUG> 
+2025-12-09 10:58:54,336 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 01:38:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:54,592 (Api.py:149): 已获取数据:27000  <DEBUG> 
+2025-12-09 10:58:54,894 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 08:58:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:55,184 (Api.py:149): 已获取数据:28000  <DEBUG> 
+2025-12-09 10:58:55,486 (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:18:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 
+2025-12-09 10:58:55,736 (Api.py:149): 已获取数据:29000  <DEBUG> 
+2025-12-09 10:58:56,207 (Api.py:169): 获取未保存数据:29000  <INFO> 
+2025-12-09 10:58:57,449 (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 
+2025-12-09 10:58:57,454 (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:14:31,576
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:14:34,658
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:14:34,658
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:14:34,659
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:14:34,659
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:14:34,659
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:14:34.659861, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:34,659
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:14:35,634
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:35,935
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:14:36,232
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 17:54:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:36,533
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:14:36,788
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:14:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:37,089
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:14:37,359
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:37,661
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:14:37,975
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 15:54:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:38,276
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:14:38,608
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:14:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:38,910
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:14:39,201
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:39,503
+ (Api.py:65): Api>get_futures_data获取api数据失败:HTTPSConnectionPool(host='fapi.binance.com', port=443): Max retries exceeded with url: /fapi/v1/klines?endTime=1764830099999&interval=1m&limit=1000&symbol=ETHUSDT&timeout=2000 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))  <ERROR> 2025-12-09 11:14:41,566
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:14:41,566
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:14:41,566
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:44,567
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:14:52,746
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:14:52,746
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:14:52,746
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:14:55,748
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:15:03,866
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:15:03,868
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:15:03,868
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:15:06,869
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:15:14,946
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:15:14,946
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:15:14,946
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:34:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:15:17,948
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:15:26,055
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:15:26,056
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:15:26,056
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:17:29,806
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:17:42,506
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:17:44,853
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:17:44,854
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:17:44,854
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:17:44,854
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:17:44,854
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:17:44.854156, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:17:44,855
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:17:52,995
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:17:52,997
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:17:52,997
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:17:44.854156, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:17:55,997
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:18:04,088
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:18:04,088
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:18:04,088
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:17:44.854156, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:18:07,089
+ (Api.py:65): Api>get_futures_data获取api数据失败:('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))  <ERROR> 2025-12-09 11:18:15,191
+ (Api.py:160): API>>_init_base_k_line_data>>基础数据初始化失败:'NoneType' object has no attribute 'empty'  <ERROR> 2025-12-09 11:18:15,191
+ (Api.py:161): 等待3秒后重试  <INFO> 2025-12-09 11:18:15,192
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:18:20,690
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:18:35,167
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:18:47,377
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:19:04,953
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:19:07,491
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:19:07,493
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:19:07,493
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:19:07,493
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:19:07,493
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:19:07.493170, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:07,493
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:19:09,184
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:09,486
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:19:10,055
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 17:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:10,356
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:19:10,601
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:10,903
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:19:11,138
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:11,439
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:19:11,669
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 15:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:11,971
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:19:12,191
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:12,492
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:19:12,733
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:13,035
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:19:13,533
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 13:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:13,837
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:19:14,070
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:14,371
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:19:14,590
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:19:14,590
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:14,892
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:19:15,108
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 11:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:15,410
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:19:15,640
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:15,942
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:19:16,164
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:16,466
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:19:16,691
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 09:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:16,992
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:19:17,194
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:17,495
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:19:17,720
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:18,021
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:19:18,239
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 07:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:18,541
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:19:18,761
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:19,062
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:19:19,277
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:19,578
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:19:19,816
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:19:19,816
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 05:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:20,117
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:19:20,340
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:20,641
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:19:20,869
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:21,171
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:19:21,418
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 03:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:21,719
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:19:22,366
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:22,669
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:19:22,878
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:23,179
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:19:23,402
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 01:59:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:23,703
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:19:23,933
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:19:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:24,234
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:19:24,469
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:39:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:19:24,770
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:19:24,988
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:19:25,470
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:19:26,577
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:19:26,582
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:21:54,042
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:21:57,449
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:21:57,450
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:21:57,450
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:21:57,450
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:21:57,450
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:21:57.451273, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:21:57,451
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:22:00,770
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:01,074
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:22:01,444
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:01,745
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:22:01,993
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:02,295
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:22:02,529
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:02,830
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:22:03,070
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:03,372
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:22:03,615
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:03,917
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:22:04,169
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:04,470
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:22:04,718
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:05,020
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:22:05,293
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:05,595
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:22:06,238
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:22:06,239
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:06,540
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:22:07,162
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:07,463
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:22:07,690
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:07,992
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:22:08,238
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:08,539
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:22:08,799
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:09,100
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:22:09,340
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:09,641
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:22:09,875
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:10,177
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:22:10,409
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:10,711
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:22:10,940
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:11,241
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:22:11,472
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:11,773
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:22:12,044
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:22:12,044
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:12,346
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:22:12,589
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:12,890
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:22:13,121
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:13,422
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:22:13,656
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:13,958
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:22:14,216
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:14,518
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:22:14,768
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:15,069
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:22:15,314
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:15,616
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:22:15,869
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:16,170
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:22:16,393
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:22:16,694
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:22:16,927
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:22:17,412
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:22:18,575
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:22:18,582
+ (Api.py:174): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:22:18,834
+ (Api.py:45): 获取期货数据 start_time=2025-12-09 03:21:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2025-12-09 11:22:18,835
+ (Api.py:183): ETHUSDT 数据集已是最新  <INFO> 2025-12-09 11:22:19,100
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:23:46,247
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:23:49,178
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:23:49,179
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:23:49,179
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:23:49,179
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:23:49,179
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:23:49.179064, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:49,180
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:23:50,112
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:50,413
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:23:50,669
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:50,970
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:23:51,367
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:51,668
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:23:51,876
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:52,177
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:23:52,378
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:52,680
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:23:52,904
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:53,205
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:23:53,459
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:53,760
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:23:53,960
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:54,261
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:23:54,467
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:54,768
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:23:54,992
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:23:54,992
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:55,293
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:23:55,504
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:55,805
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:23:56,027
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:56,328
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:23:56,536
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:56,837
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:23:57,041
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:57,342
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:23:57,556
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:57,857
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:23:58,082
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:58,384
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:23:59,023
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:59,324
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:23:59,546
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:23:59,848
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:24:00,071
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:00,373
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:24:00,603
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:24:00,603
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:00,904
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:24:01,124
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:01,426
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:24:01,656
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:01,957
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:24:02,168
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:02,469
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:24:02,684
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:02,984
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:24:03,199
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:03,500
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:24:03,728
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:04,029
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:24:04,238
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:04,539
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:24:04,794
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:24:05,095
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:24:05,314
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:24:05,788
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:24:06,946
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:24:06,950
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:25:42,499
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:25:46,174
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:25:46,175
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:25:46,176
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:25:46,176
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:25:46,176
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:25:46.178136, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:46,179
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:25:52,840
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:53,142
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:25:53,443
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:53,745
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:25:53,982
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:54,340
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:25:54,564
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:54,866
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:25:55,085
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:55,386
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:25:55,592
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:55,893
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:25:56,108
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:56,409
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:25:56,628
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:56,929
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:25:57,144
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:57,446
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:25:57,667
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:25:57,667
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:57,968
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:25:58,197
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:58,498
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:25:58,699
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:59,000
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:25:59,220
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:25:59,521
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:25:59,751
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:00,052
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:26:00,263
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:00,564
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:26:00,786
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:01,088
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:26:01,308
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:01,609
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:26:01,820
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:02,121
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:26:02,335
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:02,637
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:26:02,848
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:26:02,848
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:03,150
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:26:03,376
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:03,678
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:26:03,924
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:04,225
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:26:04,865
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:05,167
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:26:05,399
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:05,700
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:26:05,911
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:06,213
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:26:06,435
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:05:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:06,736
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:26:06,959
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:25:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:07,260
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:26:07,475
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:45:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:26:07,777
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:26:07,988
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:26:08,586
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:26:10,454
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:26:10,460
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:28:37,320
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:28:40,435
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:28:40,435
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:28:40,435
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:28:40,436
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:28:40,436
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:28:40.436834, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:40,436
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:28:43,772
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:44,073
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:28:44,474
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:44,775
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:28:45,057
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:45,358
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:28:45,645
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:45,946
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:28:46,234
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:46,535
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:28:46,938
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:47,239
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:28:47,533
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:47,835
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:28:48,114
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:48,415
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:28:48,695
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:48,996
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:28:49,275
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:28:49,275
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:49,576
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:28:49,857
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:50,159
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:28:50,469
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:50,771
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:28:51,068
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:51,370
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:28:51,649
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:51,950
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:28:52,229
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:52,530
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:28:52,811
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:53,112
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:28:53,407
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:53,708
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:28:53,989
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:54,290
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:28:54,575
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:54,876
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:28:55,174
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:28:55,174
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:55,476
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:28:55,794
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:56,096
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:28:56,446
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:56,748
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:28:57,045
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:57,346
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:28:57,633
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:57,934
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:28:58,218
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:58,519
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:28:58,811
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:08:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:59,112
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:28:59,397
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:28:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:28:59,698
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:29:00,001
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:48:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:00,303
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:29:00,593
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:29:01,068
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:29:02,193
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:29:02,199
+ (Api.py:174): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:29:02,438
+ (Api.py:45): 获取期货数据 start_time=2025-12-09 03:28:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2025-12-09 11:29:02,441
+ (Api.py:183): ETHUSDT 数据集已是最新  <INFO> 2025-12-09 11:29:02,668
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:29:48,944
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:29:51,950
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:29:51,950
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:29:51,950
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:29:51,951
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:29:51,951
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:29:51.951813, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:51,951
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:29:54,206
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 10:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:54,507
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:29:54,873
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:55,174
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:29:55,484
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:55,786
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:29:56,088
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 08:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:56,390
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:29:56,681
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:56,982
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:29:57,273
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:57,574
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:29:57,856
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 06:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:58,158
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:29:58,461
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:58,762
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:29:59,041
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:29:59,341
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:30:00,049
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:30:00,050
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 04:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:00,351
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:30:00,669
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:00,970
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:30:01,252
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:01,555
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:30:01,861
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 02:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:02,163
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:30:02,502
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:02,803
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:30:03,097
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:03,398
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:30:03,672
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 00:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:03,974
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:30:04,251
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:04,552
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:30:04,858
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:05,159
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:30:05,436
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 22:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:05,738
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:30:06,020
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:30:06,020
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:06,321
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:30:06,612
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:06,913
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:30:07,201
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 20:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:07,502
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:30:07,797
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:08,098
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:30:08,397
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:08,698
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:30:08,997
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 18:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:09,298
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:30:09,589
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:09:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:09,890
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:30:10,185
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:29:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:10,486
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:30:10,789
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 16:49:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:30:11,089
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:30:11,393
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:30:11,860
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:30:12,991
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:30:12,997
+ (Api.py:174): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:30:13,217
+ (Api.py:45): 获取期货数据 start_time=2025-12-09 03:29:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2025-12-09 11:30:13,218
+ (Api.py:187): 更新中,数据量:29001  <INFO> 2025-12-09 11:30:13,443
+ (Api.py:188): 最新时间戳:2025-12-09 03:30:00  <DEBUG> 2025-12-09 11:30:13,443
+ (Api.py:193): 检测到结束数据标识:1  <DEBUG> 2025-12-09 11:30:13,444
+ (Api.py:199): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:30:13,559
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:33:07,453
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:33:10,089
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:33:10,089
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:33:10,089
+ (Api.py:174): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:33:10,089
+ (Api.py:45): 获取期货数据 start_time=2025-12-09 03:30:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2025-12-09 11:33:10,093
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:41:30,780
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:41:33,974
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:41:33,974
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:41:33,974
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:41:33,974
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:41:33,974
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:41:33.975853, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:33,975
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:41:34,940
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 11:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:35,241
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:41:35,472
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:35,773
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:41:36,005
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:36,306
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:41:36,528
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 09:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:36,829
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:41:37,055
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:37,356
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:41:37,585
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:37,887
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:41:38,420
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 07:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:38,721
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:41:39,244
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:39,546
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:41:40,031
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:40,332
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:41:42,548
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:41:42,548
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 05:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:42,849
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:41:43,142
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:43,443
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:41:43,936
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:44,237
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:41:45,246
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 03:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:45,546
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:41:46,052
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:46,353
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:41:46,960
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:47,261
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:41:47,818
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 01:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:48,119
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:41:48,667
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:48,968
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:41:49,442
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:49,743
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:41:50,156
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 23:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:50,458
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:41:51,136
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:41:51,137
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:51,437
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:41:51,953
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:52,254
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:41:52,881
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 21:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:53,182
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:41:53,525
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:53,827
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:41:54,128
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:54,430
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:41:54,737
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 19:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:55,038
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:41:55,339
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:21:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:55,641
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:41:55,948
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:41:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:56,249
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:41:56,552
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 17:01:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:41:56,853
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:41:57,152
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:41:57,622
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:41:58,719
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:41:58,724
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2025-12-09 11:43:25,900
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2025-12-09 11:43:28,438
+ (Api.py:119):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2025-12-09 11:43:28,438
+ (Api.py:38): 初始化本地数据库对象 SqliteOper ...  <DEBUG> 2025-12-09 11:43:28,438
+ (Api.py:125): [1,1]<Api-main>:未找到本地数据库，将初始化基础 K 线数据 symbol=ETHUSDT  <INFO> 2025-12-09 11:43:28,439
+ (Api.py:133): 开始初始化基础 K 线数据 symbol=ETHUSDT  <DEBUG> 2025-12-09 11:43:28,439
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-09 11:43:28.439778, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:28,439
+ (Api.py:149): 已获取数据:1000  <DEBUG> 2025-12-09 11:43:29,735
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-08 11:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:30,037
+ (Api.py:149): 已获取数据:2000  <DEBUG> 2025-12-09 11:43:30,429
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 18:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:30,730
+ (Api.py:149): 已获取数据:3000  <DEBUG> 2025-12-09 11:43:31,092
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-07 01:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:31,393
+ (Api.py:149): 已获取数据:4000  <DEBUG> 2025-12-09 11:43:31,747
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-06 09:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:32,049
+ (Api.py:149): 已获取数据:5000  <DEBUG> 2025-12-09 11:43:32,424
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-05 16:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:32,725
+ (Api.py:149): 已获取数据:6000  <DEBUG> 2025-12-09 11:43:33,057
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 23:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:33,358
+ (Api.py:149): 已获取数据:7000  <DEBUG> 2025-12-09 11:43:33,928
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-04 07:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:34,229
+ (Api.py:149): 已获取数据:8000  <DEBUG> 2025-12-09 11:43:34,745
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-03 14:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:35,046
+ (Api.py:149): 已获取数据:9000  <DEBUG> 2025-12-09 11:43:35,548
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 21:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:35,849
+ (Api.py:149): 已获取数据:10000  <DEBUG> 2025-12-09 11:43:37,072
+ (Api.py:151): 已获得数据:10000  <INFO> 2025-12-09 11:43:37,072
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-02 05:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:37,373
+ (Api.py:149): 已获取数据:11000  <DEBUG> 2025-12-09 11:43:37,979
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-12-01 12:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:38,281
+ (Api.py:149): 已获取数据:12000  <DEBUG> 2025-12-09 11:43:38,757
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 19:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:39,058
+ (Api.py:149): 已获取数据:13000  <DEBUG> 2025-12-09 11:43:39,467
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-30 03:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:39,769
+ (Api.py:149): 已获取数据:14000  <DEBUG> 2025-12-09 11:43:40,209
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-29 10:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:40,510
+ (Api.py:149): 已获取数据:15000  <DEBUG> 2025-12-09 11:43:41,316
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 17:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:41,617
+ (Api.py:149): 已获取数据:16000  <DEBUG> 2025-12-09 11:43:41,960
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-28 01:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:42,262
+ (Api.py:149): 已获取数据:17000  <DEBUG> 2025-12-09 11:43:42,609
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-27 08:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:42,910
+ (Api.py:149): 已获取数据:18000  <DEBUG> 2025-12-09 11:43:43,448
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-26 15:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:43,749
+ (Api.py:149): 已获取数据:19000  <DEBUG> 2025-12-09 11:43:44,285
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 23:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:44,585
+ (Api.py:149): 已获取数据:20000  <DEBUG> 2025-12-09 11:43:45,152
+ (Api.py:151): 已获得数据:20000  <INFO> 2025-12-09 11:43:45,153
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-25 06:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:45,454
+ (Api.py:149): 已获取数据:21000  <DEBUG> 2025-12-09 11:43:46,088
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-24 13:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:46,389
+ (Api.py:149): 已获取数据:22000  <DEBUG> 2025-12-09 11:43:47,061
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 21:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:47,362
+ (Api.py:149): 已获取数据:23000  <DEBUG> 2025-12-09 11:43:48,036
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-23 04:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:48,337
+ (Api.py:149): 已获取数据:24000  <DEBUG> 2025-12-09 11:43:49,021
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-22 11:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:49,321
+ (Api.py:149): 已获取数据:25000  <DEBUG> 2025-12-09 11:43:49,856
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 19:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:50,157
+ (Api.py:149): 已获取数据:26000  <DEBUG> 2025-12-09 11:43:50,752
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-21 02:23:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:51,053
+ (Api.py:149): 已获取数据:27000  <DEBUG> 2025-12-09 11:43:51,491
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-20 09:43:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:51,794
+ (Api.py:149): 已获取数据:28000  <DEBUG> 2025-12-09 11:43:52,181
+ (Api.py:45): 获取期货数据 start_time=None, end_time=2025-11-19 17:03:59.999000, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2025-12-09 11:43:52,482
+ (Api.py:149): 已获取数据:29000  <DEBUG> 2025-12-09 11:43:53,192
+ (Api.py:169): 获取未保存数据:29000  <INFO> 2025-12-09 11:43:53,666
+ (Api.py:171): 基础 K 线初始化完成并写入数据库  <DEBUG> 2025-12-09 11:43:54,781
+ (Api.py:127): [1,2]<Api-main>:准备聚合常用k线数据: symbol=ETHUSDT  <INFO> 2025-12-09 11:43:54,787

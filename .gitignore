@@ -9,9 +9,10 @@ vendor/
 *.log
 STUDY01/app_logger/logs/
 
-#数据文件
+#数据文件co
 *.csv
 *.db
+*.txt
 
 # 系统文件
 .DS_Store
