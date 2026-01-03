@@ -8,6 +8,7 @@ vendor/
 # 日志文件
 *.log
 STUDY01/app_logger/logs/
+**/__pycache__/
 
 #数据文件co
 *.csv
