@@ -1,11 +1,9 @@
 
 
 from data.Api import *
-from BackTest.position_contral import PositionControl
-from strategy.cta_macd_strategy import Strategy
+from strategy.position_contral import PositionControl
 
-
-from type import BackTestSetting, StrategyResult, PositionSignal, StaSetting
+from type import BackTestSetting, StaSetting
 
 
 class BackTest:
@@ -42,20 +40,7 @@ class BackTest:
         )
 
         #     # 4. 执行交易操作
-        #     if signals.signal == PositionSignal.OPEN:
-        #         self.position.open_position(size_ratio=signals.size, price=signals.execution_price, time=signals.execution_time)
-        #     elif signals.signal == PositionSignal.CLOSE:
-        #         self.position.close_position(price=signals.execution_price, time=signals.execution_time)
-        #
-        # # 有持仓就平仓
-        # if self.position.position != PositionSignal.EMPTY:
-        #     self.position.close_position(price=float(cur_price), time=cur_time)
-        #
-        #
-        # self.position.print(data_len - Config.PADDING_COUNT,cl_k_time=f"{interval}/per",interval=interval)
-        #
-        # # 重置仓位
-        # self.position = PositionControl(self.symbol, self.usdt)
+
 
 
 

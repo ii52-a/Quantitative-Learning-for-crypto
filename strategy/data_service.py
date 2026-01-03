@@ -1,13 +1,15 @@
-from logging import Logger
+
 from typing import List
 
 import pandas as pd
+import talib
 
 import Config
+from app_logger.logger_setup import setup_logger
 from data.sqlite_oper import SqliteOper
 from decorator import catch_and_log
 
-logger=Logger(__name__)
+logger=setup_logger(__name__)
 class Dataservice:
     data_list:List[str]=Config.TradeMapper.data_time
 
@@ -35,15 +37,26 @@ class Dataservice:
         if time not in cls.data_list:
             logger.error(f"{time} not in data_list!")
         kline=f"kline_{time}"
-        data_df=cls._get_data_time(symbol=symbol,kline=kline,start=start_time,length=length)
+        data_df=cls._get_data_time(symbol=symbol,kline=kline,start=start_time,length=length+50)
         if data_df is None or data_df.empty:
             logger.error("data获取失败")
         return data_df
+
+    @staticmethod
+    def macd_data(data:pd.DataFrame)->pd.DataFrame:
+        logger.debug("计算 MACD 指标中...")
+        macd, macd_signal, macd_hist = talib.MACD(data['close'], fastperiod=12, slowperiod=26, signalperiod=9)
+        data['MACD'] = macd
+        data['MACD_SIGNAL'] = macd_signal
+        data['MACD_HIST'] = macd_hist
+        data = data.dropna(subset=['MACD', 'MACD_SIGNAL', 'MACD_HIST'])
+        logger.debug("MACD 计算完成")
+        return data
 
 
 if __name__ == '__main__':
     start=pd.Timestamp("2025-07-30")
     n=1000
-    data=Dataservice.get_data("ETHUSDT","15min",start_time=start,length=n)
-    print(data)
+    data=Dataservice.get_data("ETHUSDT","30min",start_time=start,length=n)
+    print(Dataservice.macd_data(data))
 

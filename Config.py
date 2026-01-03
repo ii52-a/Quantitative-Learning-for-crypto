@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Type
 
@@ -28,6 +29,7 @@ class ApiConfig:
     #csv废弃
     LOCAL_DATA_CSV_DIR: str = 'data_csv'
     LOCAL_DATA_SQLITE_DIR: str = 'LocalData'
+    PROJECT_ROOT=os.path.dirname(os.path.abspath(__file__))
 
     # 最大本地csv保存值,废弃
     LOCAL_MAX_CSV_NUMBER: int = 1000

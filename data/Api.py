@@ -3,7 +3,7 @@ from time import sleep
 from typing import List
 
 
-import talib
+
 from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from urlibs import *
 # import plotly.graph_objects as go
 
-from Config import TradeMapper,ApiConfig as Config
+from Config import ApiConfig as Config
 
 from data.sqlite_oper import *
 from kline_process import KlineProcess
@@ -58,57 +58,7 @@ class Api:
                                               'taker_buy_quote_asset_volume','ignore'])
          return data
 
-
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
-           retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_standard_futures_data(self,start_time=None,end_time=None,symbol='BTCUSDT',interval=Client.KLINE_INTERVAL_30MINUTE,limit=ApiConfig.LIMIT) -> pd.DataFrame:
-        logger.info("开始获取标准合约数据（含 MACD + 北京时间）...")
-        try:
-            data= self.get_futures_data(start_time=start_time,end_time=end_time,symbol=symbol, interval=interval, limit=limit)
-            data = FormatUrlibs.standard_timestamp(data)
-            data = self.get_standard_macd(data)
-        except Exception as e:
-            logger.error(f"Api>get_standard_futures_data获取api数据失败:{e}")
-            raise
-        logger.info("标准合约数据处理完成")
-        return data
-
-    @staticmethod
-    def get_standard_macd(data:pd.DataFrame) ->pd.DataFrame:
-        logger.debug("计算 MACD 指标中...")
-        macd, macd_signal, macd_hist = talib.MACD(data['close'], fastperiod=12, slowperiod=26, signalperiod=9)
-        data['MACD'] = macd
-        data['MACD_SIGNAL'] = macd_signal
-        data['MACD_HIST'] = macd_hist
-        data = data.dropna(subset=['MACD', 'MACD_SIGNAL', 'MACD_HIST'])
-        logger.debug("MACD 计算完成")
-        return data
-
-    @retry(stop=stop_after_attempt(Config.MAX_RETRY), wait=wait_fixed(Config.WAITING_TIME),
-           retry=retry_if_exception_type(Config.RETRY_ERROR_ACCEPT))
-    def get_backtest_data(self,symbol:str, number: int, interval: str, limit: int = ApiConfig.LIMIT) ->pd.DataFrame | None:
-        logger.info(f"开始获取回测数据 symbol={symbol}, number={number}, interval={interval}")
-        try:
-            all_data: List[pd.DataFrame] = []
-            total_requests: int = math.ceil((number + Config.GET_COUNT) / limit)
-
-            current_time: pd.Timestamp = pd.to_datetime('now')
-            kline_interval: int = TradeMapper.K_LINE_TO_MINUTE[interval]
-
-            for i in range(total_requests):
-                start_time: pd.Timestamp = current_time- pd.Timedelta(minutes=limit * kline_interval*(total_requests - i))
-                data: pd.DataFrame = self.get_futures_data(symbol=symbol,start_time=start_time,
-                                                               interval=interval, limit=limit)
-                all_data.append(data)
-            all_data_df: pd.DataFrame = pd.concat(all_data, ignore_index=True)
-            all_data_df = self.get_standard_macd(all_data_df)
-            data: pd.DataFrame = FormatUrlibs.standard_timestamp(all_data_df)
-            logger.info(f"回测数据获取完成，总条数={len(data)}")
-            return data
-        except Exception as e:
-            logger.error(f"API>get_backtest_data>获取回测数据错误:{e}")
-            return None
-
+    """PLan to 废弃"""
     def local_data_main(self,symbol):
         logger.info(f" [1]<Api-main>:启动本地数据主程序 symbol={symbol}")
         path=Path(f"LocalData/{symbol}_base.db")
@@ -122,7 +72,7 @@ class Api:
         self._update_base_k_line_data(symbol=symbol)
 
     def _init_base_k_line_data(self,symbol:str) -> None:
-        logger.debug(f"开始初始化基础 K 线数据 symbol={symbol}")
+        logger.info(f"开始初始化基础 K 线数据 symbol={symbol}")
         all_data: List[pd.DataFrame] = []
         get_time_min:int=ApiConfig.LOCAL_MAX_HISTORY_ALLOW * 24 * 60
         end_time:pd.Timestamp=pd.to_datetime('now')
@@ -164,10 +114,12 @@ class Api:
         logger.debug("基础 K 线初始化完成并写入数据库")
 
     def _update_base_k_line_data(self, symbol: str) -> None:
-        logger.debug(f"开始更新本地 K 线 symbol={symbol}")
+        logger.info(f"开始更新本地 K 线 symbol={symbol}")
         add_data: List[pd.DataFrame] = []
         path=Path(f"LocalData/{symbol}_base.db")
-        start_time: pd.Timestamp =pd.to_datetime(self.local_data_oper.read_newest_timestamp(path),unit='ms')
+        with sqlite3.connect(path) as conn:
+            cursor = conn.cursor()
+            start_time: pd.Timestamp =pd.to_datetime(self.local_data_oper.read_newest_timestamp(cursor),unit='ms')
         while True:
             if start_time is None:
                 logger.warning(f"请求初始时间start_time={start_time}")

@@ -83,7 +83,7 @@ class SqliteOper:
             logger.exception(f"{path}无基础数据集，程序错误")
             return None
 
-        logger.debug(caback[0])
+        logger.debug(f"最新时间戳:{caback[0]}")
         return caback[0]
 
     # 获取时间跨度
@@ -203,9 +203,9 @@ class SqliteOper:
         if not cls.has_table(cursor=cursor, table_name=kline):
             logger.exception(f"[in,1error]<read_kline_range>没有找到{kline}表结构!")
         if not start_time and not endtime:
-
-            endtime=cls.read_newest_timestamp(cursor=cursor)
-            logger.info(f"[in,2set]<read_kline_range>默认end为最新数据{endtime}")
+            endstr=cls.read_newest_timestamp(cursor=cursor,kline=kline)
+            endtime=pd.to_datetime(float(endstr),unit='ms', utc=True)
+            logger.info(f"[in,2set]<read_kline_range>默认end为最新数据{endtime.tz_convert('Asia/Shanghai')}")
         if start_time:
             if endtime:
                 start_time=int(start_time.value/10 ** 6)
@@ -218,7 +218,7 @@ class SqliteOper:
                                                 'taker_buy_quote_asset_volume'])
             else:
                 start_time=int(start_time.value/10 ** 6)
-                cursor.execute(f"SELECT * FROM {kline} WHERE timestamp >= {start_time} LIMIT {number};")
+                cursor.execute(f"SELECT * FROM {kline} WHERE timestamp >= {start_time} ORDER BY timestamp DESC LIMIT {number};")
                 data_df = pd.DataFrame(cursor.fetchall(),
                                        columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                                 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
@@ -226,8 +226,9 @@ class SqliteOper:
 
         else:
             endtime=int(endtime.value / 10 ** 6)
-            cursor.execute(f"SELECT * FROM {kline} WHERE TIMESTAMP <= ? LIMIT ?", (endtime, number,))
+            cursor.execute(f"SELECT * FROM {kline}  WHERE TIMESTAMP <= ? ORDER BY timestamp DESC LIMIT ?", (endtime, number,))
             data_df=pd.DataFrame(cursor.fetchall(), columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume'])
+            data_df= data_df.sort_values("timestamp").reset_index(drop=True)
         return urlibs.FormatUrlibs.standard_timestamp(data_df)
 
     @classmethod
@@ -273,7 +274,7 @@ class SqliteOper:
             patht=Path(f"data/LocalData/{symbol}_aggerate.db")
             # urlibs.FileUrlibs.check_local_path(patht)
             logger.info(f"[in,1aggerate]<with_open_and_func>路径:{patht}")
-        patht= ROOT_DIR.joinpath(patht)
+        patht = Path(ApiConfig.PROJECT_ROOT) / "data" / "LocalData" / f"{symbol}_aggerate.db"
         with sqlite3.connect(patht) as conn:
             cursor = conn.cursor()
             return func(cursor,*args,**kwargs)

@@ -1,10 +1,13 @@
+import logging
+from app_logger.logger_setup import setup_logger
+
 import pandas as pd
 
 
 from Config import *
 from type import PositionSignal
 
-
+logger=setup_logger(__name__)
 class PositionControl:
     def __init__(self, symbol: str, init_usdt: float = BackConfig.ORIGIN_USDT, leverage=BackConfig.SET_LEVERAGE):
         self.symbol: str = symbol
@@ -23,6 +26,8 @@ class PositionControl:
         self.position_change_history = []
 
         self.open_first=None
+        self.open_num=0
+        self.open_gain=0
         self.fee:float = 0.0
 
 
@@ -41,7 +46,7 @@ class PositionControl:
             if margin_usdt <= 0 or self.usdt < margin_usdt:
                 print("资金不足，开仓失败。")
                 return
-
+            self.open_num+=1
             # 2. 计算合约数量
             # 合约数量 (e_size) = (保证金 * 杠杆) / 开仓价格
             e_size:float = round(margin_usdt * leverage / price, BackConfig.ROUND_RADIO)
@@ -51,7 +56,7 @@ class PositionControl:
             self.fee +=open_fee
             # 3. 更新资金和保证金占用
             self.margin_used += margin_usdt  # 占用保证金
-            self.usdt -= margin_usdt  # 从可用资金中扣除保证金 (最关键的修正)
+            self.usdt -= margin_usdt  # 从可用资金中扣除保证金
 
             # 4. 首次开仓时记录
             if self.position is PositionSignal.EMPTY and e_size != 0:
@@ -60,9 +65,9 @@ class PositionControl:
                 self.size = e_size
                 self.leverage = leverage
                 self.open_first = time
-
-                print(
-                    f"[开仓]:\t{self.symbol}\t[{leverage}x]\t开仓价:{round(price,2)}usdt\t持有数量:{self.size}{self.symbol.replace('USDT', '')}")
+                logger.debug(f"\t{self.symbol}\t[{leverage}x]")
+                logger.debug(
+                    f"""\t[开仓]:\t开仓价:{round(price,2)}usdt\t持有数量:{self.size}{self.symbol.replace('USDT', '')} 开仓时间:{time}\t""")
 
                 self.position_change_history.append({
                     "symbol": self.symbol,
@@ -98,8 +103,11 @@ class PositionControl:
             pnl_percent = round((pnl_usdt / margin_used_for_calc) * 100, BackConfig.ROUND_RADIO)
 
             # 格式化输出：使用 pnl 盈亏金额
-            print(f"[平仓] 平仓价格:{round(price,2)}usdt 回报:{pnl}USDT @ 回报率:{pnl_percent:.2f}%")
-            print('=' * 40)
+            logger.debug(f"\t[平仓] 平仓价格:{round(price,2)}usdt 回报:{pnl}USDT @ 回报率:{pnl_percent:.2f}%\t")
+            logger.debug(f"平仓时间:{time} 手续费:{self.fee}")
+            logger.debug('=' * 40)
+            if pnl_percent >0:
+                self.open_gain+=1
 
             # 更新资金
             self.usdt += margin_used_for_calc + pnl_usdt
@@ -118,7 +126,7 @@ class PositionControl:
 
                 "leverage": self.leverage,
 
-                "open_time": time,
+                "close_time": time,
 
             })
 
@@ -162,12 +170,14 @@ class PositionControl:
             print(f"PositionControl>close_position_Error平仓错误:{e}")
 
     def print(self,k_num,cl_k_time:str,interval):
-        for i in self.position_history:
-            print(i)
+        if self.open_num<50:
+            for i in self.position_history:
+                logger.debug(i)
 
         npnl_percent = round((self.usdt - self.init_usdt) / self.init_usdt * 100, 3)
-        print('='*40)
-        print(f"回测k线数量:{k_num}({cl_k_time})\t回测时长:{pd.Timedelta(minutes=k_num*TradeMapper.K_LINE_TO_MINUTE[interval])}")
-        print(f"模拟投入(usd/usdt):{self.init_usdt}\t\t回测结果(usd/usdt):{self.usdt:.4f}")
-        print(f"策略总回报率:{npnl_percent}%")
-        print('=' * 40)
+        logger.info('='*40)
+        logger.info(f"回测k线数量:{k_num}({cl_k_time})\t回测时长:{pd.Timedelta(minutes=k_num*TradeMapper.K_LINE_TO_MINUTE[interval])}")
+        logger.info(f"模拟投入(usd/usdt):{self.init_usdt}\t\t回测结果(usd/usdt):{self.usdt:.4f}")
+        logger.info(f"共开仓{self.open_num}次,总盈利{self.open_gain}次，胜率:{self.open_gain/self.open_num*100:.2f}%")
+        logger.info(f"策略总回报率:{npnl_percent}% ")
+        logger.info('=' * 40)
