@@ -3,11 +3,11 @@ from binance import Client
 
 import Config
 from app_logger.logger_setup import setup_logger
-from strategy.CTA.CTA_MACD_CORE import *
-from strategy.data_service import Dataservice
+from Strategy.CTA.CTA_MACD_CORE import *
+from Strategy.data_service import Dataservice
 
-from strategy.position_contral import PositionControl
-from strategy.types import PositionSignal, StrategyResult
+from Strategy.position_contral import PositionControl
+from Strategy.StrategyTypes import PositionSignal, StrategyResult
 
 logger=setup_logger(__name__)
 class StrategyMacd:
@@ -48,5 +48,5 @@ class StrategyMacd:
 if __name__ == '__main__':
 
 
-    s30=StrategyMacd30Min("ETHUSDT","30min",20000)
+    s30=StrategyMacd("ETHUSDT","30min",20000)
     s30.main()

@@ -5,7 +5,7 @@ import pandas as pd
 
 
 from Config import *
-from type import PositionSignal
+from Strategy.StrategyTypes import PositionSignal
 
 logger=setup_logger(__name__)
 class PositionControl:

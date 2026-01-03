@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 )
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
-from BackTest.BackTestPlat import BackTest
+
 from UI.QtheaderWork import ApiWorker, LoaclWorker
 from data.Api import Api
 from type import BackTestSetting
@@ -252,10 +252,6 @@ class GetbackUi(QMainWindow):
                 trading_pair=self.h_combobox_trading_pair.currentText(),
                 strategy=self.strategy_combo.currentText(),
             )
-            backtest = BackTest(api=self.api, back_test_setting=back_test_setting)
-
-            backtest.strategy_backtest_loop(interval=back_test_setting.k_line, data=data)
-
             self.text_resultput.append("回测完成")
         except Exception as e:
             self.text_resultput.setText(f"回测错误: {e}")

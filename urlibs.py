@@ -29,9 +29,9 @@ class FormatUrlibs:
     def standard_timestamp(data: pd.DataFrame) -> pd.DataFrame:
         """
             标准时区转换,转换为北京时区，并设置时间为表头
-            data['?']=pd.to_datetime(data['?'], unit='ms',utc=True)
-            data['?']=data['?'].dt.tz_convert('Asia/Shanghai')
-            data.set_index('?', inplace=True)
+            Data['?']=pd.to_datetime(Data['?'], unit='ms',utc=True)
+            Data['?']=Data['?'].dt.tz_convert('Asia/Shanghai')
+            Data.set_index('?', inplace=True)
         """
         if data.index.name == 'timestamp':
             data = data.reset_index()
@@ -43,14 +43,6 @@ class FormatUrlibs:
         data['close_time'] = data['close_time'].dt.tz_convert('Asia/Shanghai')  # 转换为北京时间
         data.set_index('timestamp', inplace=True)
         return data
-
-    #废弃
-    @staticmethod
-    def standard_open_position_print(symbol:str,size:float,leverage,open_price):
-        print("="*10+f"[开仓]:{symbol}"+'='*15)
-        print(f"开仓价格:{open_price}USDT\t\t占用保险金:{size:.2f}")
-        print("开仓数量:{size}"+symbol.replace('USDT',''))
-
 
 
 class FileUrlibs:

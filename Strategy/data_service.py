@@ -5,8 +5,8 @@ import pandas as pd
 import talib
 
 import Config
+from Data.sqlite_oper import SqliteOper
 from app_logger.logger_setup import setup_logger
-from data.sqlite_oper import SqliteOper
 from decorator import catch_and_log
 
 logger=setup_logger(__name__)

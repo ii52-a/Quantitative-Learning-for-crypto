@@ -171,7 +171,7 @@ class SqliteOper:
             logger.Exception(f"[in,3error]<SqliteOper-insert_or_update_data>:数据写入错误:{e}]")
         logger.debug(f"[in,3success]<SqliteOper-insert_or_update_data>:{symbol}_{kline}写入成功！")
         # INSERT OR REPLACE 无法用pd.to_sql因为if_exists=append无法处理主键重复，会报错，而原生代码则会执行replace替代
-        # data.to_sql('kline',conn,if_exists='append',index=True)
+        # Data.to_sql('kline',conn,if_exists='append',index=True)
         logger.debug(f"[in,4]<SqliteOper-insert_or_update_data>:检查最新数据")
         cursor.execute(f"SELECT * FROM {kline} ORDER BY timestamp DESC LIMIT 1")
         last_entry = cursor.fetchone()
@@ -268,13 +268,13 @@ class SqliteOper:
         patht=None
         ROOT_DIR = Path(__file__).resolve().parent.parent
         if kline_str=="1m":
-            patht=Path(f"data/LocalData/{symbol}_base.db")
+            patht=Path(f"Data/LocalData/{symbol}_base.db")
             logger.info(f"[in,1base]<with_open_and_func>路径:{patht}")
         else:
-            patht=Path(f"data/LocalData/{symbol}_aggerate.db")
+            patht=Path(f"Data/LocalData/{symbol}_aggerate.db")
             # urlibs.FileUrlibs.check_local_path(patht)
             logger.info(f"[in,1aggerate]<with_open_and_func>路径:{patht}")
-        patht = Path(ApiConfig.PROJECT_ROOT) / "data" / "LocalData" / f"{symbol}_aggerate.db"
+        patht = Path(ApiConfig.PROJECT_ROOT) / "Data" / "LocalData" / f"{symbol}_aggerate.db"
         with sqlite3.connect(patht) as conn:
             cursor = conn.cursor()
             return func(cursor,*args,**kwargs)
