@@ -11,6 +11,7 @@ class PositionSignal(Enum):
 class PositionResultSignal(Enum):
     PARTIAL = "partial_close"  # 部分平仓
     FULL = "full_close"  # 全部平仓
+    RESERVED = "reserved"  #反向开仓
     OPEN = "open"  # 开仓
 
 

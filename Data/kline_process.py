@@ -4,7 +4,6 @@ from pathlib import Path
 import pandas as pd
 
 import Config
-from data.sqlite_oper import SqliteOper,SqliteBase
 from app_logger.logger_setup import setup_logger
 from urlibs import FormatUrlibs
 
