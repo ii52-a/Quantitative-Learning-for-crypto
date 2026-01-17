@@ -6,13 +6,19 @@ from typing import Hashable
 class PositionSignal(Enum):
     MORE = 1
     LESS = -1
+    RESERVED = 0
+    FULL = 3
+    PARTIAL =2
 
 
-class PositionResultSignal(Enum):
+class PositionChange(Enum):
     PARTIAL = "partial_close"  # 部分平仓
     FULL = "full_close"  # 全部平仓
-    RESERVED = "reserved"  #反向开仓
+    RESERVED = "reserved"  # 反向开仓
     OPEN = "open"  # 开仓
+    ERROR = "error"
+
+
 
 
 @dataclass
@@ -42,7 +48,7 @@ class PositionSet:
     price:价格   \n
 
     """
-    signal: PositionSignal
+    signal: PositionChange
     changed_usdt: float
     price: float
 
@@ -50,10 +56,8 @@ class PositionSet:
 @dataclass
 class PositionResult:
     """
-       signal<PositionResultSignal>:部分平仓或全部平仓   \n
        pnl:平仓盈利   \n
     """
-    signal: PositionResultSignal
     pnl: float
 
 
