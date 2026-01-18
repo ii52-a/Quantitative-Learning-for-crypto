@@ -68,25 +68,30 @@ class PositionControl:
         self.position.pop(symbol)
 
     def _sign_transform(self,symbol,strategy_result:StrategyResult):
-        signal=strategy_result.more_less
-        print(signal)
+        signal=strategy_result.direction
+        logger.info(f"{symbol}\t{signal} p:{self.position[symbol].direction}")
         # 同向开仓
-        if self.position[symbol].direction* signal.value>=0:
+        if  self.position[symbol].get_avg_price()==0 or abs(self.position[symbol].direction+ signal.value)==2:
             position_change=PositionChange.OPEN
             changed_usdt = strategy_result.size * self._usdt
+            logger.info("同向开仓")
+        # 部分平仓
+        elif self.position[symbol].direction+ signal.value==0:
+            position_change = PositionChange.PARTIAL
+            changed_usdt = strategy_result.size * self.position[symbol].margin_usdt
+            logger.info("部分平仓")
         #反转
         elif signal==PositionSignal.RESERVED:
             position_change=PositionChange.RESERVED
-            changed_usdt = strategy_result.size * self._usdt
-        #部分平仓
-        elif signal==PositionSignal.PARTIAL:
-            position_change=PositionChange.PARTIAL
             changed_usdt = strategy_result.size * self.position[symbol].margin_usdt
+            logger.info("反手")
+
         #全部平仓
         elif signal==PositionSignal.FULL:
             position_change=PositionChange.FULL
             changed_usdt = self.position[symbol].margin_usdt
-            self.close(symbol)
+
+            logger.info("全平")
         else:
             logger.error(f"仓位管理：策略信号转化失败")
             changed_usdt = 0
@@ -122,118 +127,57 @@ class PositionControl:
         )
         result:PositionResult=self.position[symbol].execute(position_set)
         pnl=result.pnl
+        if self.position[symbol].get_avg_price()==0:
+            self.close(symbol)
 
 
 if __name__ == "__main__":
-    # 1. 初始化仓位控制器，初始资金 10000 USDT
+    # 1. 账户初始化：假设 10000 USDT 初始资金
     pc = PositionControl(usdt=10000.0)
-    print(f"--- 初始状态: 总资金 {pc.all_usdt} USDT ---")
 
-    # 模拟当前市场价格
-    market_prices = {"BTC/USDT": 50000.0, "ETH/USDT": 3000.0}
+    print(f"=== 账户初始化: {pc.all_usdt} USDT | 杠杆: {pc.leverage}x ===")
 
-    # ---------------------------------------------------------
-    # 2. 场景一：开启 BTC 多头仓位 (占用可用资金的 10%)
-    # ---------------------------------------------------------
-    res1 = StrategyResult(
-        symbol="BTC/USDT",
-        size=0.1,
-        execution_price=50000.0,
-        execution_time="2026-01-17 12:00:00",
-        more_less=PositionSignal.MORE,
-        comment="突破信号"
-    )
-    print("\n[Action] 开启 BTC 多单 (10% 保证金)...")
-    pc.main(res1)
+    # --- 场景 1: 同时开启两个仓位 ---
+    # BTC 开多：使用可用资金的 10%
+    btc_res1 = StrategyResult(symbol="BTC/USDT", size=0.1, execution_price=50000.0,
+                              execution_time="T1", direction=PositionSignal.LONG)
+    pc.main(btc_res1)
+
+    # ETH 开多：使用此时剩余可用资金的 10%
+    eth_res1 = StrategyResult(symbol="ETH/USDT", size=0.1, execution_price=3000.0,
+                              direction=PositionSignal.LONG, execution_time="T1")
+    pc.main(eth_res1)
+
+    print(f"\n[Step 1] 初始双开仓完成:")
+    for s, p in pc.position.items():
+        print(f" - {s}: 保证金={p.margin_usdt:.2f}, 名义价值={p.get_nominal_value():.2f}")
+    print(f"总计保证金占用: {pc.margin_usdt:.2f} | 账户剩余可用 (_usdt): {pc._usdt:.2f}")
+
+    # --- 场景 2: 市场剧变 (BTC 暴跌，ETH 阴跌) ---
+    # 此时 BTC 产生巨大浮亏，会拉高 _true_margin_usdt
+    market_prices = {
+        "BTC/USDT": 42000.0,  # 跌 16%，20倍杠杆下已经穿仓边缘
+        "ETH/USDT": 2900.0  # 跌 3.3%
+    }
     pc.update(market_prices)
 
-    btc_pos = pc.position["BTC/USDT"]
-    print(
-        f"BTC 仓位: 均价={btc_pos.get_avg_price()}, 占用保证金={btc_pos.margin_usdt}, 名义价值={btc_pos.get_nominal_value()}")
-    print(f"账户状态: 可用={pc._usdt}, 保证金占比={pc.margin_percent:.2%}")
+    print(f"\n[Step 2] 市场暴跌更新:")
+    print(f"账户真实占用 (True Margin): {pc._true_margin_usdt:.2f} (包含浮亏对保证金的挤占)")
+    print(f"当前账户风险比率: {pc.margin_percent * 100:.2f}%")
+    print(f"此时账户真正剩余可用资金: {pc._usdt:.2f} (此时可能已经没钱开新仓了)")
 
-    # ---------------------------------------------------------
-    # 3. 场景二：BTC 价格上涨，进行加仓 (再追加可用资金的 10%)
-    # ---------------------------------------------------------
-    market_prices["BTC/USDT"] = 55000.0
-    res2 = StrategyResult(
-        symbol="BTC/USDT",
-        size=0.1,
-        execution_price=55000.0,
-        execution_time="2026-01-17 13:00:00",
-        more_less=PositionSignal.MORE,
-        comment="趋势回调加仓"
-    )
-    print(f"\n[Action] BTC 上涨至 55000，加仓...")
-    pc.main(res2)
-    pc.update(market_prices)
-    print(f"BTC 均价更新为: {btc_pos.get_avg_price():.2f}")
+    # --- 场景 3: 尝试在风险极高时强行加仓 (测试系统安全性) ---
+    print(f"\n[Step 3] 尝试在账户危机时为 ETH 加仓...")
+    eth_res2 = StrategyResult(symbol="ETH/USDT", size=0.5, execution_price=2800.0,
+                              direction=PositionSignal.LONG, execution_time="T2")
+    # 如果 _usdt 已经因为 BTC 的浮亏变负数或极小，这里应该报错
+    pc.main(eth_res2)
 
-    # ---------------------------------------------------------
-    # 4. 场景三：开启 ETH 空头仓位 (双向持仓模拟)
-    # ---------------------------------------------------------
-    res3 = StrategyResult(
-        symbol="ETH/USDT",
-        size=0.2,
-        execution_price=3000.0,
-        execution_time="2026-01-17 14:00:00",
-        more_less=PositionSignal.LESS,
-        comment="ETH 遇阻开空"
-    )
-    print(f"\n[Action] 开启 ETH 空单 (20% 保证金)...")
-    pc.main(res3)
-    pc.update(market_prices)
-    print(f"当前总仓位数量: {len(pc.position)}")
-    print(f"当前账户保证金比率: {pc.margin_percent:.2%}")
+    # --- 场景 4: 强制全平 BTC 释放保证金 ---
+    print(f"\n[Step 4] 斩仓 BTC 以释放保证金...")
+    btc_close = StrategyResult(symbol="BTC/USDT", size=1.0, execution_price=42000.0,
+                               direction=PositionSignal.FULL, execution_time="T3")
+    pc.main(btc_close)
 
-    # ---------------------------------------------------------
-    # 5. 场景四：BTC 部分平仓 (平掉一半保证金)
-    # ---------------------------------------------------------
-    res4 = StrategyResult(
-        symbol="BTC/USDT",
-        size=0.5,  # 在 _sign_transform 中，PARTIAL 信号使用此比例乘以当前仓位保证金
-        execution_price=60000.0,
-        execution_time="2026-01-17 15:00:00",
-        more_less=PositionSignal.PARTIAL,
-        comment="BTC 止盈一半"
-    )
-    print(f"\n[Action] BTC 上涨至 60000，平掉一半仓位...")
-    pc.main(res4)
-    pc.update(market_prices)
-    print(f"BTC 剩余保证金: {pc.position['BTC/USDT'].margin_usdt}")
-
-    # ---------------------------------------------------------
-    # 6. 场景五：BTC 反手 (由多转空)
-    # ---------------------------------------------------------
-    res5 = StrategyResult(
-        symbol="BTC/USDT",
-        size=0.15,
-        execution_price=58000.0,
-        execution_time="2026-01-17 16:00:00",
-        more_less=PositionSignal.RESERVED,
-        comment="趋势反转，反手做空"
-    )
-    print(f"\n[Action] BTC 信号反转，平多开空...")
-    pc.main(res5)
-    pc.update(market_prices)
-    print(f"BTC 当前方向 (1多-1空): {pc.position['BTC/USDT'].direction}")
-    print(f"BTC 当前名义价值: {pc.position['BTC/USDT'].get_nominal_value()}")
-
-    # ---------------------------------------------------------
-    # 7. 场景六：极端行情下的爆仓检查
-    # ---------------------------------------------------------
-    print(f"\n[Scenario] 模拟极端行情导致 ETH 爆仓...")
-    market_prices["ETH/USDT"] = 10000.0  # ETH 暴涨，空单巨亏
-    pc.update(market_prices)
-    print(f"当前真实占用保证金: {pc._true_margin_usdt:.2f}")
-    print(f"当前保证金比率: {pc.margin_percent:.2%}")
-    if pc._liquidated:
-        print("!!! 警报：账户已达到爆仓阈值 !!!")
-
-
-
-
-
-
-
-
+    print(f"BTC 平仓后，账户剩余可用 (_usdt): {pc._usdt:.2f}")
+    print(f"此时 ETH 是否依然健在: {'是' if 'ETH/USDT' in pc.position else '否'}")

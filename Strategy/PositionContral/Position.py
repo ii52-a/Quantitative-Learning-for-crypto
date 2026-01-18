@@ -46,7 +46,7 @@ class Position:
 
     @property
     def direction(self) -> int:
-        return  1 if self.get_nominal_value() >0 else -1
+        return 1 if self.get_nominal_value() >=0 else -1
 
 
     #仓位处理
@@ -146,7 +146,7 @@ class Position:
         #反转，平所有仓位计算盈亏
         pnl: float = (self._price - self._position_status.avg_price)/self._position_status.avg_price * self._position_status.nominal_value
         #剩余名义价值判断
-        self._position_status.nominal_value =self._nominal_value
+        self._position_status.nominal_value = -self._nominal_value
         self._position_status.avg_price = self._price
         self._position_status.margin_used = self._changed_used
         return PositionResult(

@@ -4,11 +4,12 @@ from typing import Hashable
 
 
 class PositionSignal(Enum):
-    MORE = 1
-    LESS = -1
+    LONG = 1
+    SHORT = -1
     RESERVED = 0
-    FULL = 3
+    FULL = 4
     PARTIAL =2
+
 
 
 class PositionChange(Enum):
@@ -76,5 +77,5 @@ class StrategyResult:
     size: float        # 开仓权重(%资金)
     execution_price: float | None   #确定开仓价格
     execution_time: Hashable | None   #确定开仓日期
-    more_less: PositionSignal
+    direction: PositionSignal
     comment: str = ""
