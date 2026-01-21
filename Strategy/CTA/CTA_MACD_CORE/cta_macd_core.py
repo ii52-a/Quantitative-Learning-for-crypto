@@ -1,16 +1,18 @@
 from abc import ABC, abstractmethod
 
+import pandas as pd
 
-from strategy.types import StrategyResult
+from Strategy.StrategyTypes import StrategyResult
 
 
 class CtaMacdCore(ABC):
     def __init__(self):
-        self.data = None
-        self.macd_data = None
-        self.macd_now = None
-        self.macd_last = None
-        self.price = None
+        self.symbol:str | None = None
+        self.data:pd.DataFrame | None = None
+        self.macd_data:pd.DataFrame | None = None
+        self.macd_now:pd.Series | None = None
+        self.macd_last:pd.Series | None = None
+        self.price:float | None = None
         self.time = None
 
     @abstractmethod
@@ -22,6 +24,23 @@ class CtaMacdCore(ABC):
         """
         pass
 
+    def run_step(self, i):
+        """循环调用"""
+        self.update_context(i)
+        return self.step(i)
+
+    @property
+    def data_count(self):
+        return len(self.macd_data)
+
+    @property
+    def get_last_time(self):
+        return self.macd_data.iloc[-1]['close_time']
+
+    @property
+    def get_close_price(self):
+        return self.macd_data.iloc[-1]['close']
+
     @abstractmethod
     def update_context(self,i) -> None:
         """
@@ -29,9 +48,9 @@ class CtaMacdCore(ABC):
         :return:
         """
 
-
     @abstractmethod
-    def step(self) -> StrategyResult | None:
-        """
-        在第 i 根 K 线上，给出策略判断
-        """
+    def step(self, i) -> StrategyResult | None:
+        """子类逻辑实现"""
+        pass
+
+

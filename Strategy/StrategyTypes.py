@@ -52,6 +52,7 @@ class PositionSet:
     signal: PositionChange
     changed_usdt: float
     price: float
+    open_time:Hashable
 
 
 @dataclass

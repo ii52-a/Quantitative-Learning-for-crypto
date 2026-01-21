@@ -1,4 +1,5 @@
 import math
+import sqlite3
 from time import sleep
 from typing import List
 
@@ -8,16 +9,18 @@ from binance import Client
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 from dotenv import load_dotenv
 
+from Data.sqlite_oper import SqliteBase, SqliteOper
+from decorator import catch_and_log
 from urlibs import *
 # import plotly.graph_objects as go
 
 from Config import ApiConfig as Config
 
-from data.sqlite_oper import *
+
 from kline_process import KlineProcess
 
-from app_logger.logger_setup import setup_logger
-logger = setup_logger(__name__)
+from app_logger.logger_setup import Logger
+logger = Logger(__name__)
 load_dotenv()
 class Api:
     def __init__(self):

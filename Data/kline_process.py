@@ -4,10 +4,11 @@ from pathlib import Path
 import pandas as pd
 
 import Config
-from app_logger.logger_setup import setup_logger
+from Data.sqlite_oper import SqliteBase, SqliteOper
+from app_logger.logger_setup import Logger
 from urlibs import FormatUrlibs
 
-logger=setup_logger('kline_process')
+logger=Logger('kline_process')
 class KlineProcess:
     LOCAL_PATH:Path=Path('LocalData')
 

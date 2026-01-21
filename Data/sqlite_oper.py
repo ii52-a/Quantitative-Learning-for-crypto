@@ -7,10 +7,10 @@ import pandas as pd
 import urlibs
 from Config import ApiConfig
 
-from app_logger.logger_setup import setup_logger
+from app_logger.logger_setup import Logger
 from decorator import catch_and_log
 
-logger = setup_logger("sqlite_oper")
+logger = Logger("sqlite_oper")
 
 
 class SqliteBase:

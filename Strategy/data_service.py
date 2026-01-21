@@ -6,10 +6,10 @@ import talib
 
 import Config
 from Data.sqlite_oper import SqliteOper
-from app_logger.logger_setup import setup_logger
+from app_logger.logger_setup import Logger
 from decorator import catch_and_log
 
-logger=setup_logger(__name__)
+logger=Logger(__name__)
 class Dataservice:
     data_list:List[str]=Config.TradeMapper.data_time
 

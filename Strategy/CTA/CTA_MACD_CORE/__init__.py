@@ -1,1 +1,1 @@
-from macd_base import BaseMacd
+from .macd_base import BaseMacd

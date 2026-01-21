@@ -1,8 +1,9 @@
 
 from Strategy.StrategyTypes import *
-from app_logger.logger_setup import setup_logger
+from app_logger.LoggerType import PositionHistory
+from app_logger.logger_setup import Logger
 
-logger=setup_logger(__name__)
+logger=Logger(__name__)
 class Position:
     def __init__(self,symbol,leverage):
         self.symbol: str = symbol
@@ -27,6 +28,13 @@ class Position:
         self._price = None
         self._signal = None
         self._changed_used = None
+        self._change_time=None
+
+        #仓位对标
+        self._open_price = None
+
+        self._open_time=None
+
 
     #返回真实保险金占用
     def true_margin(self,price) -> float:
@@ -46,7 +54,7 @@ class Position:
 
     @property
     def direction(self) -> int:
-        return 1 if self.get_nominal_value() >=0 else -1
+        return 1 if self.get_nominal_value >=0 else -1
 
 
     #仓位处理
@@ -68,11 +76,6 @@ class Position:
             return self._close()
         elif position_set.signal==PositionChange.FULL:
             return self._full_close()
-        elif position_set.signal==PositionChange.ERROR:
-            logger.error(f"{self.symbol}仓位：execute处理失败，仓位管理错误")
-            return PositionResult(
-                pnl=0
-            )
         else:
             logger.error(f"{self.symbol}仓位：execute处理失败，信号无法处理")
             return PositionResult(
@@ -98,6 +101,10 @@ class Position:
         # 变动名义价值   (U本位价值)  value=变动保险金 * 杠杆 * 仓位方向
         self._nominal_value = self._changed_used * self._position_status.leverage * self.direction
 
+        self._close
+
+        self._change_time=position_set.open_time
+
     def _close(self) -> PositionResult:
         """
         处理平仓逻辑
@@ -110,15 +117,24 @@ class Position:
         # 处理仓位 释放占用保险金，更改名义价值
         self._position_status.margin_used -= self._changed_used
         self._position_status.nominal_value += self._nominal_value
+        #
+        log: PositionHistory = self.get_log_standard(PositionChange.PARTIAL, pnl)
+        logger.log_position_history(log)
+        #
         return PositionResult(
             pnl=round(pnl,6)
         )
 
     def _full_close(self) -> PositionResult:
-        pnl: float = (self._price - self._position_status.avg_price) / self._position_status.avg_price * -self._nominal_value
+        #
+        pnl: float = (self._price - self._position_status.avg_price) / self._position_status.avg_price * self._nominal_value
         self._position_status.margin_used = 0
         self._position_status.nominal_value =0
         self._position_status.avg_price = 0
+        #
+        log: PositionHistory = self.get_log_standard(PositionChange.FULL,pnl)
+        logger.log_position_history(log)
+        #
         return PositionResult(
             pnl=round(pnl,6)
         )
@@ -137,27 +153,48 @@ class Position:
         self._position_status.margin_used += self._changed_used
         self._position_status.nominal_value = new_nominal_value
 
+        self._open_price=self._price
+        self._open_time=self._change_time
         return PositionResult(
-
             pnl=0
         )
 
     def _close_and_reverse(self) -> PositionResult:
         #反转，平所有仓位计算盈亏
         pnl: float = (self._price - self._position_status.avg_price)/self._position_status.avg_price * self._position_status.nominal_value
+        #
+        log: PositionHistory = self.get_log_standard(PositionChange.RESERVED, pnl)
+        logger.log_position_history(log)
         #剩余名义价值判断
         self._position_status.nominal_value = -self._nominal_value
         self._position_status.avg_price = self._price
         self._position_status.margin_used = self._changed_used
+
+        #
         return PositionResult(
             pnl=round(pnl,6)
         )
 
+    @property
     def get_nominal_value(self) -> float:
         return self._position_status.nominal_value
-
+    @property
     def get_avg_price(self) -> float:
         return self._position_status.avg_price
+
+
+    def get_log_standard(self,close_type:PositionChange,pnl:float) -> PositionHistory:
+        return PositionHistory(
+            close_type=close_type,
+            symbol=self.symbol,
+            leverage=self._position_status.leverage,
+            open=self._open_price,
+            open_time=self._open_time,
+            close=self._price,
+            close_time=self._change_time,
+            pnl=round(pnl, 6)
+        )
+
 
     def __str__(self):
         return f"{self._position_status}"

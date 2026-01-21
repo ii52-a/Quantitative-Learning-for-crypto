@@ -1,0 +1,148 @@
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 17:41:01,072
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 17:41:01,935
+ (Api.py:113):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 17:41:01,935
+ (Api.py:167): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2026-01-02 17:41:01,935
+ (Api.py:42): 获取期货数据 start_time=2025-12-12 03:05:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2026-01-02 17:41:01,979
+ (Api.py:180): 更新中,数据量:1000  <INFO> 2026-01-02 17:41:02,899
+ (Api.py:181): 最新时间戳:2026-01-01 23:00:00  <DEBUG> 2026-01-02 17:41:02,900
+ (Api.py:42): 获取期货数据 start_time=2026-01-01 23:00:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2026-01-02 17:41:03,200
+ (Api.py:180): 更新中,数据量:1022  <INFO> 2026-01-02 17:41:03,379
+ (Api.py:181): 最新时间戳:2026-01-02 09:30:00  <DEBUG> 2026-01-02 17:41:03,379
+ (Api.py:186): 检测到结束数据标识:22  <DEBUG> 2026-01-02 17:41:03,379
+ (Api.py:192): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2026-01-02 17:41:04,303
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 17:44:06,515
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 17:44:56,212
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 17:44:57,979
+ (Api.py:113):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 17:44:57,983
+ (Api.py:167): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2026-01-02 17:44:57,983
+ (Api.py:42): 获取期货数据 start_time=2026-01-02 09:30:00, end_time=None, symbol=ETHUSDT, interval=30m, limit=1000  <DEBUG> 2026-01-02 17:44:57,985
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 17:52:05,170
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 17:52:06,908
+ (Api.py:113):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 17:52:06,908
+ (Api.py:167): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2026-01-02 17:52:06,908
+ (Api.py:42): 获取期货数据 start_time=2025-12-12 03:04:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:06,936
+ (Api.py:180): 更新中,数据量:1000  <INFO> 2026-01-02 17:52:07,840
+ (Api.py:181): 最新时间戳:2025-12-12 19:43:00  <DEBUG> 2026-01-02 17:52:07,840
+ (Api.py:42): 获取期货数据 start_time=2025-12-12 19:43:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:08,141
+ (Api.py:180): 更新中,数据量:2000  <INFO> 2026-01-02 17:52:08,380
+ (Api.py:181): 最新时间戳:2025-12-13 12:22:00  <DEBUG> 2026-01-02 17:52:08,380
+ (Api.py:42): 获取期货数据 start_time=2025-12-13 12:22:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:08,680
+ (Api.py:180): 更新中,数据量:3000  <INFO> 2026-01-02 17:52:08,901
+ (Api.py:181): 最新时间戳:2025-12-14 05:01:00  <DEBUG> 2026-01-02 17:52:08,901
+ (Api.py:42): 获取期货数据 start_time=2025-12-14 05:01:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:09,202
+ (Api.py:180): 更新中,数据量:4000  <INFO> 2026-01-02 17:52:09,481
+ (Api.py:181): 最新时间戳:2025-12-14 21:40:00  <DEBUG> 2026-01-02 17:52:09,482
+ (Api.py:42): 获取期货数据 start_time=2025-12-14 21:40:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:09,783
+ (Api.py:180): 更新中,数据量:5000  <INFO> 2026-01-02 17:52:10,023
+ (Api.py:181): 最新时间戳:2025-12-15 14:19:00  <DEBUG> 2026-01-02 17:52:10,023
+ (Api.py:42): 获取期货数据 start_time=2025-12-15 14:19:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:10,324
+ (Api.py:180): 更新中,数据量:6000  <INFO> 2026-01-02 17:52:10,552
+ (Api.py:181): 最新时间戳:2025-12-16 06:58:00  <DEBUG> 2026-01-02 17:52:10,553
+ (Api.py:42): 获取期货数据 start_time=2025-12-16 06:58:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:10,854
+ (Api.py:180): 更新中,数据量:7000  <INFO> 2026-01-02 17:52:11,083
+ (Api.py:181): 最新时间戳:2025-12-16 23:37:00  <DEBUG> 2026-01-02 17:52:11,084
+ (Api.py:42): 获取期货数据 start_time=2025-12-16 23:37:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:11,384
+ (Api.py:180): 更新中,数据量:8000  <INFO> 2026-01-02 17:52:11,598
+ (Api.py:181): 最新时间戳:2025-12-17 16:16:00  <DEBUG> 2026-01-02 17:52:11,598
+ (Api.py:42): 获取期货数据 start_time=2025-12-17 16:16:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:11,899
+ (Api.py:180): 更新中,数据量:9000  <INFO> 2026-01-02 17:52:12,144
+ (Api.py:181): 最新时间戳:2025-12-18 08:55:00  <DEBUG> 2026-01-02 17:52:12,145
+ (Api.py:42): 获取期货数据 start_time=2025-12-18 08:55:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:12,446
+ (Api.py:180): 更新中,数据量:10000  <INFO> 2026-01-02 17:52:12,666
+ (Api.py:181): 最新时间戳:2025-12-19 01:34:00  <DEBUG> 2026-01-02 17:52:12,666
+ (Api.py:42): 获取期货数据 start_time=2025-12-19 01:34:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:12,966
+ (Api.py:180): 更新中,数据量:11000  <INFO> 2026-01-02 17:52:13,180
+ (Api.py:181): 最新时间戳:2025-12-19 18:13:00  <DEBUG> 2026-01-02 17:52:13,180
+ (Api.py:42): 获取期货数据 start_time=2025-12-19 18:13:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:13,481
+ (Api.py:180): 更新中,数据量:12000  <INFO> 2026-01-02 17:52:13,699
+ (Api.py:181): 最新时间戳:2025-12-20 10:52:00  <DEBUG> 2026-01-02 17:52:13,699
+ (Api.py:42): 获取期货数据 start_time=2025-12-20 10:52:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:14,000
+ (Api.py:180): 更新中,数据量:13000  <INFO> 2026-01-02 17:52:14,208
+ (Api.py:181): 最新时间戳:2025-12-21 03:31:00  <DEBUG> 2026-01-02 17:52:14,208
+ (Api.py:42): 获取期货数据 start_time=2025-12-21 03:31:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:14,509
+ (Api.py:180): 更新中,数据量:14000  <INFO> 2026-01-02 17:52:14,729
+ (Api.py:181): 最新时间戳:2025-12-21 20:10:00  <DEBUG> 2026-01-02 17:52:14,729
+ (Api.py:42): 获取期货数据 start_time=2025-12-21 20:10:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:15,031
+ (Api.py:180): 更新中,数据量:15000  <INFO> 2026-01-02 17:52:15,264
+ (Api.py:181): 最新时间戳:2025-12-22 12:49:00  <DEBUG> 2026-01-02 17:52:15,264
+ (Api.py:42): 获取期货数据 start_time=2025-12-22 12:49:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:15,566
+ (Api.py:180): 更新中,数据量:16000  <INFO> 2026-01-02 17:52:15,791
+ (Api.py:181): 最新时间戳:2025-12-23 05:28:00  <DEBUG> 2026-01-02 17:52:15,792
+ (Api.py:42): 获取期货数据 start_time=2025-12-23 05:28:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:16,092
+ (Api.py:180): 更新中,数据量:17000  <INFO> 2026-01-02 17:52:16,308
+ (Api.py:181): 最新时间戳:2025-12-23 22:07:00  <DEBUG> 2026-01-02 17:52:16,308
+ (Api.py:42): 获取期货数据 start_time=2025-12-23 22:07:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:16,610
+ (Api.py:180): 更新中,数据量:18000  <INFO> 2026-01-02 17:52:16,843
+ (Api.py:181): 最新时间戳:2025-12-24 14:46:00  <DEBUG> 2026-01-02 17:52:16,843
+ (Api.py:42): 获取期货数据 start_time=2025-12-24 14:46:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:17,144
+ (Api.py:180): 更新中,数据量:19000  <INFO> 2026-01-02 17:52:17,355
+ (Api.py:181): 最新时间戳:2025-12-25 07:25:00  <DEBUG> 2026-01-02 17:52:17,355
+ (Api.py:42): 获取期货数据 start_time=2025-12-25 07:25:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:17,658
+ (Api.py:180): 更新中,数据量:20000  <INFO> 2026-01-02 17:52:17,872
+ (Api.py:181): 最新时间戳:2025-12-26 00:04:00  <DEBUG> 2026-01-02 17:52:17,872
+ (Api.py:42): 获取期货数据 start_time=2025-12-26 00:04:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:18,173
+ (Api.py:180): 更新中,数据量:21000  <INFO> 2026-01-02 17:52:18,413
+ (Api.py:181): 最新时间戳:2025-12-26 16:43:00  <DEBUG> 2026-01-02 17:52:18,413
+ (Api.py:42): 获取期货数据 start_time=2025-12-26 16:43:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:18,714
+ (Api.py:180): 更新中,数据量:22000  <INFO> 2026-01-02 17:52:18,931
+ (Api.py:181): 最新时间戳:2025-12-27 09:22:00  <DEBUG> 2026-01-02 17:52:18,932
+ (Api.py:42): 获取期货数据 start_time=2025-12-27 09:22:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:19,233
+ (Api.py:180): 更新中,数据量:23000  <INFO> 2026-01-02 17:52:19,456
+ (Api.py:181): 最新时间戳:2025-12-28 02:01:00  <DEBUG> 2026-01-02 17:52:19,456
+ (Api.py:42): 获取期货数据 start_time=2025-12-28 02:01:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:19,757
+ (Api.py:180): 更新中,数据量:24000  <INFO> 2026-01-02 17:52:19,991
+ (Api.py:181): 最新时间戳:2025-12-28 18:40:00  <DEBUG> 2026-01-02 17:52:19,991
+ (Api.py:42): 获取期货数据 start_time=2025-12-28 18:40:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:20,291
+ (Api.py:180): 更新中,数据量:25000  <INFO> 2026-01-02 17:52:20,504
+ (Api.py:181): 最新时间戳:2025-12-29 11:19:00  <DEBUG> 2026-01-02 17:52:20,504
+ (Api.py:42): 获取期货数据 start_time=2025-12-29 11:19:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:20,804
+ (Api.py:180): 更新中,数据量:26000  <INFO> 2026-01-02 17:52:21,015
+ (Api.py:181): 最新时间戳:2025-12-30 03:58:00  <DEBUG> 2026-01-02 17:52:21,015
+ (Api.py:42): 获取期货数据 start_time=2025-12-30 03:58:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:21,316
+ (Api.py:180): 更新中,数据量:27000  <INFO> 2026-01-02 17:52:21,523
+ (Api.py:181): 最新时间戳:2025-12-30 20:37:00  <DEBUG> 2026-01-02 17:52:21,523
+ (Api.py:42): 获取期货数据 start_time=2025-12-30 20:37:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:21,824
+ (Api.py:180): 更新中,数据量:28000  <INFO> 2026-01-02 17:52:22,033
+ (Api.py:181): 最新时间戳:2025-12-31 13:16:00  <DEBUG> 2026-01-02 17:52:22,033
+ (Api.py:42): 获取期货数据 start_time=2025-12-31 13:16:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:22,334
+ (Api.py:180): 更新中,数据量:29000  <INFO> 2026-01-02 17:52:22,541
+ (Api.py:181): 最新时间戳:2026-01-01 05:55:00  <DEBUG> 2026-01-02 17:52:22,541
+ (Api.py:42): 获取期货数据 start_time=2026-01-01 05:55:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:22,842
+ (Api.py:180): 更新中,数据量:30000  <INFO> 2026-01-02 17:52:23,050
+ (Api.py:181): 最新时间戳:2026-01-01 22:34:00  <DEBUG> 2026-01-02 17:52:23,050
+ (Api.py:42): 获取期货数据 start_time=2026-01-01 22:34:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 17:52:23,351
+ (Api.py:180): 更新中,数据量:30679  <INFO> 2026-01-02 17:52:23,540
+ (Api.py:181): 最新时间戳:2026-01-02 09:52:00  <DEBUG> 2026-01-02 17:52:23,540
+ (Api.py:186): 检测到结束数据标识:679  <DEBUG> 2026-01-02 17:52:23,540
+ (Api.py:192): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2026-01-02 17:52:24,794
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 18:02:54,898
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 18:02:56,607
+ (Api.py:113):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 18:02:56,607
+ (Api.py:167): 开始更新本地 K 线 symbol=ETHUSDT  <DEBUG> 2026-01-02 18:02:56,607
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 22:45:39,792
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 22:45:41,742
+ (Api.py:63):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 22:45:41,742
+ (Api.py:117): 开始更新本地 K 线 symbol=ETHUSDT  <INFO> 2026-01-02 22:45:41,743
+ (Api.py:42): 获取期货数据 start_time=2026-01-02 09:52:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 22:45:41,762
+ (Api.py:132): 更新中,数据量:294  <INFO> 2026-01-02 22:45:44,173
+ (Api.py:133): 最新时间戳:2026-01-02 14:45:00  <DEBUG> 2026-01-02 22:45:44,174
+ (Api.py:138): 检测到结束数据标识:294  <DEBUG> 2026-01-02 22:45:44,184
+ (Api.py:145): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2026-01-02 22:45:45,350
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 22:46:14,712
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 22:46:16,374
+ (Api.py:63):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 22:46:16,374
+ (Api.py:117): 开始更新本地 K 线 symbol=ETHUSDT  <INFO> 2026-01-02 22:46:16,375
+ (Api.py:42): 获取期货数据 start_time=2026-01-02 14:45:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 22:46:16,377
+ (Api.py:132): 更新中,数据量:2  <INFO> 2026-01-02 22:46:18,117
+ (Api.py:133): 最新时间戳:2026-01-02 14:46:00  <DEBUG> 2026-01-02 22:46:18,117
+ (Api.py:138): 检测到结束数据标识:2  <DEBUG> 2026-01-02 22:46:18,117
+ (Api.py:145): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2026-01-02 22:46:18,268
+ (Api.py:24): 初始化 Api 类，正在加载 API 密钥和客户端配置...  <DEBUG> 2026-01-02 22:57:06,054
+ (Api.py:35): Api 初始化完成，开始数据操作  <DEBUG> 2026-01-02 22:57:07,405
+ (Api.py:63):  [1]<Api-main>:启动本地数据主程序 symbol=ETHUSDT  <INFO> 2026-01-02 22:57:07,405
+ (Api.py:117): 开始更新本地 K 线 symbol=ETHUSDT  <INFO> 2026-01-02 22:57:07,405
+ (Api.py:42): 获取期货数据 start_time=2026-01-02 14:46:00, end_time=None, symbol=ETHUSDT, interval=1m, limit=1000  <DEBUG> 2026-01-02 22:57:07,407
+ (Api.py:132): 更新中,数据量:12  <INFO> 2026-01-02 22:57:09,006
+ (Api.py:133): 最新时间戳:2026-01-02 14:57:00  <DEBUG> 2026-01-02 22:57:09,006
+ (Api.py:138): 检测到结束数据标识:12  <DEBUG> 2026-01-02 22:57:09,006
+ (Api.py:145): K 线更新完成 symbol=ETHUSDT  <DEBUG> 2026-01-02 22:57:09,148
