@@ -12,6 +12,7 @@ from decorator import catch_and_log
 logger=Logger(__name__)
 class Dataservice:
     data_list:List[str]=Config.TradeMapper.data_time
+    additional_data=300
 
 
     @classmethod
@@ -37,7 +38,7 @@ class Dataservice:
         if time not in cls.data_list:
             logger.error(f"{time} not in data_list!")
         kline=f"kline_{time}"
-        data_df=cls._get_data_time(symbol=symbol,kline=kline,start=start_time,length=length+50)
+        data_df=cls._get_data_time(symbol=symbol,kline=kline,start=start_time,length=length+cls.additional_data)
         if data_df is None or data_df.empty:
             logger.error("data获取失败")
         return data_df
@@ -49,6 +50,7 @@ class Dataservice:
         data['MACD'] = macd
         data['MACD_SIGNAL'] = macd_signal
         data['MACD_HIST'] = macd_hist
+        data=data.iloc[300:]
         data = data.dropna(subset=['MACD', 'MACD_SIGNAL', 'MACD_HIST'])
         logger.debug("MACD 计算完成")
         return data
@@ -56,7 +58,7 @@ class Dataservice:
 
 if __name__ == '__main__':
     start=pd.Timestamp("2025-07-30")
-    n=1000
+    n=10000
     data=Dataservice.get_data("ETHUSDT","30min",start_time=start,length=n)
     print(Dataservice.macd_data(data))
 

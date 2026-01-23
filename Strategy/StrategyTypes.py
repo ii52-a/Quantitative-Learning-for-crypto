@@ -60,7 +60,9 @@ class PositionResult:
     """
        pnl:平仓盈利   \n
     """
-    pnl: float
+    if_full:bool
+    win: bool
+    pnl: float=0
 
 
 

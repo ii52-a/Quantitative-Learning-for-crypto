@@ -1,3 +1,4 @@
+from tqdm import tqdm
 
 from Strategy.PositionContral.PonsitionContral import PositionControl
 from app_logger.logger_setup import Logger
@@ -21,17 +22,22 @@ class StrategyMacd:
 
     def main(self):
         count=self.core.data_count
-        for i in range(2,count):
-            strategy_result:StrategyResult=self.core.run_step(i)
-            if strategy_result:
-                self.positionControl.main(strategy_result)
+        with tqdm(total=count,desc="回测进度") as pbar:
+            for i in range(2,count):
+                strategy_result:StrategyResult=self.core.run_step(i)
+                if strategy_result:
+                    self.positionControl.main(strategy_result)
+                if i%100:
+                    pbar.n=i+1
+                    pbar.refresh()
 
         if self.status:
             self.all_full()
             #TODO:策略结束一键平仓
 
         #TODO:日志调试和输出
-        logger.info(self.positionControl.all_usdt)
+        logger.info(f"{self.positionControl.all_usdt}({self.positionControl.all_usdt*100/ self.positionControl.init_usdt :.2f}%)\n"
+                    f"total:{self.positionControl.total}\t win:{self.positionControl.win}\t per:{self.positionControl.win/self.positionControl.total*100:.2f}%")
 
     def all_full(self):
         for key,value in list(self.positionControl.position.items()):
@@ -46,5 +52,5 @@ class StrategyMacd:
 
 if __name__ == '__main__':
 
-    s30=StrategyMacd("ETHUSDT","30min",1000)
+    s30=StrategyMacd("ETHUSDT","30min",20000)
     s30.main()

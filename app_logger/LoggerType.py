@@ -13,3 +13,4 @@ class PositionHistory:
     open_time:any
     close_time:any
     pnl: float
+    pnl_percent: float

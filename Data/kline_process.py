@@ -54,14 +54,14 @@ class KlineProcess:
             for i in data_time:
                 logger.debug(f"[2,4]<klineProcess-main>:{i}级k线开始聚合")
                 cls._agg_kline(df,i)
-                logger.debug(f"[2,4success]<klineProcess-main>:{i}级k线聚合成功")
+                logger.info(f"[2,4success]<klineProcess-main>:{i}级k线聚合成功")
 
     @classmethod
     def _agg_kline(cls,df:pd.DataFrame,time:str)->None:
         kline:str=f'kline_{time}'
         logger.debug(f"[2,4,1start]<KlineProcess-main-_agg_kline_{time}>开始")
         logger.debug("="*30)
-        data:pd.DataFrame=df.resample(rule=time,origin='start').agg(
+        data:pd.DataFrame=df.resample(rule=time,origin='start_day').agg(
             {
                 'open': 'first',
                 'high': 'max',

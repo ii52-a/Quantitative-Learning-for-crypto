@@ -1,0 +1,235 @@
+ (logger_setup.py:57): 最新时间戳:1767365820000.0  <DEBUG> 2026-01-21 17:12:53,093
+ (logger_setup.py:57): ETHUSDT数据库不存在，进入初始化程序  <DEBUG> 2026-01-21 17:13:09,797
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:13:09,797
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x000002A3E9A5D340>路径：kline数据集初始化完成  <DEBUG> 2026-01-21 17:13:09,798
+ (logger_setup.py:57): 进入数据插入或更新环节  <DEBUG> 2026-01-21 17:13:09,798
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:13:09,799
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline数据开始转换为列表  <DEBUG> 2026-01-21 17:13:09,799
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:13:11,850
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline写入成功！  <DEBUG> 2026-01-21 17:13:11,971
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:13:11,971
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:13:11,971
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:13:11.971590+08:00  <DEBUG> 2026-01-21 17:13:11,972
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:13:00+08:00  <DEBUG> 2026-01-21 17:13:11,972
+ (logger_setup.py:57): 数据集时间差:0 days 00:00:11.971590,状态(True/False):True  <DEBUG> 2026-01-21 17:13:11,974
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline数据库操作完毕  <DEBUG> 2026-01-21 17:13:11,974
+ (logger_setup.py:57): 路径:<sqlite3.Cursor object at 0x000002A3E9A5D340> 数据集,最旧时间:1679108760000.0,最新时间:1768986780000.0,总量:1497968  <DEBUG> 2026-01-21 17:13:12,815
+ (logger_setup.py:55): 数据集跨度:[2023-03-18 11:06:00+08:00 -> 2026-01-21 17:13:00+08:00] 总量:<1497968>  <INFO> 2026-01-21 17:13:12,817
+ (logger_setup.py:57): ETHUSDT数据库不存在，进入初始化程序  <DEBUG> 2026-01-21 17:34:24,088
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:34:24,088
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023077088DC0>路径：kline数据集初始化完成  <DEBUG> 2026-01-21 17:34:24,109
+ (logger_setup.py:57): 进入数据插入或更新环节  <DEBUG> 2026-01-21 17:34:24,109
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:34:24,109
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline数据开始转换为列表  <DEBUG> 2026-01-21 17:34:24,109
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:15,271
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline写入成功！  <DEBUG> 2026-01-21 17:35:18,078
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:18,078
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:18,078
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:18.078393+08:00  <DEBUG> 2026-01-21 17:35:18,078
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:21:00+08:00  <DEBUG> 2026-01-21 17:35:18,078
+ (logger_setup.py:57): 数据集时间差:0 days 00:14:18.078393,状态(True/False):False  <DEBUG> 2026-01-21 17:35:18,079
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline数据库操作完毕  <DEBUG> 2026-01-21 17:35:18,079
+ (logger_setup.py:57): 路径:<sqlite3.Cursor object at 0x0000023077088DC0> 数据集,最旧时间:1682587320000.0,最新时间:1768987260000.0,总量:1440000  <DEBUG> 2026-01-21 17:35:18,512
+ (logger_setup.py:55): 数据集跨度:[2023-04-27 17:22:00+08:00 -> 2026-01-21 17:21:00+08:00] 总量:<1440000>  <INFO> 2026-01-21 17:35:18,513
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:23,378
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_3min数据集初始化完成  <DEBUG> 2026-01-21 17:35:23,398
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:23,398
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_3min数据开始转换为列表  <DEBUG> 2026-01-21 17:35:23,398
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:39,465
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_3min写入成功！  <DEBUG> 2026-01-21 17:35:40,405
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:40,405
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:40,406
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:40.406531+08:00  <DEBUG> 2026-01-21 17:35:40,406
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:19:00+08:00  <DEBUG> 2026-01-21 17:35:40,406
+ (logger_setup.py:57): 数据集时间差:0 days 00:16:40.406531,状态(True/False):False  <DEBUG> 2026-01-21 17:35:40,406
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_3min数据库操作完毕  <DEBUG> 2026-01-21 17:35:40,406
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:40,788
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_5min数据集初始化完成  <DEBUG> 2026-01-21 17:35:40,788
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:40,788
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_5min数据开始转换为列表  <DEBUG> 2026-01-21 17:35:40,788
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:51,412
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_5min写入成功！  <DEBUG> 2026-01-21 17:35:52,001
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:52.002974+08:00  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:17:00+08:00  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): 数据集时间差:0 days 00:18:52.002974,状态(True/False):False  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_5min数据库操作完毕  <DEBUG> 2026-01-21 17:35:52,002
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:52,343
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_15min数据集初始化完成  <DEBUG> 2026-01-21 17:35:52,343
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:52,344
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_15min数据开始转换为列表  <DEBUG> 2026-01-21 17:35:52,344
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:55,892
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_15min写入成功！  <DEBUG> 2026-01-21 17:35:56,088
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:56,088
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:56,088
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:56.089082+08:00  <DEBUG> 2026-01-21 17:35:56,089
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:07:00+08:00  <DEBUG> 2026-01-21 17:35:56,089
+ (logger_setup.py:57): 数据集时间差:0 days 00:28:56.089082,状态(True/False):False  <DEBUG> 2026-01-21 17:35:56,089
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_15min数据库操作完毕  <DEBUG> 2026-01-21 17:35:56,089
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:56,404
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_30min数据集初始化完成  <DEBUG> 2026-01-21 17:35:56,404
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:56,404
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_30min数据开始转换为列表  <DEBUG> 2026-01-21 17:35:56,404
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:58,079
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_30min写入成功！  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:58.188499+08:00  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 16:52:00+08:00  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): 数据集时间差:0 days 00:43:58.188499,状态(True/False):False  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_30min数据库操作完毕  <DEBUG> 2026-01-21 17:35:58,188
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:58,487
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_1h数据集初始化完成  <DEBUG> 2026-01-21 17:35:58,487
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:58,487
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1h数据开始转换为列表  <DEBUG> 2026-01-21 17:35:58,487
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:35:59,351
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1h写入成功！  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:35:59.403396+08:00  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 16:22:00+08:00  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): 数据集时间差:0 days 01:13:59.403396,状态(True/False):False  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_1h数据库操作完毕  <DEBUG> 2026-01-21 17:35:59,403
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:35:59,689
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_2h数据集初始化完成  <DEBUG> 2026-01-21 17:35:59,690
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:35:59,690
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_2h数据开始转换为列表  <DEBUG> 2026-01-21 17:35:59,690
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:00,081
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_2h写入成功！  <DEBUG> 2026-01-21 17:36:00,103
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:00.104222+08:00  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 15:22:00+08:00  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): 数据集时间差:0 days 02:14:00.104222,状态(True/False):False  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_2h数据库操作完毕  <DEBUG> 2026-01-21 17:36:00,104
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:00,379
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_4h数据集初始化完成  <DEBUG> 2026-01-21 17:36:00,381
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:00,381
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_4h数据开始转换为列表  <DEBUG> 2026-01-21 17:36:00,381
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:00,638
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_4h写入成功！  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:00.650885+08:00  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 13:22:00+08:00  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): 数据集时间差:0 days 04:14:00.650885,状态(True/False):False  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_4h数据库操作完毕  <DEBUG> 2026-01-21 17:36:00,650
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:00,923
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_6h数据集初始化完成  <DEBUG> 2026-01-21 17:36:00,923
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:00,923
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_6h数据开始转换为列表  <DEBUG> 2026-01-21 17:36:00,923
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:01,054
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_6h写入成功！  <DEBUG> 2026-01-21 17:36:01,063
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:01,063
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:01,063
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:01.063097+08:00  <DEBUG> 2026-01-21 17:36:01,064
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 11:22:00+08:00  <DEBUG> 2026-01-21 17:36:01,064
+ (logger_setup.py:57): 数据集时间差:0 days 06:14:01.063097,状态(True/False):False  <DEBUG> 2026-01-21 17:36:01,064
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_6h数据库操作完毕  <DEBUG> 2026-01-21 17:36:01,064
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:01,332
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_8h数据集初始化完成  <DEBUG> 2026-01-21 17:36:01,332
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:01,333
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_8h数据开始转换为列表  <DEBUG> 2026-01-21 17:36:01,333
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:01,429
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_8h写入成功！  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:01.436395+08:00  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 09:22:00+08:00  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): 数据集时间差:0 days 08:14:01.436395,状态(True/False):False  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_8h数据库操作完毕  <DEBUG> 2026-01-21 17:36:01,436
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:01,719
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_12h数据集初始化完成  <DEBUG> 2026-01-21 17:36:01,719
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:01,719
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_12h数据开始转换为列表  <DEBUG> 2026-01-21 17:36:01,719
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:01,782
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_12h写入成功！  <DEBUG> 2026-01-21 17:36:01,787
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:01,787
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:01,787
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:01.787106+08:00  <DEBUG> 2026-01-21 17:36:01,788
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 05:22:00+08:00  <DEBUG> 2026-01-21 17:36:01,788
+ (logger_setup.py:57): 数据集时间差:0 days 12:14:01.787106,状态(True/False):False  <DEBUG> 2026-01-21 17:36:01,788
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_12h数据库操作完毕  <DEBUG> 2026-01-21 17:36:01,788
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:02,070
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_1d数据集初始化完成  <DEBUG> 2026-01-21 17:36:02,070
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:02,070
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1d数据开始转换为列表  <DEBUG> 2026-01-21 17:36:02,070
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:02,108
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1d写入成功！  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:02.110315+08:00  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): 数据集最新时间:2026-01-20 17:22:00+08:00  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): 数据集时间差:1 days 00:14:02.110315,状态(True/False):False  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_1d数据库操作完毕  <DEBUG> 2026-01-21 17:36:02,110
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:02,389
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_3d数据集初始化完成  <DEBUG> 2026-01-21 17:36:02,390
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:02,390
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_3d数据开始转换为列表  <DEBUG> 2026-01-21 17:36:02,390
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:02,401
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_3d写入成功！  <DEBUG> 2026-01-21 17:36:02,402
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:02,402
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:02,402
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:02.402582+08:00  <DEBUG> 2026-01-21 17:36:02,402
+ (logger_setup.py:57): 数据集最新时间:2026-01-20 17:22:00+08:00  <DEBUG> 2026-01-21 17:36:02,402
+ (logger_setup.py:57): 数据集时间差:1 days 00:14:02.402582,状态(True/False):False  <DEBUG> 2026-01-21 17:36:02,403
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_3d数据库操作完毕  <DEBUG> 2026-01-21 17:36:02,403
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:02,679
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_1W数据集初始化完成  <DEBUG> 2026-01-21 17:36:02,680
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:02,680
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1W数据开始转换为列表  <DEBUG> 2026-01-21 17:36:02,680
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:02,684
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1W写入成功！  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:02.685987+08:00  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): 数据集最新时间:2026-01-25 00:00:00+08:00  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): 数据集时间差:-4 days +17:36:02.685987,状态(True/False):True  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_1W数据库操作完毕  <DEBUG> 2026-01-21 17:36:02,685
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:02,959
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000023007493CC0>路径：kline_1ME数据集初始化完成  <DEBUG> 2026-01-21 17:36:02,959
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:02,959
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1ME数据开始转换为列表  <DEBUG> 2026-01-21 17:36:02,959
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline_1ME写入成功！  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:02.962301+08:00  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): 数据集最新时间:2026-01-31 00:00:00+08:00  <DEBUG> 2026-01-21 17:36:02,962
+ (logger_setup.py:57): 数据集时间差:-10 days +17:36:02.962301,状态(True/False):True  <DEBUG> 2026-01-21 17:36:02,963
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline_1ME数据库操作完毕  <DEBUG> 2026-01-21 17:36:02,963
+ (logger_setup.py:57): 最新时间戳:1768987260000.0  <DEBUG> 2026-01-21 17:36:03,162
+ (logger_setup.py:57): ETHUSDT数据库不存在，进入初始化程序  <DEBUG> 2026-01-21 17:36:03,903
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:36:03,903
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x000002304173EA40>路径：kline数据集初始化完成  <DEBUG> 2026-01-21 17:36:03,903
+ (logger_setup.py:57): 进入数据插入或更新环节  <DEBUG> 2026-01-21 17:36:03,903
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:36:03,904
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline数据开始转换为列表  <DEBUG> 2026-01-21 17:36:03,904
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:36:03,904
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline写入成功！  <DEBUG> 2026-01-21 17:36:03,905
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:36:03.906803+08:00  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:36:00+08:00  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): 数据集时间差:0 days 00:00:03.906803,状态(True/False):True  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline数据库操作完毕  <DEBUG> 2026-01-21 17:36:03,906
+ (logger_setup.py:57): 路径:<sqlite3.Cursor object at 0x000002304173EA40> 数据集,最旧时间:1682587320000.0,最新时间:1768988160000.0,总量:1440015  <DEBUG> 2026-01-21 17:36:03,931
+ (logger_setup.py:55): 数据集跨度:[2023-04-27 17:22:00+08:00 -> 2026-01-21 17:36:00+08:00] 总量:<1440015>  <INFO> 2026-01-21 17:36:03,932
+ (logger_setup.py:57): 最新时间戳:1768988160000.0  <DEBUG> 2026-01-21 17:37:06,122
+ (logger_setup.py:57): ETHUSDT数据库不存在，进入初始化程序  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): 检查表结构  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): <sqlite3.Cursor object at 0x0000027A241EC3C0>路径：kline数据集初始化完成  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): 进入数据插入或更新环节  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): [in,1]<SqliteOper-insert_or_update_data>:symbol=ETHUSDT开始插入或更新  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): [in,2]<SqliteOper-insert_or_update_data>:ETHUSDT_kline数据开始转换为列表  <DEBUG> 2026-01-21 17:37:07,951
+ (logger_setup.py:57): [in,3]<SqliteOper-insert_or_update_data>:ETHUSDT基础数据开始写入数据库  <DEBUG> 2026-01-21 17:37:07,954
+ (logger_setup.py:57): [in,3success]<SqliteOper-insert_or_update_data>:ETHUSDT_kline写入成功！  <DEBUG> 2026-01-21 17:37:07,955
+ (logger_setup.py:57): [in,4]<SqliteOper-insert_or_update_data>:检查最新数据  <DEBUG> 2026-01-21 17:37:07,955
+ (logger_setup.py:57): [in,5]<SqliteOper-insert_or_update_data>:ETHUSDT检查时间差]  <DEBUG> 2026-01-21 17:37:07,955
+ (logger_setup.py:57): 当前时间戳:2026-01-21 17:37:07.955626+08:00  <DEBUG> 2026-01-21 17:37:07,956
+ (logger_setup.py:57): 数据集最新时间:2026-01-21 17:37:00+08:00  <DEBUG> 2026-01-21 17:37:07,956
+ (logger_setup.py:57): 数据集时间差:0 days 00:00:07.955626,状态(True/False):True  <DEBUG> 2026-01-21 17:37:07,956
+ (logger_setup.py:57): [in,end]<SqliteOper-insert_or_update_data>ETHUSDT_kline数据库操作完毕  <DEBUG> 2026-01-21 17:37:07,956
+ (logger_setup.py:57): 路径:<sqlite3.Cursor object at 0x0000027A241EC3C0> 数据集,最旧时间:1682587320000.0,最新时间:1768988220000.0,总量:1440016  <DEBUG> 2026-01-21 17:37:07,980
+ (logger_setup.py:55): 数据集跨度:[2023-04-27 17:22:00+08:00 -> 2026-01-21 17:37:00+08:00] 总量:<1440016>  <INFO> 2026-01-21 17:37:07,981

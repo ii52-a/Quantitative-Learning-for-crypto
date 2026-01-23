@@ -16,10 +16,15 @@ from urlibs import *
 
 from Config import ApiConfig as Config
 
+from tqdm import tqdm
+
+
 
 from kline_process import KlineProcess
 
 from app_logger.logger_setup import Logger
+
+tqdm.pandas()
 logger = Logger(__name__)
 load_dotenv()
 class Api:
@@ -80,36 +85,39 @@ class Api:
         get_time_min:int=ApiConfig.LOCAL_MAX_HISTORY_ALLOW * 24 * 60
         end_time:pd.Timestamp=pd.to_datetime('now')
         link_count=0
-        while self.update_local_count < get_time_min:
-            try:
-                if end_time is None:
-                    logger.warning(f"{symbol}获取end_time为None!")
-                    return
 
-                data_df:pd.DataFrame=self.get_futures_data(end_time=end_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
-                all_data.insert(0, data_df)
-                ceil_percent:int=math.ceil(self.update_local_count / (get_time_min*0.1))
-                percent:float=round(self.update_local_count*100 / get_time_min,2)
+        with tqdm(total=get_time_min, desc=f"正在初始化 {symbol}", unit="data") as pbar:
+            while self.update_local_count < get_time_min:
+                try:
+                    if end_time is None:
+                        logger.warning(f"{symbol}获取end_time为None!")
+                        return
 
-                if not data_df.empty:
-                    self.update_local_count +=len(data_df)
-                    if self.update_local_count%10000==0:
-                        logger.info(f"已获得数据:{self.update_local_count}  [{'='*ceil_percent}{' '*(10-ceil_percent)}]{percent}%")
+                    data_df:pd.DataFrame=self.get_futures_data(end_time=end_time,interval=Client.KLINE_INTERVAL_1MINUTE,symbol=symbol)
+                    all_data.insert(0, data_df)
 
-                end_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(milliseconds=1)
-                if data_df is None or data_df.empty:
-                    logger.debug(f"{symbol}已达最新数据,总添加数据量:{len(all_data)}")
-                    break
-                sleep(ApiConfig.API_BASE_GET_INTERVAL)
+                    new_data_count =len(data_df)
+                    self.update_local_count+=new_data_count
+                    if self.update_local_count % 1000 == 0:
+                        pbar.n=self.update_local_count
+                        pbar.refresh()
 
-            except Exception as e:
-                logger.error(f"API>>_init_base_k_line_data>>基础数据初始化失败:{e}")
-                logger.info("等待3秒后重试")
-                sleep(3)
-                link_count+=1
-                if link_count>=5:
-                    raise Exception("API>>_init_base_k_line_data>>链接次数过多，请寻找错误或调高时间间隔")
-                continue
+
+
+                    end_time:pd.Timestamp=pd.to_datetime(data_df['timestamp'].iloc[0], unit='ms') - pd.Timedelta(milliseconds=1)
+                    if data_df is None or data_df.empty:
+                        logger.debug(f"{symbol}已达最新数据,总添加数据量:{len(all_data)}")
+                        break
+                    sleep(ApiConfig.API_BASE_GET_INTERVAL)
+
+                except Exception as e:
+                    logger.error(f"API>>_init_base_k_line_data>>基础数据初始化失败:{e}")
+                    logger.info("等待3秒后重试")
+                    sleep(3)
+                    link_count+=1
+                    if link_count>=5:
+                        raise Exception("API>>_init_base_k_line_data>>链接次数过多，请寻找错误或调高时间间隔")
+                    continue
         data:pd.DataFrame=pd.concat(all_data, ignore_index=True)
         data=FormatUrlibs.standard_timestamp(data)
         logger.info(f"获取未保存数据:{len(data)}")
@@ -130,6 +138,7 @@ class Api:
             if data_df is None or data_df.empty:
                 logger.info(f"{symbol} 数据集已是最新")
                 return
+
             start_time:pd.Timestamp= pd.to_datetime(data_df['timestamp'].iloc[-1], unit='ms')
             self.update_local_count += len(data_df)
             logger.info(f"更新中,数据量:{self.update_local_count}")

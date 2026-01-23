@@ -9,9 +9,15 @@ logger = Logger(__name__)
 class PositionControl:
     def __init__(self, usdt=1000):
         self.position: dict[str:Position] = {}
+        self.init_usdt=usdt
         self.all_usdt = usdt  # 账户余额（含已结算盈亏）
         self._true_margin_usdt = 0
         self.leverage = BackConfig.SET_LEVERAGE
+
+        self.total=0
+        self.win=0
+        self.lose=0
+
 
     @property
     def _usdt(self):
@@ -52,7 +58,7 @@ class PositionControl:
 
         # 风险拦截
         if change_type == PositionChange.OPEN and changed_usdt > self._usdt:
-            logger.warning(f"[{symbol}] 资金不足拒绝开仓: 需{changed_usdt:.2f} > 剩{self._usdt:.2f}")
+            logger.warning(f"[{symbol}] 资金不足拒绝开仓: {changed_usdt:.2f} > 剩{self._usdt:.2f}")
             return
 
         # 执行
@@ -61,10 +67,19 @@ class PositionControl:
                               price=strategy_result.execution_price,
                               open_time=strategy_result.execution_time,
                               )
-        result = self.position[symbol].execute(pos_set)
+        result:PositionResult = self.position[symbol].execute(pos_set)
 
         # 更新余额
         self.all_usdt += result.pnl
+
+        if result.if_full:
+            if result.win:
+                self.win +=1
+            elif not result.win:
+                self.lose +=1
+            self.total+=1
+
+
 
 
         if self.position[symbol].get_avg_price == 0:
