@@ -9,6 +9,7 @@ vendor/
 *.log
 STUDY01/app_logger/logs/
 **/__pycache__/
+Logs/
 
 #数据文件co
 *.csv
