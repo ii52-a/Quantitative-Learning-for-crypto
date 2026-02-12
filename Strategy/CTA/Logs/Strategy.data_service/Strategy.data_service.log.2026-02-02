@@ -1,0 +1,66 @@
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:32:33,409
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:32:33,541
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:32:33,546
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:36:07,955
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:36:08,080
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:36:08,082
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:45:37,944
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:45:38,043
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:45:38,046
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:46:20,898
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:46:20,988
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:46:20,990
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:47:31,773
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:47:31,870
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:47:31,872
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:49:05,304
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:49:05,397
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:49:05,398
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 21:50:29,072
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 21:50:29,164
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 21:50:29,166
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:06:33,077
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:06:33,190
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:06:33,192
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:09:47,914
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:09:48,036
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:09:48,037
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:10:14,341
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:10:14,441
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:10:14,444
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:26:07,783
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:26:07,897
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:26:07,899
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:26:51,190
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:26:51,298
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:26:51,301
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:28:00,089
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:28:00,193
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:28:00,195
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:29:17,762
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:29:17,866
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:29:17,887
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:29:28,979
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:29:29,095
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:29:29,097
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:31:06,263
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:31:06,376
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:31:06,378
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:31:32,547
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:31:32,965
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:31:32,973
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:31:36,007
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:31:36,114
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:31:36,115
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:32:39,717
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:32:39,834
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:32:39,837
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:43:51,795
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:43:51,991
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:43:51,996
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:44:47,984
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:44:48,136
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:44:48,140
+ <INFO>(logger_setup.py:59): begin get ETHUSDT kline_30min   2026-02-02 22:46:21,752
+ <DEBUG>(logger_setup.py:61): 计算 MACD 指标中...   2026-02-02 22:46:21,910
+ <DEBUG>(logger_setup.py:61): MACD 计算完成   2026-02-02 22:46:21,914

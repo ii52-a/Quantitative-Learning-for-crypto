@@ -1,0 +1,34 @@
+ (logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db  <INFO> 2026-02-01 17:56:46,724
+ (logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min  <INFO> 2026-02-01 17:56:46,729
+ (logger_setup.py:61): 最新时间戳:1769140800000.0  <DEBUG> 2026-02-01 17:56:46,744
+ (logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00  <INFO> 2026-02-01 17:56:46,914
+ (logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db  <INFO> 2026-02-01 18:10:20,008
+ (logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min  <INFO> 2026-02-01 18:10:20,009
+ (logger_setup.py:61): 最新时间戳:1769140800000.0  <DEBUG> 2026-02-01 18:10:20,026
+ (logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00  <INFO> 2026-02-01 18:10:20,136
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 18:11:07,356
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 18:11:07,357
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 18:11:07,357
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 18:11:07,500
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 19:40:32,074
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 19:40:32,077
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:40:32,088
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:40:32,095
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:40:32,219
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:40:32,223
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 19:41:28,746
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 19:41:28,747
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:41:28,748
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:41:28,860
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 19:41:35,304
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 19:41:35,305
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:41:35,305
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:41:35,406
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 19:42:17,074
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 19:42:17,075
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:42:17,076
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:42:17,198
+ <INFO>(logger_setup.py:59): [in,1aggerate]<with_open_and_func>路径:Data\LocalData\ETHUSDT_aggerate.db   2026-02-01 19:42:36,088
+ <INFO>(logger_setup.py:59): [in,1]<read_kline_range>读取表结构kline_30min   2026-02-01 19:42:36,089
+ <DEBUG>(logger_setup.py:61): 最新时间戳:1769140800000.0   2026-02-01 19:42:36,090
+ <INFO>(logger_setup.py:59): [in,2set]<read_kline_range>默认end为最新数据2026-01-23 12:00:00+08:00   2026-02-01 19:42:36,190
