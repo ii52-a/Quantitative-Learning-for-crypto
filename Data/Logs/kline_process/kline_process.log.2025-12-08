@@ -1,4 +1,0 @@
-2025-12-08 18:30:22,149 (kline_process.py:62): 准备进行3min聚合  <DEBUG> 
-2025-12-08 18:30:22,186 (kline_process.py:77): ETHUSDT3min数据集聚合完毕  <INFO> 
-2025-12-08 18:30:22,192 (kline_process.py:79): ETHUSDT3min写入中  <DEBUG> 
-2025-12-08 18:32:13,071 (kline_process.py:64): 准备进行3min聚合  <DEBUG> 

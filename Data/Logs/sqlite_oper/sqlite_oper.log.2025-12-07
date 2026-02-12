@@ -1,5 +1,0 @@
-2025-12-07 21:20:21,056 (sqlite_oper.py:51): BTCUSDT数据库不存在，进入初始化程序  <DEBUG> 
-2025-12-07 21:20:21,056 (sqlite_oper.py:22): 检测BTCUSDT_base.db不存在,创建数据库中  <DEBUG> 
-2025-12-07 21:20:21,063 (sqlite_oper.py:43): BTCUSDT数据库初始化完成  <INFO> 
-2025-12-07 21:20:21,064 (sqlite_oper.py:56): BTCUSDT基础数据开始写入  <DEBUG> 
-2025-12-07 21:24:49,119 (sqlite_oper.py:111): BTCUSDT无基础数据集，程序错误  <WARNING> 

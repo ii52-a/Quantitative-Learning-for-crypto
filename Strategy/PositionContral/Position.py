@@ -39,6 +39,8 @@ class Position:
         self.open_all=0
         self.d_pnl=0
 
+        self._d_log=None
+
 
     #返回真实保险金占用
     def true_margin(self,price) -> float:
@@ -139,6 +141,7 @@ class Position:
         self.d_pnl +=pnl
         #
         log: PositionHistory = self.get_log_standard(PositionChange.FULL,self.d_pnl)
+        self._d_log=log
         logger.log_position_history(log)
 
         #
@@ -195,6 +198,12 @@ class Position:
     @property
     def get_avg_price(self) -> float:
         return self._position_status.avg_price
+
+    def get_d_log(self):
+        self._d_log, log = None, self._d_log
+        log.open_time=log.open_time.tz_localize(None)
+        log.close_time=log.close_time.tz_localize(None)
+        return log
 
 
     def get_log_standard(self,close_type:PositionChange,pnl:float) -> PositionHistory:

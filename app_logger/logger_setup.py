@@ -44,7 +44,7 @@ def _init(logger_name, console_level=logging.INFO, file_level=logging.DEBUG):
         delay=False
     )
     file_handler.setLevel(file_level)
-    file_handler.setFormatter(logging.Formatter(' (%(filename)s:%(lineno)d): %(message)s  <%(levelname)s> %(asctime)s'))
+    file_handler.setFormatter(logging.Formatter(' <%(levelname)s>(%(filename)s:%(lineno)d): %(message)s   %(asctime)s'))
 
     # 装载 handler
     logger.addHandler(console_handler)

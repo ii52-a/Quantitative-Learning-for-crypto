@@ -1,3 +1,7 @@
+import os
+
+import pandas as pd
+
 from Config import BackConfig
 from Strategy.PositionContral.Position import Position
 from Strategy.StrategyTypes import *
@@ -7,12 +11,13 @@ logger = Logger(__name__)
 
 
 class PositionControl:
-    def __init__(self, usdt=1000):
+    def __init__(self, usdt=1000,leverage=BackConfig.SET_LEVERAGE):
+        self.history_records = []
         self.position: dict[str:Position] = {}
         self.init_usdt=usdt
         self.all_usdt = usdt  # 账户余额（含已结算盈亏）
         self._true_margin_usdt = 0
-        self.leverage = BackConfig.SET_LEVERAGE
+        self.leverage = leverage
 
         self.total=0
         self.win=0
@@ -79,6 +84,14 @@ class PositionControl:
                 self.lose +=1
             self.total+=1
 
+            history_obj = self.position[symbol].get_d_log()
+
+            # 转换为字典
+            record = history_obj.__dict__
+            # logger.warning(type(record))
+            record['current_balance'] = self.all_usdt
+            self.history_records.append(record)
+
 
 
 
@@ -88,4 +101,23 @@ class PositionControl:
         # 强平保护
         if self.all_usdt < 0:
             logger.error("!!! 账户已穿仓 (Balance < 0) !!! 强制停止回测")
-            # 可以在此处抛出异常或停止循环
+            #
+
+    def data_to_csv(self,filename = "backtest_result"):
+        i=0
+        filename1=filename + f"_{self.leverage}X.csv"
+        while True:
+            if os.path.exists(filename1):
+                i += 1
+                filename1 = filename + "_" + str(i) + f"_{self.leverage}X.csv"
+            else:
+                break
+
+
+
+        if not self.history_records:
+            logger.warning("<UNK>没有交易记录")
+            return
+        df = pd.DataFrame(self.history_records)
+        df.to_csv(filename1, index=False)
+        logger.info(f" 过程数据已导出至: {filename1}")

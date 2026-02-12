@@ -265,8 +265,6 @@ class SqliteOper:
         :param kwargs: 函数参数
         :return:
         """
-        patht=None
-        ROOT_DIR = Path(__file__).resolve().parent.parent
         if kline_str=="1m":
             patht=Path(f"Data/LocalData/{symbol}_base.db")
             logger.info(f"[in,1base]<with_open_and_func>路径:{patht}")

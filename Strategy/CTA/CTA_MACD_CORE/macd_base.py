@@ -7,6 +7,7 @@ class BaseMacd(CtaMacdCore):
     def __init__(self):
         super().__init__()
         self.open=False
+        self._open_price = None
 
     def init_data(self,symbol,k_line,number) -> None:
         self.symbol=symbol
@@ -22,10 +23,14 @@ class BaseMacd(CtaMacdCore):
         self.time = self.macd_data.iloc[i - 1]['close_time']
 
     def step(self,i) -> StrategyResult | None:
-
+        if abs(self.macd_last)<0.05:
+            return None
         # 金叉
+        if :
+
         if self.macd_last < 0 < self.macd_now and not self.open:
             self.open=True
+            self._open_price = self.price
             return StrategyResult(
                 symbol=self.symbol,
                 direction=PositionSignal.LONG,

@@ -11,7 +11,7 @@ logger=Logger(__name__)
 class StrategyMacd:
     def __init__(self,symbol,k_line,number=2000):
         self.usdt = 1000
-        self.positionControl:PositionControl=PositionControl(self.usdt)
+        self.positionControl:PositionControl=PositionControl(self.usdt,7)
         self.number:int=number
         self.core=BaseMacd()
         self.core.init_data(symbol,k_line,number)
@@ -22,6 +22,7 @@ class StrategyMacd:
 
     def main(self):
         count=self.core.data_count
+        logger.debug("================new_process===============\n"*2)
         with tqdm(total=count,desc="回测进度") as pbar:
             for i in range(2,count):
                 strategy_result:StrategyResult=self.core.run_step(i)
@@ -36,9 +37,9 @@ class StrategyMacd:
             #TODO:策略结束一键平仓
 
         #TODO:日志调试和输出
-        logger.info(f"{self.positionControl.all_usdt}({self.positionControl.all_usdt*100/ self.positionControl.init_usdt :.2f}%)\n"
+        logger.info(f"{self.positionControl.all_usdt}({(self.positionControl.all_usdt-self.positionControl.init_usdt)*100/ self.positionControl.init_usdt :.2f}%)\n"
                     f"total:{self.positionControl.total}\t win:{self.positionControl.win}\t per:{self.positionControl.win/self.positionControl.total*100:.2f}%")
-
+        self.positionControl.data_to_csv()
     def all_full(self):
         for key,value in list(self.positionControl.position.items()):
             st=StrategyResult(

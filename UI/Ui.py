@@ -8,9 +8,8 @@ from PyQt5.QtWidgets import (
 )
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
-
+from Data.api import Api
 from UI.QtheaderWork import ApiWorker, LoaclWorker
-from data.Api import Api
 from type import BackTestSetting
 from Config import *
 from urlibs import *
@@ -263,12 +262,7 @@ class GetbackUi(QMainWindow):
 
 
 
-#TODO:学习使用logging替代插print来寻找错误
-n=0
-def c():
-    global n
-    n+=1
-    print(f'第{n}个*')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
