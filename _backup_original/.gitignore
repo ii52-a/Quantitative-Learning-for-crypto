@@ -1,0 +1,22 @@
+node_modules/
+vendor/
+
+# 环境文件
+.env
+.env.local
+
+# 日志文件
+*.log
+Logs/
+STUDY01/app_logger/logs/
+**/__pycache__/
+
+#数据文件co
+*.csv
+*.db
+*.txt
+
+# 系统文件
+.DS_Store
+Thumbs.db
+EOF

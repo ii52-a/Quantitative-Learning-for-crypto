@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 
 
-from kline_process import KlineProcess
+from Data.kline_process import KlineProcess
 
 from app_logger.logger_setup import Logger
 

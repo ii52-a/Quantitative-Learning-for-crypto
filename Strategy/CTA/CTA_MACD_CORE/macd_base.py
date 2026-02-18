@@ -23,10 +23,8 @@ class BaseMacd(CtaMacdCore):
         self.time = self.macd_data.iloc[i - 1]['close_time']
 
     def step(self,i) -> StrategyResult | None:
-        if abs(self.macd_last)<0.05:
+        if abs(self.macd_last) < 0.5:
             return None
-        # 金叉
-        if :
 
         if self.macd_last < 0 < self.macd_now and not self.open:
             self.open=True

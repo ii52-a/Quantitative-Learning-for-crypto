@@ -1,10 +1,17 @@
+"""
+量化交易系统
+
+主程序入口 - 直接启动UI
+"""
+
 import sys
 
-from PyQt5.QtWidgets import QApplication
 
-import UI.Ui as Ui
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = Ui.GetbackUi()
-    window.show()
-    sys.exit(app.exec_())
+def main():
+    """主函数 - 直接启动UI"""
+    from UI.main_ui import main as ui_main
+    ui_main()
+
+
+if __name__ == "__main__":
+    main()
