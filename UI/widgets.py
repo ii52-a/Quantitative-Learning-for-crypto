@@ -206,6 +206,8 @@ TOOLTIP_TEXTS = {
     "opt_method": "参数优化方法\n网格搜索：遍历所有组合\n随机搜索：随机采样\n贝叶斯优化：智能搜索",
     "opt_iterations": "优化迭代次数\n更多迭代=更可能找到最优参数\n但耗时更长",
     "opt_metric": "优化目标\n夏普比率：风险调整后收益\n总收益率：绝对收益\n综合得分：多指标加权",
+    "opt_breadth": "优化广度\n控制参数搜索区间范围\n<1 更保守，>1 更激进",
+    "opt_depth": "优化深度\n控制参数搜索精细度\n数值越大，步长越小",
 }
 
 
@@ -231,6 +233,7 @@ class OptimizerWorker(QThread):
                 ParameterOptimizer,
                 ParameterRange,
                 get_parameter_ranges_from_strategy,
+                tune_parameter_ranges,
             )
             from Strategy.templates import get_strategy
             from Data.data_service import get_data_service, DataServiceConfig, RegionRestrictedError, DataSourceError
@@ -247,10 +250,12 @@ class OptimizerWorker(QThread):
             self.progress.emit("正在加载数据...", 2, 100)
             
             try:
+                data_limit = max(100, int(self.config["data_limit"]))
+                # 优化阶段无需额外 padding，避免高周期聚合触发超大数据拉取导致UI看似卡死
                 data = service.get_klines(
                     self.config["symbol"],
                     self.config["interval"],
-                    self.config["data_limit"]
+                    data_limit,
                 )
             except RegionRestrictedError as e:
                 self.error.emit(f"API访问受限，请配置代理:\n{str(e)}")
@@ -298,6 +303,12 @@ class OptimizerWorker(QThread):
                     ParameterRange("take_profit_pct", 0, 50, 10),
                     ParameterRange("leverage", 1, 20, 1),
                 ])
+
+            param_ranges = tune_parameter_ranges(
+                param_ranges,
+                breadth=self.config.get("opt_breadth", 1.0),
+                depth=self.config.get("opt_depth", 1),
+            )
             
             last_progress_time = [0]
             

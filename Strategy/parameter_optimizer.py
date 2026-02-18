@@ -477,3 +477,65 @@ def get_parameter_ranges_from_strategy(
             ))
     
     return ranges
+
+
+def tune_parameter_ranges(
+    ranges: list[ParameterRange],
+    breadth: float = 1.0,
+    depth: int = 1,
+) -> list[ParameterRange]:
+    """根据优化广度/深度调整参数搜索空间。
+
+    breadth:
+        控制搜索范围，>1 扩大区间，<1 缩小区间。
+    depth:
+        控制搜索精度，值越大步长越小。
+    """
+    tuned_ranges: list[ParameterRange] = []
+    safe_breadth = max(0.2, float(breadth))
+    safe_depth = max(1, int(depth))
+
+    for pr in ranges:
+        if pr.values is not None:
+            values = list(pr.values)
+            if safe_breadth < 1 and len(values) > 2:
+                keep = max(2, int(round(len(values) * safe_breadth)))
+                step = max(1, len(values) // keep)
+                sampled = values[::step][:keep]
+                if values[-1] not in sampled:
+                    sampled[-1] = values[-1]
+                values = sampled
+
+            tuned_ranges.append(ParameterRange(
+                name=pr.name,
+                min_value=pr.min_value,
+                max_value=pr.max_value,
+                step=pr.step,
+                values=values,
+            ))
+            continue
+
+        min_v = float(pr.min_value)
+        max_v = float(pr.max_value)
+        center = (min_v + max_v) / 2
+        half_span = (max_v - min_v) / 2
+        tuned_min = center - (half_span * safe_breadth)
+        tuned_max = center + (half_span * safe_breadth)
+
+        if min_v >= 0:
+            tuned_min = max(0.0, tuned_min)
+
+        step = pr.step
+        if step:
+            step = step / safe_depth
+            if isinstance(pr.step, int) and pr.step > 0:
+                step = max(1, int(round(step)))
+
+        tuned_ranges.append(ParameterRange(
+            name=pr.name,
+            min_value=tuned_min,
+            max_value=tuned_max,
+            step=step,
+        ))
+
+    return tuned_ranges

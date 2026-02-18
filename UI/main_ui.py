@@ -79,7 +79,8 @@ class BacktestWorker(QThread):
             self.progress.emit(f"正在加载 {symbol} 数据...")
             
             try:
-                data = service.get_backtest_data(symbol, interval, data_num)
+                # UI回测优先保证响应速度，避免高周期触发超大基础K线聚合
+                data = service.get_klines(symbol, interval, max(100, int(data_num)))
             except RegionRestrictedError as e:
                 self.error.emit(f"API访问受限，请配置代理:\n{str(e)}")
                 return
@@ -388,16 +389,30 @@ class TradingUI(QMainWindow):
         self.opt_iterations.setRange(10, 1000)
         self.opt_iterations.setValue(50)
         opt_grid.addWidget(self.opt_iterations, 0, 3)
+
+        opt_grid.addWidget(TooltipLabel("优化广度", TOOLTIP_TEXTS["opt_breadth"]), 1, 0)
+        self.opt_breadth = TooltipDoubleSpinBox(TOOLTIP_TEXTS["opt_breadth"])
+        self.opt_breadth.setRange(0.2, 3.0)
+        self.opt_breadth.setDecimals(1)
+        self.opt_breadth.setSingleStep(0.1)
+        self.opt_breadth.setValue(1.0)
+        opt_grid.addWidget(self.opt_breadth, 1, 1)
+
+        opt_grid.addWidget(TooltipLabel("优化深度", TOOLTIP_TEXTS["opt_depth"]), 1, 2)
+        self.opt_depth = TooltipSpinBox(TOOLTIP_TEXTS["opt_depth"])
+        self.opt_depth.setRange(1, 5)
+        self.opt_depth.setValue(2)
+        opt_grid.addWidget(self.opt_depth, 1, 3)
         
-        opt_grid.addWidget(TooltipLabel("优化目标", TOOLTIP_TEXTS["opt_metric"]), 1, 0)
+        opt_grid.addWidget(TooltipLabel("优化目标", TOOLTIP_TEXTS["opt_metric"]), 2, 0)
         self.opt_metric = TooltipComboBox(TOOLTIP_TEXTS["opt_metric"])
         self.opt_metric.addItems(["夏普比率", "总收益率", "综合得分"])
-        opt_grid.addWidget(self.opt_metric, 1, 1)
+        opt_grid.addWidget(self.opt_metric, 2, 1)
         
         self.optimize_risk_params = QCheckBox("优化风险参数")
         self.optimize_risk_params.setToolTip("同时优化止损、止盈、杠杆参数")
         self.optimize_risk_params.setChecked(False)
-        opt_grid.addWidget(self.optimize_risk_params, 1, 2, 1, 2)
+        opt_grid.addWidget(self.optimize_risk_params, 2, 2, 1, 2)
         
         layout.addLayout(opt_grid)
         
@@ -503,6 +518,8 @@ class TradingUI(QMainWindow):
             "optimization_metric": metric_map.get(self.opt_metric.currentText(), "sharpe_ratio"),
             "opt_method": opt_method_map.get(self.opt_method.currentText(), "random_search"),
             "iterations": self.opt_iterations.value(),
+            "opt_breadth": self.opt_breadth.value(),
+            "opt_depth": self.opt_depth.value(),
             "optimize_risk_params": self.optimize_risk_params.isChecked(),
         }
         
@@ -531,7 +548,12 @@ class TradingUI(QMainWindow):
     
     def _on_optimization_progress(self, message: str, current: int, total: int):
         """优化进度回调"""
-        self.progress.setValue(current)
+        safe_total = max(1, total)
+        if total != 100:
+            pct = int(current * 100 / safe_total)
+            self.progress.setValue(max(0, min(100, pct)))
+        else:
+            self.progress.setValue(max(0, min(100, current)))
         self.log_output.append_text(f"[{datetime.now():%H:%M:%S}] {message}")
     
     def _on_optimization_finished(self, data: dict):
