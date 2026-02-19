@@ -54,6 +54,7 @@ class OrderCommand:
     symbol: str
     side: str
     quantity: float
+    price: float = 0.0
     order_type: str = "MARKET"
     strategy_name: str = ""
     reason: str = ""
@@ -93,32 +94,15 @@ class InMemoryOrderGateway(OrderGateway):
         self.commands.append(order)
         self._order_id += 1
 
-        side = Side.LONG if order.side == SIDE_BUY else Side.SHORT
-
-        if order.reduce_only:
-            pos = self.position_manager.get_position(order.symbol)
-            record = self.position_manager.close_position(
-                symbol=order.symbol,
-                price=order.quantity * 100 if pos.entry_price == 0 else pos.entry_price,
-                reason=order.reason,
-            )
-            pnl = record.pnl if record else 0.0
-        else:
-            self.position_manager.open_position(
-                symbol=order.symbol,
-                side=side,
-                quantity=order.quantity,
-                price=order.quantity * 100,
-                reason=order.reason,
-            )
-            pnl = 0.0
+        fill_price = order.price if order.price > 0 else 0.0
 
         ack = OrderAck(
             order_id=f"SIM-{self._order_id:06d}",
             symbol=order.symbol,
             status="FILLED",
             executed_qty=order.quantity,
-            message=f"simulated fill, pnl={pnl}",
+            avg_price=fill_price,
+            message=order.reason,
         )
         logger.info(f"模拟下单: {ack}")
         return ack
@@ -434,6 +418,7 @@ class MACD30mCTAStrategy:
                 symbol=self.symbol,
                 side=SIDE_BUY,
                 quantity=qty,
+                price=current_price,
                 reason="MACD_GOLDEN_CROSS",
                 reduce_only=False,
             )
@@ -444,6 +429,7 @@ class MACD30mCTAStrategy:
                 symbol=self.symbol,
                 side=SIDE_SELL,
                 quantity=pos.quantity,
+                price=current_price,
                 reason="MACD_DEAD_CROSS",
                 reduce_only=True,
             )
@@ -463,14 +449,18 @@ class MACD30mCTAStrategy:
             )
             logger.info(f"[{self.symbol}] 死叉平仓成交 @ {ack.avg_price}")
         elif "MACD_GOLDEN_CROSS" in ack.message:
+            fill_price = ack.avg_price if ack.avg_price > 0 else (self._prices[-1] if self._prices else 0.0)
+            if fill_price <= 0:
+                logger.warning(f"[{self.symbol}] 成交价无效，忽略开仓回调: {ack}")
+                return
             self.position_manager.open_position(
                 symbol=self.symbol,
                 side=Side.LONG,
                 quantity=ack.executed_qty,
-                price=ack.avg_price,
+                price=fill_price,
                 reason=ack.message,
             )
-            logger.info(f"[{self.symbol}] 金叉开仓成交 @ {ack.avg_price}")
+            logger.info(f"[{self.symbol}] 金叉开仓成交 @ {fill_price}")
 
 
 class LiveTradeEngine:

@@ -280,6 +280,7 @@ class BacktestEngine:
         equity = self._calculate_equity(bar.close)
         
         if equity <= 0:
+            capital_before_liquidation = self._capital
             entry_price = self._position.entry_price
             quantity = self._position.quantity
             leverage = self.config.leverage
@@ -311,7 +312,7 @@ class BacktestEngine:
                 quantity=quantity,
                 price=liquidation_price,
                 commission=exit_commission,
-                pnl=-self._initial_capital,
+                pnl=-capital_before_liquidation,
                 reason=f"爆仓 (权益归零)",
             )
             self._trades.append(trade)
@@ -328,12 +329,12 @@ class BacktestEngine:
                 entry_price=entry_price_val,
                 exit_price=liquidation_price,
                 quantity=quantity,
-                pnl=-self._initial_capital,
+                pnl=-capital_before_liquidation,
                 commission=total_commission,
                 reason=f"爆仓 (权益归零)",
                 exit_type="liquidation",
                 leverage=self.config.leverage,
-                side="long",
+                side="long" if position_side == PositionSide.LONG else "short",
                 position_value=position_value,
                 margin_used=margin_used,
             )
@@ -412,7 +413,7 @@ class BacktestEngine:
             reason=reason,
             exit_type=exit_type,
             leverage=self.config.leverage,
-            side="long",
+            side="long" if position_side == PositionSide.LONG else "short",
             position_value=position_value,
             margin_used=margin_used,
         )

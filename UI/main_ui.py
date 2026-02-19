@@ -58,7 +58,7 @@ class LiveAccountWorker(QThread):
     
     def run(self):
         self._running = True
-        while self._running:
+        while self._running and not self.isInterruptionRequested():
             try:
                 if self._trader and hasattr(self._trader, '_update_positions'):
                     self._trader._update_positions()
@@ -84,9 +84,16 @@ class LiveAccountWorker(QThread):
             
             self.msleep(self._interval_ms)
     
-    def stop(self):
+    def stop(self, timeout_ms: int = 1500) -> bool:
         self._running = False
-        self.wait()
+        self.requestInterruption()
+
+        if self.currentThread() == self:
+            return False
+
+        if self.isRunning():
+            return self.wait(timeout_ms)
+        return True
 
 
 class EnhancedBacktestWorker(QThread):
@@ -2151,7 +2158,7 @@ class TradingUI(QMainWindow):
     def _stop_live_trading(self) -> None:
         """停止实盘交易"""
         if hasattr(self, '_live_worker') and self._live_worker:
-            self._live_worker.stop()
+            self._shutdown_thread(self._live_worker, "LiveAccountWorker")
             self._live_worker = None
         
         if hasattr(self, '_trader') and self._trader:
@@ -3698,10 +3705,49 @@ class TradingUI(QMainWindow):
         self.progress.setVisible(False)
         self.status.setText("● 错误")
         self.status.setStyleSheet("color: #f6465d;")
+
+    def _shutdown_thread(self, worker: QThread | None, name: str, timeout_ms: int = 1200) -> None:
+        """安全停止后台线程，避免UI关闭时卡死。"""
+        if worker is None:
+            return
+
+        try:
+            if hasattr(worker, "stop"):
+                stopped = worker.stop(timeout_ms)  # type: ignore[misc]
+                if stopped is True:
+                    return
+            else:
+                worker.requestInterruption()
+
+            if worker.isRunning() and not worker.wait(timeout_ms):
+                logger.warning(f"线程 {name} 在 {timeout_ms}ms 内未退出，执行强制终止")
+                worker.terminate()
+                worker.wait(300)
+        except Exception as e:
+            logger.warning(f"停止线程 {name} 失败: {e}")
     
     def closeEvent(self, event):
-        if self._worker and self._worker.isRunning():
-            self._worker.wait(3000)
+        if hasattr(self, '_status_timer') and self._status_timer:
+            self._status_timer.stop()
+
+        if hasattr(self, '_optimizer_worker') and self._optimizer_worker:
+            self._shutdown_thread(self._optimizer_worker, "OptimizerWorker")
+
+        if hasattr(self, '_enhanced_worker') and self._enhanced_worker:
+            self._shutdown_thread(self._enhanced_worker, "EnhancedBacktestWorker")
+
+        if hasattr(self, '_worker') and self._worker:
+            self._shutdown_thread(self._worker, "BacktestWorker")
+
+        if hasattr(self, '_live_worker') and self._live_worker:
+            self._shutdown_thread(self._live_worker, "LiveAccountWorker")
+
+        if hasattr(self, '_trader') and self._trader:
+            try:
+                self._trader.stop()
+            except Exception as e:
+                logger.warning(f"停止交易器失败: {e}")
+
         event.accept()
 
 
