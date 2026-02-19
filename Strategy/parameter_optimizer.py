@@ -246,7 +246,7 @@ class ParameterOptimizer:
         self._convergence_data = []
         
         for i, value in enumerate(values):
-            if self._stop_flag:
+            if self._stop_flag.is_set():
                 break
             
             params = fixed_params.copy()
