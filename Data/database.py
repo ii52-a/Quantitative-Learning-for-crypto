@@ -181,18 +181,32 @@ class KlineRepository:
             if isinstance(close_time, pd.Timestamp):
                 close_time = int(close_time.value / 1_000_000)
 
+            try:
+                open_val = float(row["open"])
+                high_val = float(row["high"])
+                low_val = float(row["low"])
+                close_val = float(row["close"])
+                volume_val = float(row["volume"])
+                quote_volume = float(row.get("quote_volume", row.get("quote_asset_volume", 0)))
+                trades = int(row.get("trades", row.get("number_of_trades", 0)))
+                taker_buy_base = float(row.get("taker_buy_base", row.get("taker_buy_base_asset_volume", 0)))
+                taker_buy_quote = float(row.get("taker_buy_quote", row.get("taker_buy_quote_asset_volume", 0)))
+            except (ValueError, TypeError) as e:
+                logger.warning(f"[{self.symbol}] 数据格式错误，跳过该行: {e}")
+                continue
+
             records.append((
                 timestamp,
-                float(row["open"]),
-                float(row["high"]),
-                float(row["low"]),
-                float(row["close"]),
-                float(row["volume"]),
+                open_val,
+                high_val,
+                low_val,
+                close_val,
+                volume_val,
                 close_time,
-                float(row.get("quote_volume", row.get("quote_asset_volume", 0))),
-                int(row.get("trades", row.get("number_of_trades", 0))),
-                float(row.get("taker_buy_base", row.get("taker_buy_base_asset_volume", 0))),
-                float(row.get("taker_buy_quote", row.get("taker_buy_quote_asset_volume", 0))),
+                quote_volume,
+                trades,
+                taker_buy_base,
+                taker_buy_quote,
             ))
         return records
 
@@ -304,6 +318,15 @@ class KlineRepository:
                 (table_name,),
             )
             return cursor.fetchone() is not None
+
+    def list_tables(self, use_base_db: bool = True) -> list[str]:
+        db = self.base_db if use_base_db else self.aggregate_db
+
+        with db.connection() as conn:
+            cursor = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            )
+            return [row[0] for row in cursor.fetchall()]
 
 
 class DatabaseManager:

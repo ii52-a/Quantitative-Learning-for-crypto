@@ -20,11 +20,20 @@ from core.constants import SignalType, PositionSide
 
 
 class MACDStrategy(BaseStrategy):
-    """MACD趋势跟踪策略
+    """MACD趋势跟踪策略（支持双向交易）
     
     策略逻辑：
+    做多模式：
     1. HIST从负变正（金叉）-> 开多
     2. HIST从正变负（死叉）-> 平多
+    
+    做空模式：
+    1. HIST从正变负（死叉）-> 开空
+    2. HIST从负变正（金叉）-> 平空
+    
+    双向模式：
+    1. 金叉 -> 开多/平空
+    2. 死叉 -> 开空/平多
     
     适用场景：趋势行情
     风险等级：中等
@@ -32,11 +41,19 @@ class MACDStrategy(BaseStrategy):
     
     name = "MACDStrategy"
     display_name = "MACD趋势策略"
-    description = "基于MACD指标的趋势跟踪策略，适合趋势行情"
+    description = "基于MACD指标的趋势跟踪策略，支持做多/做空/双向交易"
     strategy_type = "trend_following"
     risk_level = "medium"
     
     parameters = [
+        StrategyParameter(
+            name="trade_mode",
+            display_name="交易模式",
+            description="交易方向：long_only=仅做多, short_only=仅做空, both=双向",
+            value_type=str,
+            default_value="long_only",
+            options=["long_only", "short_only", "both"],
+        ),
         StrategyParameter(
             name="hist_filter",
             display_name="HIST过滤",
@@ -108,20 +125,90 @@ class MACDStrategy(BaseStrategy):
         
         signal = None
         hist_filter = self._params.get("hist_filter", 0.0)
+        trade_mode = self._params.get("trade_mode", "long_only")
         
         if self._prev_hist is not None:
-            if self._prev_hist < -hist_filter and curr_hist > hist_filter and not context.has_position:
-                signal = Signal(
-                    type=SignalType.OPEN_LONG,
-                    price=bar.close,
-                    reason=f"MACD金叉 (HIST: {self._prev_hist:.2f} -> {curr_hist:.2f})",
-                )
-            elif self._prev_hist > hist_filter and curr_hist < -hist_filter and context.position.side == PositionSide.LONG:
-                signal = Signal(
-                    type=SignalType.CLOSE_LONG,
-                    price=bar.close,
-                    reason=f"MACD死叉 (HIST: {self._prev_hist:.2f} -> {curr_hist:.2f})",
-                )
+            golden_cross = self._prev_hist <= 0 and curr_hist > 0
+            death_cross = self._prev_hist >= 0 and curr_hist < 0
+            
+            has_long = context.position.side == PositionSide.LONG
+            has_short = context.position.side == PositionSide.SHORT
+            has_position = context.has_position
+            
+            if trade_mode == "long_only":
+                if golden_cross and abs(curr_hist) > hist_filter and not has_position:
+                    signal = Signal(
+                        type=SignalType.OPEN_LONG,
+                        price=bar.close,
+                        reason=f"MACD金叉做多 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                    )
+                elif death_cross and has_long:
+                    signal = Signal(
+                        type=SignalType.CLOSE_LONG,
+                        price=bar.close,
+                        reason=f"MACD死叉平多 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                    )
+            
+            elif trade_mode == "short_only":
+                if death_cross and abs(curr_hist) > hist_filter and not has_position:
+                    signal = Signal(
+                        type=SignalType.OPEN_SHORT,
+                        price=bar.close,
+                        reason=f"MACD死叉做空 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                    )
+                elif golden_cross and has_short:
+                    signal = Signal(
+                        type=SignalType.CLOSE_SHORT,
+                        price=bar.close,
+                        reason=f"MACD金叉平空 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                    )
+            
+            elif trade_mode == "both":
+                if golden_cross and abs(curr_hist) > hist_filter:
+                    if has_short:
+                        signal = Signal(
+                            type=SignalType.CLOSE_SHORT,
+                            price=bar.close,
+                            reason=f"MACD金叉平空 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                        )
+                        self._pending_open_long = True
+                    elif not has_position:
+                        signal = Signal(
+                            type=SignalType.OPEN_LONG,
+                            price=bar.close,
+                            reason=f"MACD金叉做多 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                        )
+                
+                elif death_cross and abs(curr_hist) > hist_filter:
+                    if has_long:
+                        signal = Signal(
+                            type=SignalType.CLOSE_LONG,
+                            price=bar.close,
+                            reason=f"MACD死叉平多 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                        )
+                        self._pending_open_short = True
+                    elif not has_position:
+                        signal = Signal(
+                            type=SignalType.OPEN_SHORT,
+                            price=bar.close,
+                            reason=f"MACD死叉做空 (HIST: {self._prev_hist:.4f} -> {curr_hist:.4f})",
+                        )
+                
+                if not has_position:
+                    if getattr(self, '_pending_open_long', False):
+                        signal = Signal(
+                            type=SignalType.OPEN_LONG,
+                            price=bar.close,
+                            reason=f"MACD金叉做多 (延迟)",
+                        )
+                        self._pending_open_long = False
+                    elif getattr(self, '_pending_open_short', False):
+                        signal = Signal(
+                            type=SignalType.OPEN_SHORT,
+                            price=bar.close,
+                            reason=f"MACD死叉做空 (延迟)",
+                        )
+                        self._pending_open_short = False
         
         self._prev_hist = curr_hist
         
@@ -132,7 +219,7 @@ class MACDStrategy(BaseStrategy):
                 "signal": curr_signal,
                 "hist": curr_hist,
             },
-            log=f"MACD={curr_macd:.2f}, Signal={curr_signal:.2f}, HIST={curr_hist:.2f}"
+            log=f"MACD={curr_macd:.2f}, Signal={curr_signal:.2f}, HIST={curr_hist:.4f}"
         )
     
     def get_required_data_count(self) -> int:

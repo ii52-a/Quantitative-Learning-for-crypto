@@ -45,6 +45,9 @@ class CompletedTrade:
     reason: str
     exit_type: str = "signal"
     leverage: int = 1
+    side: str = "long"
+    position_value: float = 0.0
+    margin_used: float = 0.0
 
 
 @dataclass
@@ -82,7 +85,17 @@ class BacktestResult:
     
     stop_loss_hits: int = 0
     take_profit_hits: int = 0
+    liquidation_hits: int = 0
     leverage: int = 1
+    
+    symbol: str = ""
+    interval: str = ""
+    strategy_name: str = ""
+    strategy_params: dict = field(default_factory=dict)
+    commission_rate: float = 0.0004
+    position_size: float = 0.1
+    stop_loss_pct: float = 0.0
+    take_profit_pct: float = 0.0
     
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -106,7 +119,16 @@ class BacktestResult:
             "end_time": str(self.end_time) if self.end_time else None,
             "stop_loss_hits": self.stop_loss_hits,
             "take_profit_hits": self.take_profit_hits,
+            "liquidation_hits": self.liquidation_hits,
             "leverage": self.leverage,
+            "symbol": self.symbol,
+            "interval": self.interval,
+            "strategy_name": self.strategy_name,
+            "strategy_params": self.strategy_params,
+            "commission_rate": self.commission_rate,
+            "position_size": self.position_size,
+            "stop_loss_pct": self.stop_loss_pct,
+            "take_profit_pct": self.take_profit_pct,
         }
 
 
@@ -133,6 +155,7 @@ class BacktestEngine:
         
         self._stop_loss_hits: int = 0
         self._take_profit_hits: int = 0
+        self._liquidation_hits: int = 0
         
         self._initialized = False
     
@@ -178,6 +201,10 @@ class BacktestEngine:
                 if sl_hit or tp_hit:
                     self._equity_history.append((timestamp, context.equity))
                     continue
+                
+                if self._check_liquidation(bar, timestamp):
+                    self._equity_history.append((timestamp, 0))
+                    continue
             
             result = self.strategy.on_bar(bar, context)
             
@@ -217,13 +244,119 @@ class BacktestEngine:
                 )
                 self._take_profit_hits += 1
         
+        elif self._position.side == PositionSide.SHORT:
+            if self._position.stop_loss and bar.high >= self._position.stop_loss:
+                sl_hit = True
+                self._close_position(
+                    price=self._position.stop_loss,
+                    timestamp=timestamp,
+                    reason="止损触发",
+                    exit_type="stop_loss"
+                )
+                self._stop_loss_hits += 1
+            
+            elif self._position.take_profit and bar.low <= self._position.take_profit:
+                tp_hit = True
+                self._close_position(
+                    price=self._position.take_profit,
+                    timestamp=timestamp,
+                    reason="止盈触发",
+                    exit_type="take_profit"
+                )
+                self._take_profit_hits += 1
+        
         return sl_hit, tp_hit
+    
+    def _check_liquidation(self, bar: Bar, timestamp: datetime) -> bool:
+        """检查爆仓
+        
+        爆仓条件：
+        - 当权益 <= 0 时爆仓
+        - 权益 = 资金 + 未实现盈亏
+        """
+        if not self._position.is_open:
+            return False
+        
+        equity = self._calculate_equity(bar.close)
+        
+        if equity <= 0:
+            entry_price = self._position.entry_price
+            quantity = self._position.quantity
+            leverage = self.config.leverage
+            
+            if self._position.side == PositionSide.LONG:
+                max_loss_pct = 1.0 / leverage
+                liquidation_price = entry_price * (1 - max_loss_pct)
+            else:
+                max_loss_pct = 1.0 / leverage
+                liquidation_price = entry_price * (1 + max_loss_pct)
+            
+            entry_price_val = self._position.entry_price
+            entry_time = self._position.entry_time
+            position_side = self._position.side
+            quantity = self._position.quantity
+            
+            exit_commission = quantity * liquidation_price * self.config.commission_rate
+            
+            self._capital = 0
+            
+            close_side = "CLOSE_LONG" if position_side == PositionSide.LONG else "CLOSE_SHORT"
+            
+            self._trade_id += 1
+            trade = Trade(
+                trade_id=self._trade_id,
+                timestamp=timestamp,
+                symbol=self.config.symbol,
+                side=close_side,
+                quantity=quantity,
+                price=liquidation_price,
+                commission=exit_commission,
+                pnl=-self._initial_capital,
+                reason=f"爆仓 (权益归零)",
+            )
+            self._trades.append(trade)
+            
+            entry_commission = quantity * entry_price_val * self.config.commission_rate
+            total_commission = entry_commission + exit_commission
+            
+            position_value = quantity * entry_price_val
+            margin_used = position_value / self.config.leverage
+            
+            completed = CompletedTrade(
+                entry_time=entry_time,
+                exit_time=timestamp,
+                entry_price=entry_price_val,
+                exit_price=liquidation_price,
+                quantity=quantity,
+                pnl=-self._initial_capital,
+                commission=total_commission,
+                reason=f"爆仓 (权益归零)",
+                exit_type="liquidation",
+                leverage=self.config.leverage,
+                side="long",
+                position_value=position_value,
+                margin_used=margin_used,
+            )
+            self._completed_trades.append(completed)
+            
+            self._position = Position(
+                side=PositionSide.EMPTY,
+                quantity=0.0,
+                entry_price=0.0,
+                entry_time=timestamp,
+            )
+            
+            self._liquidation_hits += 1
+            
+            return True
+        
+        return False
     
     def _close_position(
         self,
         price: float,
         timestamp: datetime,
-        reason: str,
+        reason: str = "",
         exit_type: str = "signal"
     ) -> None:
         """平仓"""
@@ -233,20 +366,27 @@ class BacktestEngine:
         quantity = self._position.quantity
         entry_price = self._position.entry_price
         entry_time = self._position.entry_time
+        position_side = self._position.side
         
-        price_diff = price - entry_price
+        if position_side == PositionSide.LONG:
+            price_diff = price - entry_price
+        else:
+            price_diff = entry_price - price
+        
         gross_pnl = price_diff * quantity * self.config.leverage
         exit_commission = quantity * price * self.config.commission_rate
         net_pnl = gross_pnl - exit_commission
         
         self._capital += gross_pnl - exit_commission
         
+        close_side = "CLOSE_LONG" if position_side == PositionSide.LONG else "CLOSE_SHORT"
+        
         self._trade_id += 1
         trade = Trade(
             trade_id=self._trade_id,
             timestamp=timestamp,
             symbol=self.config.symbol,
-            side="CLOSE_LONG",
+            side=close_side,
             quantity=quantity,
             price=price,
             commission=exit_commission,
@@ -257,6 +397,9 @@ class BacktestEngine:
         
         entry_commission = quantity * entry_price * self.config.commission_rate
         total_commission = entry_commission + exit_commission
+        
+        position_value = quantity * entry_price
+        margin_used = position_value / self.config.leverage
         
         completed = CompletedTrade(
             entry_time=entry_time,
@@ -269,6 +412,9 @@ class BacktestEngine:
             reason=reason,
             exit_type=exit_type,
             leverage=self.config.leverage,
+            side="long",
+            position_value=position_value,
+            margin_used=margin_used,
         )
         self._completed_trades.append(completed)
         
@@ -336,10 +482,70 @@ class BacktestEngine:
                 reason=signal.reason,
                 exit_type="signal"
             )
+        
+        elif signal.type == SignalType.OPEN_SHORT:
+            if self._position.is_open:
+                return
+            
+            quantity = self._calculate_position_size(bar.close)
+            if quantity <= 0:
+                return
+            
+            commission = quantity * bar.close * self.config.commission_rate
+            
+            stop_loss = signal.stop_loss
+            take_profit = signal.take_profit
+            
+            if stop_loss is None and self.risk_config.stop_loss_pct > 0:
+                stop_loss = self.risk_config.calculate_stop_loss_price(bar.close, is_long=False)
+            
+            if take_profit is None and self.risk_config.take_profit_pct > 0:
+                take_profit = self.risk_config.calculate_take_profit_price(bar.close, is_long=False)
+            
+            self._position = Position(
+                side=PositionSide.SHORT,
+                quantity=quantity,
+                entry_price=bar.close,
+                entry_time=timestamp,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+            )
+            
+            self._capital -= commission
+            
+            self._trade_id += 1
+            trade = Trade(
+                trade_id=self._trade_id,
+                timestamp=timestamp,
+                symbol=self.config.symbol,
+                side="OPEN_SHORT",
+                quantity=quantity,
+                price=bar.close,
+                commission=commission,
+                reason=signal.reason,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+            )
+            self._trades.append(trade)
+        
+        elif signal.type == SignalType.CLOSE_SHORT:
+            if not self._position.is_open or self._position.side != PositionSide.SHORT:
+                return
+            
+            self._close_position(
+                price=bar.close,
+                timestamp=timestamp,
+                reason=signal.reason,
+                exit_type="signal"
+            )
     
     def _calculate_position_size(self, price: float) -> float:
-        """计算仓位大小"""
-        position_value = self._capital * self.config.position_size * self.config.leverage
+        """计算仓位大小
+        
+        仓位数量 = 资金 * 仓位比例 / 价格
+        盈亏 = 价格变动 * 数量 * 杠杆
+        """
+        position_value = self._capital * self.config.position_size
         return position_value / price if price > 0 else 0.0
     
     def _calculate_equity(self, current_price: float) -> float:
@@ -349,6 +555,9 @@ class BacktestEngine:
         if self._position.is_open:
             if self._position.side == PositionSide.LONG:
                 unrealized_pnl = (current_price - self._position.entry_price) * self._position.quantity * self.config.leverage
+                equity += unrealized_pnl
+            elif self._position.side == PositionSide.SHORT:
+                unrealized_pnl = (self._position.entry_price - current_price) * self._position.quantity * self.config.leverage
                 equity += unrealized_pnl
         
         return equity
@@ -362,6 +571,15 @@ class BacktestEngine:
             leverage=self.config.leverage,
             stop_loss_hits=self._stop_loss_hits,
             take_profit_hits=self._take_profit_hits,
+            liquidation_hits=self._liquidation_hits,
+            symbol=self.config.symbol,
+            interval=self.config.interval,
+            strategy_name=self.strategy.name,
+            strategy_params=self.strategy.get_parameters(),
+            commission_rate=self.config.commission_rate,
+            position_size=self.config.position_size,
+            stop_loss_pct=self.config.stop_loss_pct,
+            take_profit_pct=self.config.take_profit_pct,
         )
         
         if self._equity_history:

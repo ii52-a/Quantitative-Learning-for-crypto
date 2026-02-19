@@ -74,9 +74,9 @@ class DataLoadWorker(QThread):
     
     def run(self):
         try:
-            self.progress.emit("正在初始化数据服务...")
+            self.progress.emit("正在连接数据源...")
             
-            from Data.data_service import get_data_service, DataServiceConfig, RegionRestrictedError, DataSourceError
+            from Data.data_service import get_data_service, DataServiceConfig
             import os
             
             use_proxy = os.getenv("USE_PROXY", "false").lower() == "true"
@@ -88,24 +88,14 @@ class DataLoadWorker(QThread):
                 proxy_host=proxy_host,
                 proxy_port=proxy_port,
                 prefer_database=True,
-                auto_init=False,
+                auto_init=True,
             )
             
             service = get_data_service(config)
             
             self.progress.emit(f"正在获取 {self.symbol} {self.interval} 数据...")
             
-            try:
-                df = service.get_backtest_data(self.symbol, self.interval, self.limit)
-            except RegionRestrictedError as e:
-                self.error.emit(f"API访问受限，请配置代理:\n{str(e)}")
-                return
-            except DataSourceError as e:
-                self.error.emit(f"数据源错误:\n{str(e)}")
-                return
-            except Exception as e:
-                self.error.emit(f"数据获取失败:\n{str(e)}")
-                return
+            df = service.get_backtest_data(self.symbol, self.interval, self.limit)
             
             if df.empty:
                 self.error.emit("数据获取失败，请检查网络连接和API配置")

@@ -4,6 +4,7 @@
 提供：
 - 统一的数据获取接口（数据库优先，API备用）
 - 基于基础数据（1分钟）聚合生成多周期数据，减少API调用
+- API请求限流保护，防止被封禁
 - 代理支持（解决地区限制）
 - 正确的interval映射
 - 完善的错误处理
@@ -27,6 +28,7 @@ from dotenv import load_dotenv
 from Config import ApiConfig
 from Data.database import DatabaseManager, KlineRepository, DatabaseConfig
 from Data.kline_aggregator import KlineAggregator
+from Data.rate_limiter import RateLimiter, RateLimitConfig, get_global_rate_limiter
 from app_logger.logger_setup import Logger
 
 load_dotenv()
@@ -69,6 +71,12 @@ class DataServiceConfig:
     prefer_database: bool = True
     auto_init: bool = True
     init_days: int = 1000
+    
+    enable_rate_limit: bool = True
+    requests_per_second: float = 3.0
+    requests_per_minute: int = 600
+    min_request_interval: float = 0.5
+    cache_ttl: int = 300
 
 
 class DataSourceError(Exception):
@@ -91,6 +99,17 @@ class UnifiedDataService:
         self._aggregation_cache: dict[str, dict[str, pd.DataFrame]] = {}
         self._cache_lock = threading.Lock()
         self._last_aggregation_time: dict[str, float] = {}
+        
+        if self.config.enable_rate_limit:
+            rate_config = RateLimitConfig(
+                requests_per_second=self.config.requests_per_second,
+                requests_per_minute=self.config.requests_per_minute,
+                min_request_interval=self.config.min_request_interval,
+                cache_ttl=self.config.cache_ttl,
+            )
+            self._rate_limiter = RateLimiter(rate_config)
+        else:
+            self._rate_limiter = None
 
     def _get_client(self) -> Client:
         if self._client is not None:
@@ -151,6 +170,18 @@ class UnifiedDataService:
         interval: str,
         limit: int = 500,
     ) -> pd.DataFrame:
+        if self._rate_limiter:
+            cache_key = f"klines_{symbol}_{interval}_{limit}"
+            cached, hit = self._rate_limiter.get_cached(cache_key)
+            if hit:
+                logger.info(f"[{symbol}] 使用缓存数据")
+                return cached
+        
+        if self._rate_limiter:
+            if not self._rate_limiter.acquire(f"klines_{symbol}"):
+                logger.warning(f"[{symbol}] 请求被限流，尝试从数据库获取")
+                return self.get_klines_from_database(symbol, interval, limit)
+        
         try:
             client = self._get_client()
             binance_interval = self.get_interval(interval)
@@ -158,22 +189,33 @@ class UnifiedDataService:
             actual_limit = min(limit, self.MAX_API_LIMIT)
             logger.info(f"[{symbol}] 从API获取数据: interval={binance_interval}, limit={actual_limit}")
 
+            start_time = time.time()
             klines = client.futures_klines(
                 symbol=symbol,
                 interval=binance_interval,
                 limit=actual_limit,
             )
+            response_time = time.time() - start_time
 
             if not klines:
                 logger.warning(f"[{symbol}] API返回空数据")
                 return pd.DataFrame()
 
             df = self._parse_klines(klines)
-            logger.info(f"[{symbol}] API获取成功: {len(df)} 条")
+            logger.info(f"[{symbol}] API获取成功: {len(df)} 条 (耗时: {response_time:.2f}s)")
+            
+            if self._rate_limiter:
+                self._rate_limiter.record_request(f"klines_{symbol}", True, response_time)
+                cache_key = f"klines_{symbol}_{interval}_{limit}"
+                self._rate_limiter.set_cache(cache_key, df)
+            
             return df
 
         except Exception as e:
             error_msg = str(e).lower()
+            
+            if self._rate_limiter:
+                self._rate_limiter.record_request(f"klines_{symbol}", False)
 
             if "restricted location" in error_msg or "eligibility" in error_msg:
                 logger.error(f"[{symbol}] 地区限制: {e}")
@@ -214,6 +256,7 @@ class UnifiedDataService:
             logger.info(f"[{symbol}] 分批获取数据: 总量={total_limit}, 批次={batches}")
 
             end_time = None
+            batch_delay = self.config.min_request_interval if self.config.enable_rate_limit else 0.3
 
             for i in range(batches):
                 batch_limit = min(self.MAX_API_LIMIT, total_limit - len(all_klines))
@@ -228,7 +271,14 @@ class UnifiedDataService:
                     params["endTime"] = end_time - 1
 
                 try:
+                    if self._rate_limiter:
+                        if not self._rate_limiter.acquire(f"batch_{symbol}"):
+                            time.sleep(batch_delay * 2)
+                    
+                    start_time = time.time()
                     klines = client.futures_klines(**params)
+                    response_time = time.time() - start_time
+                    
                     if not klines:
                         break
 
@@ -238,7 +288,13 @@ class UnifiedDataService:
                     if progress_callback:
                         progress_callback(len(all_klines), total_limit)
 
-                    logger.info(f"[{symbol}] 批次 {i+1}/{batches}: 获取 {len(klines)} 条, 累计 {len(all_klines)} 条")
+                    logger.info(f"[{symbol}] 批次 {i+1}/{batches}: 获取 {len(klines)} 条, 累计 {len(all_klines)} 条 (耗时: {response_time:.2f}s)")
+                    
+                    if self._rate_limiter:
+                        self._rate_limiter.record_request(f"batch_{symbol}", True, response_time)
+                    
+                    if i < batches - 1:
+                        time.sleep(batch_delay)
 
                     time.sleep(ApiConfig.API_BASE_GET_INTERVAL)
 
@@ -265,7 +321,21 @@ class UnifiedDataService:
             return pd.DataFrame()
 
     def _parse_klines(self, klines: list) -> pd.DataFrame:
-        df = pd.DataFrame(klines, columns=[
+        valid_klines = []
+        for k in klines:
+            if len(k) < 6:
+                continue
+            try:
+                for i in range(1, 6):
+                    float(k[i])
+                valid_klines.append(k)
+            except (ValueError, TypeError):
+                continue
+        
+        if not valid_klines:
+            return pd.DataFrame()
+            
+        df = pd.DataFrame(valid_klines, columns=[
             'timestamp', 'open', 'high', 'low', 'close', 'volume',
             'close_time', 'quote_asset_volume', 'number_of_trades',
             'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
@@ -410,7 +480,8 @@ class UnifiedDataService:
                 if aggregated is not None and len(aggregated) >= limit:
                     return aggregated.tail(limit)
             
-            logger.info(f"[{symbol}] 数据库数据不足 ({len(df)}/{limit})，尝试API获取")
+            missing_count = limit - len(df)
+            logger.info(f"[{symbol}] 数据库数据不足 ({len(df)}/{limit})，需补充 {missing_count} 条")
 
         if interval == BASE_INTERVAL:
             try:
@@ -427,34 +498,6 @@ class UnifiedDataService:
             except Exception as e:
                 logger.error(f"[{symbol}] 数据获取失败: {e}")
                 return self.get_klines_from_database(symbol, interval, limit)
-        
-        if self._can_aggregate_from_base(interval):
-            base_limit = limit * INTERVAL_TO_MINUTES.get(interval, 30)
-            
-            try:
-                base_df = self.get_klines_from_api_batch(symbol, BASE_INTERVAL, base_limit)
-                if not base_df.empty:
-                    self.save_to_database(base_df, symbol, BASE_INTERVAL)
-                    
-                    aggregated = self._aggregate_from_base(base_df, interval, limit)
-                    if aggregated is not None and not aggregated.empty:
-                        self.save_to_database(aggregated, symbol, interval)
-                        return aggregated.tail(limit) if len(aggregated) > limit else aggregated
-            except RegionRestrictedError:
-                logger.warning(f"[{symbol}] API地区限制，尝试聚合获取")
-                aggregated = self.get_klines_via_aggregation(symbol, interval, limit)
-                if aggregated is not None:
-                    return aggregated
-            except DataSourceError as e:
-                logger.error(f"[{symbol}] 数据源错误: {e}")
-                aggregated = self.get_klines_via_aggregation(symbol, interval, limit)
-                if aggregated is not None:
-                    return aggregated
-            except Exception as e:
-                logger.error(f"[{symbol}] 数据获取失败: {e}")
-                aggregated = self.get_klines_via_aggregation(symbol, interval, limit)
-                if aggregated is not None:
-                    return aggregated
         
         try:
             df = self.get_klines_from_api_batch(symbol, interval, limit)
@@ -589,6 +632,23 @@ class UnifiedDataService:
                 status["intervals"][interval] = {"count": 0, "start": None, "end": None}
 
         return status
+    
+    def get_rate_limit_stats(self) -> dict[str, Any]:
+        """获取限流统计信息"""
+        if self._rate_limiter:
+            return self._rate_limiter.get_stats()
+        return {
+            "rate_limiting_enabled": False,
+            "total_requests": 0,
+            "successful_requests": 0,
+            "failed_requests": 0,
+        }
+    
+    def clear_cache(self) -> None:
+        """清空请求缓存"""
+        if self._rate_limiter:
+            self._rate_limiter.clear_cache()
+            logger.info("数据服务缓存已清空")
 
 
 _data_service: UnifiedDataService | None = None

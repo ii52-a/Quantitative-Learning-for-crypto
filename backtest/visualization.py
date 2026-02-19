@@ -559,8 +559,31 @@ class BacktestVisualizer:
         </div>
         
         <div class="chart-container">
+            <div class="chart-title">⚙️ 回测参数</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 12px;">
+                <div><strong>交易对:</strong> {result.symbol}</div>
+                <div><strong>周期:</strong> {result.interval}</div>
+                <div><strong>策略:</strong> {result.strategy_name}</div>
+                <div><strong>杠杆:</strong> {result.leverage}x</div>
+                <div><strong>初始资金:</strong> {result.initial_capital:,.0f} USDT</div>
+                <div><strong>仓位比例:</strong> {result.position_size*100:.0f}%</div>
+                <div><strong>止损率:</strong> {result.stop_loss_pct:.1f}%</div>
+                <div><strong>止盈率:</strong> {result.take_profit_pct:.1f}%</div>
+                <div><strong>手续费率:</strong> {result.commission_rate*100:.2f}%</div>
+            </div>
+            <div style="padding: 0 12px 12px;">
+                <strong>策略参数:</strong> {', '.join(f'{k}={v}' for k, v in result.strategy_params.items()) if result.strategy_params else '默认'}
+            </div>
+        </div>
+        
+        <div class="chart-container">
             <div class="chart-title">📈 K线图与交易标记</div>
             <div id="kline-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-title">📊 MACD指标</div>
+            <div id="macd-chart"></div>
         </div>
         
         <div class="chart-container">
@@ -580,9 +603,13 @@ class BacktestVisualizer:
                     <tr>
                         <th>开仓时间</th>
                         <th>平仓时间</th>
+                        <th>方向</th>
                         <th>开仓价</th>
                         <th>平仓价</th>
                         <th>数量</th>
+                        <th>仓位金额</th>
+                        <th>保证金</th>
+                        <th>手续费</th>
                         <th>盈亏</th>
                         <th>平仓原因</th>
                     </tr>
@@ -747,10 +774,76 @@ class BacktestVisualizer:
         }};
         drawdownChart.setOption(drawdownOption);
         
+        // MACD指标图
+        const macdChart = echarts.init(document.getElementById('macd-chart'));
+        const macdData = this._calculate_macd(chartData.candles.map(c => c.close));
+        const macdOption = {{
+            backgroundColor: '#1e222d',
+            tooltip: {{
+                trigger: 'axis',
+                backgroundColor: '#2a2e39',
+                borderColor: '#2a2e39',
+                textStyle: {{ color: '#eaecef' }}
+            }},
+            legend: {{
+                data: ['DIF', 'DEA', 'MACD柱'],
+                textStyle: {{ color: '#848e9c' }},
+                top: 10
+            }},
+            grid: {{ left: '10%', right: '8%', top: '20%', bottom: '15%' }},
+            xAxis: {{
+                type: 'category',
+                data: chartData.candles.map(c => c.time),
+                axisLine: {{ lineStyle: {{ color: '#2a2e39' }} }},
+                axisLabel: {{ show: false }}
+            }},
+            yAxis: [
+                {{
+                    type: 'value',
+                    position: 'left',
+                    axisLine: {{ lineStyle: {{ color: '#2a2e39' }} }},
+                    splitLine: {{ lineStyle: {{ color: '#2a2e39' }} }},
+                    axisLabel: {{ color: '#848e9c' }}
+                }}
+            ],
+            dataZoom: [
+                {{ type: 'inside', start: 80, end: 100 }},
+                {{ type: 'slider', bottom: 10, start: 80, end: 100, borderColor: '#2a2e39', backgroundColor: '#1e222d', fillerColor: 'rgba(240, 185, 11, 0.2)', handleStyle: {{ color: '#f0b90b' }}, textStyle: {{ color: '#848e9c' }} }}
+            ],
+            series: [
+                {{
+                    name: 'DIF',
+                    type: 'line',
+                    data: macdData.dif,
+                    lineStyle: {{ color: '#f0b90b', width: 1.5 }},
+                    symbol: 'none'
+                }},
+                {{
+                    name: 'DEA',
+                    type: 'line',
+                    data: macdData.dea,
+                    lineStyle: {{ color: '#0ecb81', width: 1.5 }},
+                    symbol: 'none'
+                }},
+                {{
+                    name: 'MACD柱',
+                    type: 'bar',
+                    data: macdData.histogram,
+                    itemStyle: {{
+                        color: function(params) {{
+                            return params.value >= 0 ? '#0ecb81' : '#f6465d';
+                        }}
+                    }}
+                }}
+            ]
+        }};
+        macdChart.setOption(macdOption);
+        
         window.addEventListener('resize', function() {{
             klineChart.resize();
             equityChart.resize();
             drawdownChart.resize();
+            macdChart.resize();
         }});
         
         function _calculate_drawdown_data(equityData) {{
@@ -764,6 +857,30 @@ class BacktestVisualizer:
                 result.push(drawdown);
             }}
             return result;
+        }}
+        
+        function _calculate_macd(closePrices) {{
+            const fastPeriod = 12;
+            const slowPeriod = 26;
+            const signalPeriod = 9;
+            
+            function ema(data, period) {{
+                const k = 2 / (period + 1);
+                const result = [data[0]];
+                for (let i = 1; i < data.length; i++) {{
+                    result.push(data[i] * k + result[i - 1] * (1 - k));
+                }}
+                return result;
+            }}
+            
+            const fastEma = ema(closePrices, fastPeriod);
+            const slowEma = ema(closePrices, slowPeriod);
+            
+            const dif = fastEma.map((v, i) => v - slowEma[i]);
+            const dea = ema(dif, signalPeriod);
+            const histogram = dif.map((v, i) => (v - dea[i]) * 2);
+            
+            return {{ dif, dea, histogram }};
         }}
     </script>
 </body>
@@ -781,13 +898,24 @@ class BacktestVisualizer:
         for t in completed_trades:
             pnl_class = "profit" if t.pnl > 0 else "loss"
             exit_type = t.exit_type if hasattr(t, 'exit_type') else "signal"
+            side = t.side if hasattr(t, 'side') else "long"
+            side_class = "profit" if side == "long" else "loss"
+            side_text = "做多" if side == "long" else "做空"
+            
+            position_value = t.position_value if hasattr(t, 'position_value') else t.entry_price * t.quantity
+            margin_used = t.margin_used if hasattr(t, 'margin_used') else position_value / t.leverage
+            commission = t.commission if hasattr(t, 'commission') else 0
             
             row = f'''<tr>
                 <td>{t.entry_time}</td>
                 <td>{t.exit_time}</td>
+                <td class="{side_class}">{side_text}</td>
                 <td>{t.entry_price:.2f}</td>
                 <td>{t.exit_price:.2f}</td>
                 <td>{t.quantity:.4f}</td>
+                <td>{position_value:.2f}</td>
+                <td>{margin_used:.2f}</td>
+                <td>{commission:.2f}</td>
                 <td class="{pnl_class}">{t.pnl:.2f}</td>
                 <td>{exit_type}</td>
             </tr>'''

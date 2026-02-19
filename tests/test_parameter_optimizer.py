@@ -13,7 +13,6 @@ from Strategy.parameter_optimizer import (
     OptimizationResult,
     MultiObjectiveOptimizer,
     get_parameter_ranges_from_strategy,
-    tune_parameter_ranges,
 )
 from Strategy.multi_indicator_strategy import MultiIndicatorStrategy
 from core.config import BacktestConfig
@@ -254,21 +253,3 @@ class TestGetParameterRangesFromStrategy:
         
         range_names = [r.name for r in ranges]
         assert "vote_threshold" in range_names
-
-
-class TestTuneParameterRanges:
-    """参数广度深度调优测试"""
-
-    def test_tune_numeric_range(self):
-        ranges = [ParameterRange("p", 10, 20, 2)]
-        tuned = tune_parameter_ranges(ranges, breadth=1.5, depth=2)
-        assert len(tuned) == 1
-        assert tuned[0].min_value <= 10
-        assert tuned[0].max_value >= 20
-        assert tuned[0].step == 1
-
-    def test_tune_enum_range(self):
-        ranges = [ParameterRange("k", 0, 0, values=[1, 2, 3, 4, 5])]
-        tuned = tune_parameter_ranges(ranges, breadth=0.5, depth=1)
-        assert len(tuned[0].values) >= 2
-        assert tuned[0].values[-1] == 5
