@@ -429,6 +429,44 @@ class BacktestEngine:
     def _process_signal(self, signal: Signal, bar: Bar, timestamp: datetime) -> None:
         """处理交易信号"""
         if signal.type == SignalType.OPEN_LONG:
+            if self._position.is_open and self._position.side == PositionSide.LONG:
+                add_pct = float(signal.extra.get("add_position_pct", 0.0)) if signal.extra else 0.0
+                if add_pct <= 0:
+                    return
+
+                add_qty = self._calculate_position_size(bar.close) * add_pct
+                if add_qty <= 0:
+                    return
+
+                old_qty = self._position.quantity
+                new_qty = old_qty + add_qty
+                new_entry = (
+                    self._position.entry_price * old_qty + bar.close * add_qty
+                ) / new_qty
+
+                commission = add_qty * bar.close * self.config.commission_rate
+                self._capital -= commission
+
+                self._position.quantity = new_qty
+                self._position.entry_price = new_entry
+
+                self._trade_id += 1
+                self._trades.append(
+                    Trade(
+                        trade_id=self._trade_id,
+                        timestamp=timestamp,
+                        symbol=self.config.symbol,
+                        side="ADD_LONG",
+                        quantity=add_qty,
+                        price=bar.close,
+                        commission=commission,
+                        reason=signal.reason,
+                        stop_loss=self._position.stop_loss,
+                        take_profit=self._position.take_profit,
+                    )
+                )
+                return
+
             if self._position.is_open:
                 return
             
