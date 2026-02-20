@@ -550,7 +550,7 @@ class LiveTrader:
             strategy_params = self._strategy.get_parameters() if hasattr(self._strategy, "get_parameters") else {}
             auto_select = str(strategy_params.get("auto_select_symbol", "true")).lower() == "true"
             if self._strategy.__class__.__name__ in {"OrderFlowPullbackStrategy", "OrderFlowWoolStrategy"} and auto_select:
-                selected_symbol = self._pick_volatile_symbol()
+                selected_symbol = self._pick_volatile_symbol(strategy_params)
                 if selected_symbol and selected_symbol != self.config.symbol:
                     self.config.symbol = selected_symbol
                     logger.info(f"订单流策略自动选币: {selected_symbol}")
@@ -663,8 +663,8 @@ class LiveTrader:
         elif signal.type == SignalType.CLOSE_SHORT and current_position and current_position.side == "short":
             self._close_position(symbol)
     
-    def _pick_volatile_symbol(self) -> str | None:
-        """自动选择高波动USDT交易对"""
+    def _pick_volatile_symbol(self, strategy_params: dict | None = None) -> str | None:
+        """自动选择更适合订单流的USDT交易对（兼顾波动和成交活跃度）"""
         try:
             if self.config.mode == TradingMode.TEST:
                 return self.config.symbol
@@ -672,6 +672,13 @@ class LiveTrader:
             response = requests.get(f"{self._base_url}/fapi/v1/ticker/24hr", timeout=10)
             if response.status_code != 200:
                 return None
+
+            min_quote_volume = 5_000_000.0
+            if strategy_params and "min_quote_volume" in strategy_params:
+                try:
+                    min_quote_volume = max(1_000_000.0, float(strategy_params.get("min_quote_volume", min_quote_volume)))
+                except Exception:
+                    pass
 
             tickers = response.json()
             candidates = []
@@ -684,11 +691,20 @@ class LiveTrader:
                 try:
                     change_pct = abs(float(t.get("priceChangePercent", 0)))
                     quote_volume = float(t.get("quoteVolume", 0))
+                    last_price = float(t.get("lastPrice", 0))
+                    price_change = abs(float(t.get("priceChange", 0)))
                 except Exception:
                     continue
-                if quote_volume < 5_000_000:
+
+                if quote_volume < min_quote_volume or last_price <= 0:
                     continue
-                candidates.append((change_pct, quote_volume, symbol))
+
+                intraday_move_ratio = (price_change / last_price) * 100
+                liquidity_score = min(40.0, quote_volume / 25_000_000)
+                momentum_score = min(40.0, change_pct * 1.8)
+                noise_penalty = max(0.0, intraday_move_ratio - 25.0) * 0.8
+                score = liquidity_score + momentum_score - noise_penalty
+                candidates.append((score, quote_volume, symbol))
 
             if not candidates:
                 return None

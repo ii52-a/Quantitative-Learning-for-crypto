@@ -5,6 +5,7 @@
 """
 
 import pandas as pd
+from collections import deque
 from typing import Any
 
 from Strategy.base import (
@@ -566,6 +567,14 @@ class OrderFlowPullbackStrategy(BaseStrategy):
 
     parameters = [
         StrategyParameter(
+            name="auto_select_symbol",
+            display_name="自动选币",
+            description="实盘时自动切换到更活跃的USDT币对",
+            value_type=str,
+            default_value="true",
+            options=["true", "false"],
+        ),
+        StrategyParameter(
             name="momentum_bars",
             display_name="动量K线数",
             description="动量判断窗口",
@@ -704,8 +713,8 @@ class OrderFlowPullbackStrategy(BaseStrategy):
 
     def __init__(self, params: dict[str, Any] | None = None):
         super().__init__(params)
-        self._closes: list[float] = []
-        self._volumes: list[float] = []
+        self._closes: deque[float] = deque(maxlen=720)
+        self._volumes: deque[float] = deque(maxlen=720)
         self._peak_price: float = 0.0
         self._last_add_price: float = 0.0
         self._add_count: int = 0
@@ -713,8 +722,8 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         self._rsi = RSI(period=14)
 
     def initialize(self, context: StrategyContext) -> None:
-        self._closes = []
-        self._volumes = []
+        self._closes.clear()
+        self._volumes.clear()
         self._peak_price = 0.0
         self._last_add_price = 0.0
         self._add_count = 0
@@ -744,15 +753,18 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         momentum_add_boost = float(self._params.get("momentum_add_boost", 0.25))
         cooldown_bars = int(self._params.get("cooldown_bars", 2))
 
-        recent = pd.Series(self._closes[-(momentum_bars + 1):])
-        momentum_pct = max(0.0, (recent.iloc[-1] - recent.iloc[0]) / recent.iloc[0] * 100)
-        recent_closes = self._closes[-momentum_bars:]
+        closes_window = list(self._closes)
+        volumes_window = list(self._volumes)
+        recent = closes_window[-(momentum_bars + 1):]
+        momentum_pct = max(0.0, (recent[-1] - recent[0]) / recent[0] * 100)
+        recent_closes = closes_window[-momentum_bars:]
         consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
 
-        avg_volume = float(pd.Series(self._volumes[-20:]).mean())
-        curr_volume = self._volumes[-1]
+        last_20_volumes = volumes_window[-20:]
+        avg_volume = float(sum(last_20_volumes) / len(last_20_volumes)) if last_20_volumes else 0.0
+        curr_volume = volumes_window[-1]
         volume_ratio = (curr_volume / avg_volume) if avg_volume > 0 else 0
-        rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
+        rsi_value = float(self._rsi.calculate(pd.Series(closes_window[-60:])).iloc[-1])
         in_overbought = rsi_value >= overbought_rsi
         volume_ok = min_volume_ratio <= volume_ratio <= max_volume_ratio
 
@@ -867,6 +879,7 @@ class OrderFlowWoolStrategy(BaseStrategy):
     risk_level = "high"
 
     parameters = [
+        StrategyParameter(name="auto_select_symbol", display_name="自动选币", description="实盘时自动切换到更活跃的USDT币对", value_type=str, default_value="true", options=["true", "false"]),
         StrategyParameter(name="momentum_bars", display_name="动量K线数", description="动量判断窗口", value_type=int, default_value=4, min_value=2, max_value=10),
         StrategyParameter(name="overbought_rsi", display_name="超买RSI阈值", description="进入超买区才允许持续加仓", value_type=float, default_value=68.0, min_value=55.0, max_value=90.0),
         StrategyParameter(name="min_volume_ratio", display_name="最低量比", description="过滤量能不足币对", value_type=float, default_value=0.9, min_value=0.6, max_value=3.0),
@@ -886,8 +899,8 @@ class OrderFlowWoolStrategy(BaseStrategy):
 
     def __init__(self, params: dict[str, Any] | None = None):
         super().__init__(params)
-        self._closes: list[float] = []
-        self._volumes: list[float] = []
+        self._closes: deque[float] = deque(maxlen=720)
+        self._volumes: deque[float] = deque(maxlen=720)
         self._peak_price: float = 0.0
         self._last_add_price: float = 0.0
         self._add_count: int = 0
@@ -925,15 +938,18 @@ class OrderFlowWoolStrategy(BaseStrategy):
         momentum_add_boost = float(self._params.get("momentum_add_boost", 0.25))
         cooldown_bars = int(self._params.get("cooldown_bars", 2))
 
-        recent = pd.Series(self._closes[-(momentum_bars + 1):])
-        momentum_pct = max(0.0, (recent.iloc[-1] - recent.iloc[0]) / recent.iloc[0] * 100)
-        recent_closes = self._closes[-momentum_bars:]
+        closes_window = list(self._closes)
+        volumes_window = list(self._volumes)
+        recent = closes_window[-(momentum_bars + 1):]
+        momentum_pct = max(0.0, (recent[-1] - recent[0]) / recent[0] * 100)
+        recent_closes = closes_window[-momentum_bars:]
         consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
 
-        avg_volume = float(pd.Series(self._volumes[-20:]).mean())
-        curr_volume = self._volumes[-1]
+        last_20_volumes = volumes_window[-20:]
+        avg_volume = float(sum(last_20_volumes) / len(last_20_volumes)) if last_20_volumes else 0.0
+        curr_volume = volumes_window[-1]
         volume_boost = (curr_volume / avg_volume) if avg_volume > 0 else 0
-        rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
+        rsi_value = float(self._rsi.calculate(pd.Series(closes_window[-60:])).iloc[-1])
         in_overbought = rsi_value >= overbought_rsi
         volume_ok = min_volume_ratio <= volume_boost <= max_volume_ratio
 

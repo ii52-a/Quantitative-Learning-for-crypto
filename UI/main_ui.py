@@ -1182,38 +1182,39 @@ class TradingUI(QMainWindow):
     def _show_strategy_config_dialog(self):
         """显示策略参数配置弹窗"""
         from PyQt5.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QScrollArea
-        
+        from Strategy.templates import get_strategy
+
         dialog = QDialog(self)
         dialog.setWindowTitle("策略参数配置")
-        dialog.setMinimumWidth(450)
-        dialog.setMinimumHeight(400)
+        dialog.setMinimumWidth(620)
+        dialog.setMinimumHeight(520)
         dialog.setStyleSheet("""
             QDialog { background-color: #1e222d; }
             QLabel { color: #eaecef; }
-            QSpinBox, QDoubleSpinBox, QComboBox { 
-                background-color: #0b0e11; 
-                border: 1px solid #2a2e39; 
-                border-radius: 4px; 
+            QSpinBox, QDoubleSpinBox, QComboBox {
+                background-color: #0b0e11;
+                border: 1px solid #2a2e39;
+                border-radius: 4px;
                 padding: 4px;
                 color: #eaecef;
-                min-width: 80px;
+                min-width: 90px;
             }
-            QGroupBox { 
-                color: #f0b90b; 
-                border: 1px solid #2a2e39; 
-                border-radius: 4px; 
+            QGroupBox {
+                color: #f0b90b;
+                border: 1px solid #2a2e39;
+                border-radius: 4px;
                 margin-top: 10px;
                 padding-top: 10px;
             }
             QGroupBox::title { subcontrol-origin: margin; left: 10px; }
             QScrollArea { border: none; background-color: transparent; }
         """)
-        
+
         main_layout = QVBoxLayout(dialog)
-        
+
         strategy_group = QGroupBox("策略选择")
         strategy_layout = QVBoxLayout(strategy_group)
-        
+
         strategy_combo = QComboBox()
         strategy_combo.addItems(list(self.STRATEGIES.keys()))
         if hasattr(self, 'live_strategy'):
@@ -1222,103 +1223,125 @@ class TradingUI(QMainWindow):
                 strategy_combo.setCurrentIndex(idx)
         strategy_layout.addWidget(strategy_combo)
         main_layout.addWidget(strategy_group)
-        
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
-        
+
         param_group = QGroupBox("策略参数")
         self._dialog_param_layout = QGridLayout(param_group)
+        self._dialog_param_layout.setHorizontalSpacing(14)
+        self._dialog_param_layout.setVerticalSpacing(8)
         self._dialog_param_widgets = {}
         scroll_layout.addWidget(param_group)
-        
+
         scroll.setWidget(scroll_widget)
         main_layout.addWidget(scroll, 1)
-        
+
         def update_params():
-            strategy_name = strategy_combo.currentText()
-            strategy_class = self.STRATEGIES.get(strategy_name)
-            
             while self._dialog_param_layout.count():
                 item = self._dialog_param_layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
             self._dialog_param_widgets.clear()
-            
-            if strategy_class:
-                try:
-                    temp_strategy = strategy_class({})
-                    param_ranges = temp_strategy.get_param_ranges()
-                    
-                    for i, pr in enumerate(param_ranges):
-                        label = QLabel(pr.name)
-                        label.setStyleSheet("color: #eaecef;")
-                        self._dialog_param_layout.addWidget(label, i, 0)
-                        
-                        if pr.values:
-                            combo = QComboBox()
-                            combo.addItems([str(v) for v in pr.values])
-                            self._dialog_param_layout.addWidget(combo, i, 1)
-                            self._dialog_param_widgets[pr.name] = combo
-                        else:
-                            spinbox = QDoubleSpinBox()
-                            spinbox.setRange(pr.min_value, pr.max_value)
-                            spinbox.setValue(pr.min_value)
-                            spinbox.setSingleStep(pr.step if pr.step > 0 else 1)
-                            self._dialog_param_layout.addWidget(spinbox, i, 1)
-                            self._dialog_param_widgets[pr.name] = spinbox
-                        
-                        range_label = QLabel(f"[{pr.min_value} ~ {pr.max_value}]")
-                        range_label.setStyleSheet("color: #848e9c; font-size: 10px;")
-                        self._dialog_param_layout.addWidget(range_label, i, 2)
-                        
-                except Exception as e:
-                    pass
-        
+
+            strategy_name = strategy_combo.currentText()
+            strategy = get_strategy(self.STRATEGIES.get(strategy_name, strategy_name))
+            info = strategy.get_info()
+            param_defs = info.get("parameters", [])
+
+            for i, p in enumerate(param_defs):
+                row = i // 2
+                col = (i % 2) * 3
+
+                label = QLabel(p["display_name"])
+                label.setToolTip(p.get("description", ""))
+                self._dialog_param_layout.addWidget(label, row, col)
+
+                if p.get("options"):
+                    widget = QComboBox()
+                    widget.addItems([str(x) for x in p["options"]])
+                    widget.setCurrentText(str(p.get("default", p["options"][0])))
+                elif p["type"] == "float":
+                    widget = QDoubleSpinBox()
+                    widget.setRange(float(p.get("min", 0)), float(p.get("max", 1000000)))
+                    widget.setValue(float(p.get("default", 0)))
+                    widget.setSingleStep(0.1)
+                    widget.setDecimals(4)
+                else:
+                    widget = QSpinBox()
+                    widget.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
+                    widget.setValue(int(p.get("default", 0)))
+
+                widget.setMinimumWidth(120)
+                live_widget = getattr(self, '_live_param_widgets', {}).get(p["name"])
+                if live_widget is not None:
+                    if isinstance(widget, QComboBox) and isinstance(live_widget, QComboBox):
+                        widget.setCurrentText(live_widget.currentText())
+                    elif isinstance(widget, QSpinBox) and isinstance(live_widget, QSpinBox):
+                        widget.setValue(live_widget.value())
+                    elif isinstance(widget, QDoubleSpinBox) and isinstance(live_widget, QDoubleSpinBox):
+                        widget.setValue(live_widget.value())
+
+                self._dialog_param_layout.addWidget(widget, row, col + 1)
+                self._dialog_param_widgets[p["name"]] = widget
+
+                hint = f"[{p.get('min', '-') } ~ {p.get('max', '-')}]"
+                hint_label = QLabel(hint)
+                hint_label.setStyleSheet("color: #848e9c; font-size: 10px;")
+                self._dialog_param_layout.addWidget(hint_label, row, col + 2)
+
         strategy_combo.currentTextChanged.connect(update_params)
         update_params()
-        
+
         risk_group = QGroupBox("风险参数")
         risk_layout = QGridLayout(risk_group)
-        
+
         stop_loss = QDoubleSpinBox()
         stop_loss.setRange(0, 50)
         stop_loss.setValue(self.live_stop_loss.value() if hasattr(self, 'live_stop_loss') else 5)
         risk_layout.addWidget(QLabel("止损%"), 0, 0)
         risk_layout.addWidget(stop_loss, 0, 1)
-        
+
         take_profit = QDoubleSpinBox()
         take_profit.setRange(0, 100)
         take_profit.setValue(self.live_take_profit.value() if hasattr(self, 'live_take_profit') else 10)
         risk_layout.addWidget(QLabel("止盈%"), 0, 2)
         risk_layout.addWidget(take_profit, 0, 3)
-        
+
         main_layout.addWidget(risk_group)
-        
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         main_layout.addWidget(buttons)
-        
+
         if dialog.exec_() == QDialog.Accepted:
             if hasattr(self, 'live_strategy'):
                 idx = strategy_combo.findText(strategy_combo.currentText())
                 if idx >= 0:
                     self.live_strategy.setCurrentIndex(idx)
-            
+
             if hasattr(self, 'live_stop_loss'):
                 self.live_stop_loss.setValue(stop_loss.value())
             if hasattr(self, 'live_take_profit'):
                 self.live_take_profit.setValue(take_profit.value())
-            
-            params_str = ", ".join(f"{k}={v.currentText() if isinstance(v, QComboBox) else v.value()}" 
-                                   for k, v in self._dialog_param_widgets.items())
+
+            self._apply_live_strategy_params(self._collect_live_strategy_params() | {
+                k: v.currentText() if isinstance(v, QComboBox) else v.value()
+                for k, v in self._dialog_param_widgets.items()
+            })
+
+            params_str = ", ".join(
+                f"{k}={v.currentText() if isinstance(v, QComboBox) else v.value()}"
+                for k, v in self._dialog_param_widgets.items()
+            )
             self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚙️ 策略参数已更新")
             self.live_log.append(f"   策略: {strategy_combo.currentText()}")
             self.live_log.append(f"   参数: {params_str}")
             self.live_log.append(f"   止损: {stop_loss.value()}% | 止盈: {take_profit.value()}%")
-    
+
     def _create_live_position_panel(self) -> QWidget:
         """创建持仓面板"""
         panel = QFrame()
@@ -3698,9 +3721,18 @@ class TradingUI(QMainWindow):
             if item.widget():
                 item.widget().deleteLater()
 
+        self.live_params_layout.setHorizontalSpacing(12)
+        self.live_params_layout.setVerticalSpacing(8)
         self._live_param_widgets = {}
+
         for i, p in enumerate(info.get("parameters", [])):
-            self.live_params_layout.addWidget(QLabel(p["display_name"]), i, 0)
+            row = i // 2
+            col = (i % 2) * 2
+
+            label = QLabel(p["display_name"])
+            label.setToolTip(p.get("description", ""))
+            self.live_params_layout.addWidget(label, row, col)
+
             if p.get("options"):
                 w = QComboBox()
                 w.addItems([str(x) for x in p["options"]])
@@ -3710,12 +3742,15 @@ class TradingUI(QMainWindow):
                 w.setRange(float(p.get("min", 0)), float(p.get("max", 1000000)))
                 w.setValue(float(p.get("default", 0)))
                 w.setSingleStep(0.1)
+                w.setDecimals(4)
             else:
                 w = QSpinBox()
                 w.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
                 w.setValue(int(p.get("default", 0)))
+
+            w.setMinimumWidth(120)
             self._live_param_widgets[p["name"]] = w
-            self.live_params_layout.addWidget(w, i, 1)
+            self.live_params_layout.addWidget(w, row, col + 1)
 
     def _collect_live_strategy_params(self) -> dict:
         params = {}
