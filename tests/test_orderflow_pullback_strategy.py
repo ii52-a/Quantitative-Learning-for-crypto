@@ -41,3 +41,37 @@ def test_orderflow_pullback_strategy_can_add_position_and_close_on_pullback():
     add_trades = [t for t in result.trades if t.side == "ADD_LONG"]
     assert len(add_trades) >= 1
     assert result.total_trades >= 1
+
+
+def test_orderflow_pullback_strategy_hard_stop_and_cooldown_work():
+    strategy = get_strategy("OrderFlowPullbackStrategy", {
+        "momentum_bars": 3,
+        "overbought_rsi": 55,
+        "min_volume_ratio": 0.8,
+        "max_volume_ratio": 10.0,
+        "hard_stop_loss_pct": 0.8,
+        "cooldown_bars": 3,
+        "max_add_count": 2,
+    })
+
+    prices = [100 + i * 0.5 for i in range(28)] + [113, 114, 111.5, 109.8, 110.2, 110.4, 110.1, 112.0, 113.0]
+    rows = []
+    for i, close in enumerate(prices):
+        rows.append({
+            "open": close * 0.999,
+            "high": close * 1.002,
+            "low": close * 0.996,
+            "close": close,
+            "volume": 1500 + i * 20,
+        })
+
+    data = pd.DataFrame(rows, index=pd.date_range(datetime(2024, 2, 1), periods=len(rows), freq="30min"))
+
+    engine = BacktestEngine(
+        strategy,
+        BacktestConfig(symbol="DOGEUSDT", interval="30min", initial_capital=10000, position_size=1.0),
+    )
+    result = engine.run(data)
+
+    hard_stop_exits = [t for t in result.completed_trades if "硬止损" in t.reason]
+    assert len(hard_stop_exits) >= 1
