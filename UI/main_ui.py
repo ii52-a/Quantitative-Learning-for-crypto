@@ -72,7 +72,8 @@ class LiveAccountWorker(QThread):
                     self.account_updated.emit(stats)
                     
                     positions = []
-                    for symbol, pos in self._trader.positions.items():
+                    # 复制字典，避免迭代时被修改
+                    for symbol, pos in list(self._trader.positions.items()):
                         positions.append({
                             'symbol': symbol,
                             'side': pos.side,
@@ -158,6 +159,34 @@ class EnhancedBacktestWorker(QThread):
             self.finished.emit({'error': f"{str(e)}\n{traceback.format_exc()}"})
 
 
+class DetailUpdateWorker(QThread):
+    """详情面板更新工作线程"""
+    finished = pyqtSignal(dict)
+    
+    def __init__(self, trader, symbol: str):
+        super().__init__()
+        self._trader = trader
+        self._symbol = symbol
+    
+    def run(self):
+        try:
+            ticker = self._trader.get_ticker_24hr(self._symbol)
+            indicators = self._trader.get_indicators()
+            signal_reason = self._trader.get_signal_reason()
+            
+            self.finished.emit({
+                'ticker': ticker or {},
+                'indicators': indicators or {},
+                'signal_reason': signal_reason or '',
+            })
+        except Exception as e:
+            self.finished.emit({
+                'ticker': {},
+                'indicators': {},
+                'signal_reason': f'获取数据失败: {e}',
+            })
+
+
 class BacktestWorker(QThread):
     progress = pyqtSignal(str)
     trade_log = pyqtSignal(str)  # 交易日志
@@ -206,7 +235,7 @@ class BacktestWorker(QThread):
             
             self.progress.emit(f"\n📥 加载 {symbol} 数据...")
             
-            service = get_data_service(DataServiceConfig(prefer_database=True, auto_init=True))
+            service = get_data_service(DataServiceConfig(prefer_database=True, auto_init=False))
             
             try:
                 data = service.get_backtest_data(symbol, interval, data_num)
@@ -289,6 +318,7 @@ class BacktestWorker(QThread):
                 "data": data,
                 "visualizer": visualizer,
                 "config": config,
+                "raw_config": self.config,  # 添加原始配置字典
             })
             
         except Exception as e:
@@ -348,7 +378,7 @@ class OptimizerWorker(QThread):
             strategy = get_strategy(strategy_name)
             
             self.log_message.emit(f"\n📥 加载数据...")
-            service = get_data_service(DataServiceConfig(prefer_database=True, auto_init=True))
+            service = get_data_service(DataServiceConfig(prefer_database=True, auto_init=False))
             data = service.get_klines(
                 self.config["symbol"],
                 self.config["interval"],
@@ -622,9 +652,9 @@ class TradingUI(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self._compact_mode = False
         self._worker = None
         self._optimizer_worker = None
+        self._detail_worker = None  # 详情面板更新工作线程
         self._last_result = None
         self._last_data = None
         self._last_visualizer = None
@@ -658,6 +688,7 @@ class TradingUI(QMainWindow):
         self.main_tabs.addTab(self._create_optimizer_tab(), "🔍 参数探索")
         self.main_tabs.addTab(self._create_strategy_params_tab(), "⚙️ 策略参数")
         self.main_tabs.addTab(self._create_live_trading_tab(), "💹 实盘交易")
+        self.main_tabs.addTab(self._create_live_detail_tab(), "📋 运行详情")
         self.main_tabs.addTab(self._create_equity_tab(), "📈 资产曲线")
         self.main_tabs.addTab(self._create_version_tab(), "📝 版本更新")
         layout.addWidget(self.main_tabs, 1)
@@ -666,47 +697,17 @@ class TradingUI(QMainWindow):
 
         self._ui_log_timer = QTimer(self)
         self._ui_log_timer.timeout.connect(self._flush_ui_logs)
-        self._ui_log_timer.start(150)
+        self._ui_log_timer.start(500)  # 增加刷新间隔到500ms
 
-        self._apply_window_mode()
-
-    def _toggle_compact_mode(self):
-        """切换小窗模式"""
-        self._compact_mode = not self._compact_mode
-        self._apply_window_mode()
-
-    def _apply_window_mode(self):
-        """应用窗口尺寸与标签显示模式"""
-        if not hasattr(self, "main_tabs"):
-            return
-
-        tab_texts = [
-            "📊 回测",
-            "🔍 参数探索",
-            "⚙️ 策略参数",
-            "💹 实盘交易",
-            "📈 资产曲线",
-            "📝 版本更新",
-        ]
-        compact_texts = ["📊", "🔍", "⚙️", "💹", "📈", "📝"]
-        for i in range(min(self.main_tabs.count(), len(tab_texts))):
-            self.main_tabs.setTabText(i, compact_texts[i] if self._compact_mode else tab_texts[i])
-
-        if hasattr(self, "compact_btn"):
-            self.compact_btn.setText("🖥️ 标准窗口" if self._compact_mode else "🪟 小窗模式")
-
-        if self._compact_mode:
-            self.resize(1080, 680)
-        else:
-            self.resize(1500, 900)
-    
     def _show_env_load_result(self) -> None:
         """显示API密钥加载结果"""
         if hasattr(self, '_env_loaded') and self._env_loaded:
             if self.api_key.text() or self.api_secret.text():
-                self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📋 已从.env加载API密钥")
+                if hasattr(self, '_detail_log'):
+                    self._detail_log.append(f"[{datetime.now():%H:%M:%S}] 📋 已从.env加载API密钥")
         elif hasattr(self, '_env_load_error'):
-            self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚠️ 加载.env失败: {self._env_load_error}")
+            if hasattr(self, '_detail_log'):
+                self._detail_log.append(f"[{datetime.now():%H:%M:%S}] ⚠️ 加载.env失败: {self._env_load_error}")
     
     def _create_backtest_tab(self) -> QWidget:
         """创建回测标签页"""
@@ -823,29 +824,27 @@ class TradingUI(QMainWindow):
         return widget
 
     def _create_live_trading_tab(self) -> QWidget:
-        """创建实盘交易标签页 - 专业级界面"""
+        """创建实盘交易标签页 - 优化布局"""
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
         
+        # 顶部：账户信息 + 风险控制 + 杠杆控制
         top_layout = QHBoxLayout()
         top_layout.addWidget(self._create_live_account_panel(), 1)
         top_layout.addWidget(self._create_live_risk_panel(), 1)
         top_layout.addWidget(self._create_live_leverage_panel(), 1)
         layout.addLayout(top_layout)
         
+        # 中间：策略配置（左侧，占更多空间）+ 交易控制（右侧，紧凑）
         mid_layout = QHBoxLayout()
-        mid_layout.addWidget(self._create_live_strategy_panel(), 1)
-        mid_layout.addWidget(self._create_live_control_panel(), 1)
+        mid_layout.addWidget(self._create_live_strategy_panel(), 3)  # 策略配置占更多空间
+        mid_layout.addWidget(self._create_live_control_panel(), 1)   # 控制面板紧凑
         layout.addLayout(mid_layout)
         
-        bottom_layout = QHBoxLayout()
-        bottom_layout.addWidget(self._create_live_position_panel(), 2)
-        bottom_layout.addWidget(self._create_live_order_panel(), 1)
-        layout.addLayout(bottom_layout)
-        
-        layout.addWidget(self._create_live_log_panel(), 1)
+        # 底部：当前持仓
+        layout.addWidget(self._create_live_position_panel(), 1)
         
         return widget
     
@@ -920,6 +919,7 @@ class TradingUI(QMainWindow):
         self.live_stop_loss.setRange(0, 50)
         self.live_stop_loss.setValue(5)
         self.live_stop_loss.setSingleStep(0.5)
+        self.live_stop_loss.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_stop_loss, 0, 1)
         
         risk_layout.addWidget(QLabel("止盈%"), 0, 2)
@@ -927,30 +927,35 @@ class TradingUI(QMainWindow):
         self.live_take_profit.setRange(0, 100)
         self.live_take_profit.setValue(10)
         self.live_take_profit.setSingleStep(1)
+        self.live_take_profit.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_take_profit, 0, 3)
         
         risk_layout.addWidget(QLabel("仓位%"), 1, 0)
         self.live_position_size = QDoubleSpinBox()
         self.live_position_size.setRange(1, 100)
         self.live_position_size.setValue(10)
+        self.live_position_size.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_position_size, 1, 1)
         
         risk_layout.addWidget(QLabel("最大日交易"), 1, 2)
         self.live_max_trades = QSpinBox()
         self.live_max_trades.setRange(1, 100)
         self.live_max_trades.setValue(10)
+        self.live_max_trades.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_max_trades, 1, 3)
         
         risk_layout.addWidget(QLabel("日亏损限额%"), 2, 0)
         self.live_max_daily_loss = QDoubleSpinBox()
         self.live_max_daily_loss.setRange(1, 100)
         self.live_max_daily_loss.setValue(20)
+        self.live_max_daily_loss.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_max_daily_loss, 2, 1)
         
         risk_layout.addWidget(QLabel("最大持仓数"), 2, 2)
         self.live_max_positions = QSpinBox()
         self.live_max_positions.setRange(1, 20)
         self.live_max_positions.setValue(3)
+        self.live_max_positions.wheelEvent = lambda event: None  # 禁用滚轮事件
         risk_layout.addWidget(self.live_max_positions, 2, 3)
         
         layout.addLayout(risk_layout)
@@ -985,6 +990,7 @@ class TradingUI(QMainWindow):
         self.live_leverage = QSpinBox()
         self.live_leverage.setRange(1, 125)
         self.live_leverage.setValue(5)
+        self.live_leverage.wheelEvent = lambda event: None  # 禁用滚轮事件
         leverage_layout.addWidget(self.live_leverage, 0, 1)
         
         self._leverage_warning = QLabel("")
@@ -1071,6 +1077,7 @@ class TradingUI(QMainWindow):
         strategy_layout.addWidget(self.live_custom_strategy, 1, 3)
 
         self.live_load_custom_btn = QPushButton("加载")
+        self.live_load_custom_btn.setMinimumHeight(28)
         self.live_load_custom_btn.clicked.connect(self._load_custom_strategy_to_live)
         strategy_layout.addWidget(self.live_load_custom_btn, 1, 4)
         
@@ -1086,7 +1093,7 @@ class TradingUI(QMainWindow):
         strategy_layout.addWidget(self.api_key, 2, 1, 1, 2)
         
         self.show_api_btn = QPushButton("👁")
-        self.show_api_btn.setFixedWidth(30)
+        self.show_api_btn.setFixedSize(30, 28)
         self.show_api_btn.clicked.connect(self._toggle_api_visibility)
         strategy_layout.addWidget(self.show_api_btn, 2, 3)
         
@@ -1097,7 +1104,7 @@ class TradingUI(QMainWindow):
         strategy_layout.addWidget(self.api_secret, 3, 1, 1, 2)
         
         self.show_secret_btn = QPushButton("👁")
-        self.show_secret_btn.setFixedWidth(30)
+        self.show_secret_btn.setFixedSize(30, 28)
         self.show_secret_btn.clicked.connect(self._toggle_secret_visibility)
         strategy_layout.addWidget(self.show_secret_btn, 3, 3)
         
@@ -1110,12 +1117,27 @@ class TradingUI(QMainWindow):
         mode_layout.addStretch()
         strategy_layout.addLayout(mode_layout, 4, 0, 1, 4)
         
+        layout.addLayout(strategy_layout)
+        
+        # 策略参数区域 - 使用ScrollArea包裹
+        params_label = QLabel("策略参数")
+        params_label.setStyleSheet("color: #f0b90b; font-size: 12px; font-weight: bold;")
+        layout.addWidget(params_label)
+        
+        self.live_params_scroll = QScrollArea()
+        self.live_params_scroll.setWidgetResizable(True)
+        self.live_params_scroll.setFrameShape(QFrame.NoFrame)
+        self.live_params_scroll.setStyleSheet("QScrollArea { background-color: transparent; }")
+        self.live_params_scroll.setMinimumHeight(120)
+        
         self.live_params_frame = QFrame()
         self.live_params_layout = QGridLayout(self.live_params_frame)
         self.live_params_layout.setContentsMargins(0, 0, 0, 0)
-        self.live_params_layout.setSpacing(4)
+        self.live_params_layout.setSpacing(6)
+        self.live_params_scroll.setWidget(self.live_params_frame)
+        layout.addWidget(self.live_params_scroll, 1)  # 给参数区域设置拉伸因子
+        
         self._live_param_widgets = {}
-        layout.addWidget(self.live_params_frame)
 
         self._reload_custom_strategy_profiles()
         self._on_live_strategy_changed(self.live_strategy.currentText())
@@ -1123,7 +1145,6 @@ class TradingUI(QMainWindow):
         self._load_api_from_env()
         self.live_mode_live.toggled.connect(self._on_mode_changed)
         
-        layout.addLayout(strategy_layout)
         return panel
     
     def _create_live_control_panel(self) -> QWidget:
@@ -1383,11 +1404,203 @@ class TradingUI(QMainWindow):
         self.position_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.position_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.position_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.position_table.setMaximumHeight(180)
-        layout.addWidget(self.position_table)
+        self.position_table.setMinimumHeight(150)  # 设置最小高度而不是最大高度
+        layout.addWidget(self.position_table, 1)  # 添加拉伸因子
         
         return panel
-    
+
+    def _create_live_detail_tab(self) -> QWidget:
+        """创建运行详情标签页 - 独立页面"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+        
+        # 标题
+        header = QLabel("📋 实盘运行详情")
+        header.setStyleSheet("font-size: 18px; font-weight: bold; color: #f0b90b;")
+        layout.addWidget(header)
+        
+        # 顶部信息区域
+        info_frame = QFrame()
+        info_frame.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
+        info_layout = QGridLayout(info_frame)
+        info_layout.setContentsMargins(12, 12, 12, 12)
+        info_layout.setSpacing(16)
+        
+        # 当前策略
+        info_layout.addWidget(QLabel("📊 当前策略:"), 0, 0)
+        self._detail_strategy = QLabel("-")
+        self._detail_strategy.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 14px;")
+        info_layout.addWidget(self._detail_strategy, 0, 1)
+        
+        # 选取币种
+        info_layout.addWidget(QLabel("💱 交易对:"), 0, 2)
+        self._detail_symbol = QLabel("-")
+        self._detail_symbol.setStyleSheet("color: #0ecb81; font-weight: bold; font-size: 14px;")
+        info_layout.addWidget(self._detail_symbol, 0, 3)
+        
+        # 运行状态
+        info_layout.addWidget(QLabel("🔄 运行状态:"), 1, 0)
+        self._detail_status = QLabel("未启动")
+        self._detail_status.setStyleSheet("color: #848e9c; font-size: 14px;")
+        info_layout.addWidget(self._detail_status, 1, 1)
+        
+        # 交易模式
+        info_layout.addWidget(QLabel("📡 交易模式:"), 1, 2)
+        self._detail_mode = QLabel("-")
+        self._detail_mode.setStyleSheet("color: #848e9c; font-size: 14px;")
+        info_layout.addWidget(self._detail_mode, 1, 3)
+        
+        layout.addWidget(info_frame)
+        
+        # 中间区域：当前挂单 + 持仓摘要
+        mid_layout = QHBoxLayout()
+        
+        # 当前挂单
+        order_group = QFrame()
+        order_group.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
+        order_layout = QVBoxLayout(order_group)
+        order_layout.setContentsMargins(12, 12, 12, 12)
+        order_layout.setSpacing(8)
+        
+        order_title = QLabel("📋 当前挂单")
+        order_title.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 14px;")
+        order_layout.addWidget(order_title)
+        
+        self._detail_orders_table = QTableWidget()
+        self._detail_orders_table.setColumnCount(5)
+        self._detail_orders_table.setHorizontalHeaderLabels(["时间", "方向", "数量", "价格", "状态"])
+        self._detail_orders_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self._detail_orders_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        order_layout.addWidget(self._detail_orders_table, 1)
+        
+        mid_layout.addWidget(order_group, 1)
+        
+        # 持仓摘要 -> 实时信息与策略指标
+        pos_group = QFrame()
+        pos_group.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
+        pos_layout = QVBoxLayout(pos_group)
+        pos_layout.setContentsMargins(12, 12, 12, 12)
+        pos_layout.setSpacing(8)
+        
+        pos_title = QLabel("📊 实时信息与策略指标")
+        pos_title.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 14px;")
+        pos_layout.addWidget(pos_title)
+        
+        # 实时价格信息
+        price_layout = QGridLayout()
+        price_layout.setSpacing(6)
+        
+        price_layout.addWidget(QLabel("当前价格:"), 0, 0)
+        self._detail_current_price = QLabel("-")
+        self._detail_current_price.setStyleSheet("color: #0ecb81; font-weight: bold;")
+        price_layout.addWidget(self._detail_current_price, 0, 1)
+        
+        price_layout.addWidget(QLabel("24h涨跌:"), 0, 2)
+        self._detail_price_change = QLabel("-")
+        self._detail_price_change.setStyleSheet("color: #848e9c;")
+        price_layout.addWidget(self._detail_price_change, 0, 3)
+        
+        price_layout.addWidget(QLabel("24h最高:"), 1, 0)
+        self._detail_high = QLabel("-")
+        self._detail_high.setStyleSheet("color: #848e9c;")
+        price_layout.addWidget(self._detail_high, 1, 1)
+        
+        price_layout.addWidget(QLabel("24h最低:"), 1, 2)
+        self._detail_low = QLabel("-")
+        self._detail_low.setStyleSheet("color: #848e9c;")
+        price_layout.addWidget(self._detail_low, 1, 3)
+        
+        pos_layout.addLayout(price_layout)
+        
+        # 分隔线
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.HLine)
+        line1.setStyleSheet("background-color: #2a2e39;")
+        pos_layout.addWidget(line1)
+        
+        # 策略指标
+        indicator_title = QLabel("📈 策略指标")
+        indicator_title.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 12px;")
+        pos_layout.addWidget(indicator_title)
+        
+        self._detail_indicators = QLabel("等待策略运行...")
+        self._detail_indicators.setStyleSheet("color: #848e9c; font-size: 12px;")
+        self._detail_indicators.setWordWrap(True)
+        pos_layout.addWidget(self._detail_indicators)
+        
+        # 分隔线
+        line2 = QFrame()
+        line2.setFrameShape(QFrame.HLine)
+        line2.setStyleSheet("background-color: #2a2e39;")
+        pos_layout.addWidget(line2)
+        
+        # 开仓信号
+        signal_title = QLabel("🎯 开仓信号")
+        signal_title.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 12px;")
+        pos_layout.addWidget(signal_title)
+        
+        self._detail_signal = QLabel("等待信号...")
+        self._detail_signal.setStyleSheet("color: #848e9c; font-size: 12px;")
+        self._detail_signal.setWordWrap(True)
+        pos_layout.addWidget(self._detail_signal)
+        
+        pos_layout.addStretch()
+        
+        mid_layout.addWidget(pos_group, 1)
+        
+        layout.addLayout(mid_layout, 1)
+        
+        # 底部：交易日志
+        log_group = QFrame()
+        log_group.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
+        log_layout = QVBoxLayout(log_group)
+        log_layout.setContentsMargins(12, 12, 12, 12)
+        log_layout.setSpacing(8)
+        
+        log_header = QHBoxLayout()
+        log_title = QLabel("📝 交易日志")
+        log_title.setStyleSheet("color: #f0b90b; font-weight: bold; font-size: 14px;")
+        log_header.addWidget(log_title)
+        log_header.addStretch()
+        
+        clear_btn = QPushButton("清空日志")
+        clear_btn.setFixedWidth(80)
+        clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2e39;
+                color: #eaecef;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+            QPushButton:hover { background-color: #363a45; }
+        """)
+        clear_btn.clicked.connect(lambda: self._detail_log.clear())
+        log_header.addWidget(clear_btn)
+        log_layout.addLayout(log_header)
+        
+        self._detail_log = QTextEdit()
+        self._detail_log.setReadOnly(True)
+        self._detail_log.setStyleSheet("""
+            QTextEdit {
+                background-color: #0b0e11;
+                border: 1px solid #2a2e39;
+                border-radius: 4px;
+                color: #eaecef;
+                font-family: Consolas, monospace;
+                font-size: 12px;
+            }
+        """)
+        log_layout.addWidget(self._detail_log, 1)
+        
+        layout.addWidget(log_group, 1)
+        
+        # 保持 live_log 引用以兼容旧代码
+        self.live_log = self._detail_log
+        
+        return widget
+
     def _create_live_order_panel(self) -> QWidget:
         """创建订单面板"""
         panel = QFrame()
@@ -1554,231 +1767,6 @@ class TradingUI(QMainWindow):
                 
         except Exception as e:
             pass
-    
-    def _create_live_log_panel(self) -> QWidget:
-        """创建日志面板"""
-        panel = QFrame()
-        panel.setStyleSheet("""
-            QFrame { background-color: #1e222d; border-radius: 8px; }
-            QTextEdit { 
-                background-color: #0b0e11; 
-                border: none;
-                color: #eaecef;
-                font-family: Consolas, monospace;
-                font-size: 11px;
-            }
-        """)
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(6)
-        
-        header = QHBoxLayout()
-        title = QLabel("📝 交易日志")
-        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #f0b90b;")
-        header.addWidget(title)
-        header.addStretch()
-        
-        clear_btn = QPushButton("清空")
-        clear_btn.setFixedWidth(50)
-        clear_btn.clicked.connect(lambda: self.live_log.clear())
-        header.addWidget(clear_btn)
-        layout.addLayout(header)
-        
-        self.live_log = QTextEdit()
-        self.live_log.setReadOnly(True)
-        self.live_log.setMaximumHeight(120)
-        layout.addWidget(self.live_log)
-        
-        return panel
-    
-    def _create_live_config_panel(self) -> QWidget:
-        """创建实盘配置面板"""
-        panel = QFrame()
-        panel.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        
-        title = QLabel("💹 实盘交易配置")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0b90b;")
-        layout.addWidget(title)
-        
-        mode_group = QGroupBox("交易模式")
-        mode_layout = QVBoxLayout(mode_group)
-        
-        mode_row = QHBoxLayout()
-        self.live_mode_test = QRadioButton("测试网")
-        self.live_mode_test.setChecked(True)
-        self.live_mode_live = QRadioButton("实盘")
-        mode_row.addWidget(self.live_mode_test)
-        mode_row.addWidget(self.live_mode_live)
-        mode_row.addStretch()
-        mode_layout.addLayout(mode_row)
-        
-        layout.addWidget(mode_group)
-        
-        api_group = QGroupBox("API配置")
-        api_layout = QGridLayout(api_group)
-        
-        api_layout.addWidget(QLabel("API Key"), 0, 0)
-        self.api_key = QLineEdit()
-        self.api_key.setEchoMode(QLineEdit.Password)
-        self.api_key.setPlaceholderText("输入API Key")
-        api_layout.addWidget(self.api_key, 0, 1)
-        
-        self.show_api_btn = QPushButton("👁")
-        self.show_api_btn.setFixedWidth(30)
-        self.show_api_btn.clicked.connect(self._toggle_api_visibility)
-        api_layout.addWidget(self.show_api_btn, 0, 2)
-        
-        api_layout.addWidget(QLabel("API Secret"), 1, 0)
-        self.api_secret = QLineEdit()
-        self.api_secret.setEchoMode(QLineEdit.Password)
-        self.api_secret.setPlaceholderText("输入API Secret")
-        api_layout.addWidget(self.api_secret, 1, 1)
-        
-        self.show_secret_btn = QPushButton("👁")
-        self.show_secret_btn.setFixedWidth(30)
-        self.show_secret_btn.clicked.connect(self._toggle_secret_visibility)
-        api_layout.addWidget(self.show_secret_btn, 1, 2)
-        
-        self._load_api_from_env()
-        
-        self.live_mode_live.toggled.connect(self._on_mode_changed)
-        
-        layout.addWidget(api_group)
-        
-        trade_group = QGroupBox("交易配置")
-        trade_layout = QGridLayout(trade_group)
-        
-        trade_layout.addWidget(QLabel("交易对"), 0, 0)
-        self.live_symbol = QComboBox()
-        self.live_symbol.setEditable(True)
-        self.live_symbol.addItems(self.SYMBOLS)
-        trade_layout.addWidget(self.live_symbol, 0, 1)
-        
-        trade_layout.addWidget(QLabel("杠杆"), 0, 2)
-        self.live_leverage = QSpinBox()
-        self.live_leverage.setRange(1, 125)
-        self.live_leverage.setValue(5)
-        trade_layout.addWidget(self.live_leverage, 0, 3)
-        
-        trade_layout.addWidget(QLabel("仓位比例(%)"), 1, 0)
-        self.live_position_size = QDoubleSpinBox()
-        self.live_position_size.setRange(1, 100)
-        self.live_position_size.setValue(10)
-        trade_layout.addWidget(self.live_position_size, 1, 1)
-        
-        trade_layout.addWidget(QLabel("止损(%)"), 1, 2)
-        self.live_stop_loss = QDoubleSpinBox()
-        self.live_stop_loss.setRange(0, 50)
-        self.live_stop_loss.setValue(5)
-        trade_layout.addWidget(self.live_stop_loss, 1, 3)
-        
-        trade_layout.addWidget(QLabel("止盈(%)"), 2, 0)
-        self.live_take_profit = QDoubleSpinBox()
-        self.live_take_profit.setRange(0, 100)
-        self.live_take_profit.setValue(10)
-        trade_layout.addWidget(self.live_take_profit, 2, 1)
-        
-        trade_layout.addWidget(QLabel("最大日交易"), 2, 2)
-        self.live_max_trades = QSpinBox()
-        self.live_max_trades.setRange(1, 100)
-        self.live_max_trades.setValue(10)
-        trade_layout.addWidget(self.live_max_trades, 2, 3)
-        
-        layout.addWidget(trade_group)
-        
-        strategy_group = QGroupBox("策略选择")
-        strategy_layout = QVBoxLayout(strategy_group)
-        
-        self.live_strategy = QComboBox()
-        self.live_strategy.addItems(list(self.STRATEGIES.keys()))
-        strategy_layout.addWidget(self.live_strategy)
-        
-        layout.addWidget(strategy_group)
-        
-        btn_layout = QHBoxLayout()
-        
-        self.connect_btn = QPushButton("🔗 连接")
-        self.connect_btn.clicked.connect(self._connect_exchange)
-        btn_layout.addWidget(self.connect_btn)
-        
-        self.start_live_btn = QPushButton("▶ 启动交易")
-        self.start_live_btn.setObjectName("primary")
-        self.start_live_btn.clicked.connect(self._start_live_trading)
-        btn_layout.addWidget(self.start_live_btn)
-        
-        self.stop_live_btn = QPushButton("⏹ 停止交易")
-        self.stop_live_btn.clicked.connect(self._stop_live_trading)
-        self.stop_live_btn.setEnabled(False)
-        btn_layout.addWidget(self.stop_live_btn)
-        
-        layout.addLayout(btn_layout)
-        layout.addStretch()
-        
-        return panel
-    
-    def _create_live_status_panel(self) -> QWidget:
-        """创建实盘状态面板"""
-        panel = QFrame()
-        panel.setStyleSheet("QFrame { background-color: #1e222d; border-radius: 8px; }")
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        
-        title = QLabel("📊 交易状态")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0b90b;")
-        layout.addWidget(title)
-        
-        status_group = QGroupBox("账户状态")
-        status_layout = QGridLayout(status_group)
-        
-        self.status_labels = {}
-        status_items = [
-            ("balance", "账户余额", "USDT"),
-            ("available", "可用余额", "USDT"),
-            ("unrealized_pnl", "未实现盈亏", "USDT"),
-            ("realized_pnl", "已实现盈亏", "USDT"),
-            ("margin_used", "已用保证金", "USDT"),
-            ("daily_trades", "今日交易", "次"),
-            ("daily_pnl", "今日盈亏", "USDT"),
-        ]
-        
-        for i, (key, label, unit) in enumerate(status_items):
-            status_layout.addWidget(QLabel(label), i // 2, (i % 2) * 2)
-            value_label = QLabel(f"0 {unit}")
-            value_label.setStyleSheet("color: #eaecef; font-weight: bold;")
-            self.status_labels[key] = (value_label, unit)
-            status_layout.addWidget(value_label, i // 2, (i % 2) * 2 + 1)
-        
-        layout.addWidget(status_group)
-        
-        position_group = QGroupBox("当前持仓")
-        position_layout = QVBoxLayout(position_group)
-        
-        self.position_table = QTableWidget()
-        self.position_table.setColumnCount(7)
-        self.position_table.setHorizontalHeaderLabels(["交易对", "方向", "数量", "入场价", "当前价", "浮动盈亏", "盈亏%"])
-        self.position_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.position_table.setMaximumHeight(150)
-        self.position_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.position_table.setSelectionBehavior(QTableWidget.SelectRows)
-        position_layout.addWidget(self.position_table)
-        
-        layout.addWidget(position_group)
-        
-        log_group = QGroupBox("交易日志")
-        log_layout = QVBoxLayout(log_group)
-        
-        self.live_log = QTextEdit()
-        self.live_log.setReadOnly(True)
-        self.live_log.setMaximumHeight(200)
-        log_layout.addWidget(self.live_log)
-        
-        layout.addWidget(log_group)
-        
-        return panel
     
     def _create_equity_tab(self) -> QWidget:
         """创建资产曲线标签页"""
@@ -2148,7 +2136,8 @@ class TradingUI(QMainWindow):
             positions = self._trader.positions
             if positions:
                 self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📊 当前持仓: {len(positions)}个")
-                for symbol, pos in positions.items():
+                # 复制字典，避免迭代时被修改
+                for symbol, pos in list(positions.items()):
                     side_text = "做多" if pos.side == "long" else "做空"
                     self.live_log.append(f"   {symbol}: {side_text} {pos.quantity:.4f} @ {pos.entry_price:.4f}")
         else:
@@ -2356,6 +2345,25 @@ class TradingUI(QMainWindow):
                     self._status_label.setText("● 运行中")
                     self._status_label.setStyleSheet("color: #0ecb81; font-size: 12px;")
                 
+                # 更新运行详情面板
+                if hasattr(self, '_detail_strategy'):
+                    self._detail_strategy.setText(strategy_name)
+                if hasattr(self, '_detail_symbol'):
+                    self._detail_symbol.setText(self.live_symbol.currentText())
+                if hasattr(self, '_detail_status'):
+                    self._detail_status.setText("运行中")
+                    self._detail_status.setStyleSheet("color: #0ecb81; font-weight: bold;")
+                if hasattr(self, '_detail_mode'):
+                    mode = "测试网" if self.live_mode_test.isChecked() else "实盘"
+                    self._detail_mode.setText(mode)
+                    self._detail_mode.setStyleSheet("color: #f0b90b;" if self.live_mode_test.isChecked() else "color: #f6465d;")
+                if hasattr(self, '_detail_log'):
+                    self._detail_log.append(f"[{datetime.now():%H:%M:%S}] 🚀 交易已启动")
+                    self._detail_log.append(f"策略: {strategy_name}")
+                    self._detail_log.append(f"交易对: {self.live_symbol.currentText()}")
+                    self._detail_log.append(f"杠杆: {self.live_leverage.value()}x")
+                    self._detail_log.append(f"模式: {mode}")
+                
                 self.live_log.append(f"[{datetime.now():%H:%M:%S}] 🚀 交易已启动")
                 self.live_log.append(f"   策略: {strategy_name}")
                 self.live_log.append(f"   交易对: {self.live_symbol.currentText()}")
@@ -2363,7 +2371,12 @@ class TradingUI(QMainWindow):
                 
                 self._status_timer = QTimer()
                 self._status_timer.timeout.connect(self._update_account_status)
-                self._status_timer.start(1000)
+                self._status_timer.start(2000)  # 降低更新频率到2秒
+                
+                # 详情面板更新使用更低的频率
+                self._detail_timer = QTimer()
+                self._detail_timer.timeout.connect(self._update_detail_panel)
+                self._detail_timer.start(3000)  # 3秒更新一次详情
     
     def _stop_live_trading(self) -> None:
         """停止实盘交易"""
@@ -2380,10 +2393,19 @@ class TradingUI(QMainWindow):
                 self._status_label.setText("● 已停止")
                 self._status_label.setStyleSheet("color: #f0b90b; font-size: 12px;")
             
+            # 更新运行详情面板
+            if hasattr(self, '_detail_status'):
+                self._detail_status.setText("已停止")
+                self._detail_status.setStyleSheet("color: #f0b90b; font-weight: bold;")
+            if hasattr(self, '_detail_log'):
+                self._detail_log.append(f"[{datetime.now():%H:%M:%S}] ⏹ 交易已停止")
+            
             self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⏹ 交易已停止")
             
             if hasattr(self, '_status_timer'):
                 self._status_timer.stop()
+            if hasattr(self, '_detail_timer'):
+                self._detail_timer.stop()
     
     def _update_account_status(self) -> None:
         """更新账户状态"""
@@ -2433,9 +2455,11 @@ class TradingUI(QMainWindow):
             return
         
         positions = self._trader.positions
-        self.position_table.setRowCount(len(positions))
+        # 复制字典，避免迭代时被修改
+        positions_list = list(positions.items())
+        self.position_table.setRowCount(len(positions_list))
         
-        for i, (symbol, pos) in enumerate(positions.items()):
+        for i, (symbol, pos) in enumerate(positions_list):
             item = QTableWidgetItem(symbol)
             item.setTextAlignment(Qt.AlignCenter)
             self.position_table.setItem(i, 0, item)
@@ -2491,6 +2515,58 @@ class TradingUI(QMainWindow):
         if hasattr(self, '_position_count'):
             self._position_count.setText(f"{len(positions)}个持仓")
     
+    def _update_detail_panel(self) -> None:
+        """更新运行详情面板的实时信息和策略指标"""
+        if not hasattr(self, '_trader') or not self._trader:
+            return
+        
+        symbol = self.live_symbol.currentText()
+        
+        # 使用后台线程获取数据，避免阻塞UI
+        if hasattr(self, '_detail_worker') and self._detail_worker:
+            return  # 上一次请求还在进行中
+        
+        self._detail_worker = DetailUpdateWorker(self._trader, symbol)
+        self._detail_worker.finished.connect(self._on_detail_updated)
+        self._detail_worker.start()
+    
+    def _on_detail_updated(self, data: dict) -> None:
+        """详情数据更新完成回调"""
+        self._detail_worker = None
+        
+        ticker = data.get('ticker', {})
+        indicators = data.get('indicators', {})
+        signal_reason = data.get('signal_reason', '')
+        
+        if ticker:
+            current_price = float(ticker.get('lastPrice', 0))
+            price_change = float(ticker.get('priceChangePercent', 0))
+            high = float(ticker.get('highPrice', 0))
+            low = float(ticker.get('lowPrice', 0))
+            
+            if hasattr(self, '_detail_current_price'):
+                self._detail_current_price.setText(f"{current_price:.4f}")
+            if hasattr(self, '_detail_price_change'):
+                color = "#0ecb81" if price_change >= 0 else "#f6465d"
+                self._detail_price_change.setText(f"{price_change:+.2f}%")
+                self._detail_price_change.setStyleSheet(f"color: {color}; font-weight: bold;")
+            if hasattr(self, '_detail_high'):
+                self._detail_high.setText(f"{high:.4f}")
+            if hasattr(self, '_detail_low'):
+                self._detail_low.setText(f"{low:.4f}")
+        
+        if indicators and hasattr(self, '_detail_indicators'):
+            indicator_text = ""
+            for key, value in indicators.items():
+                if isinstance(value, float):
+                    indicator_text += f"{key}: {value:.4f}\n"
+                else:
+                    indicator_text += f"{key}: {value}\n"
+            self._detail_indicators.setText(indicator_text.strip() if indicator_text else "无指标数据")
+        
+        if signal_reason and hasattr(self, '_detail_signal'):
+            self._detail_signal.setText(signal_reason)
+    
     def _on_order_update(self, order: dict) -> None:
         """订单更新回调"""
         order_type = order.get('type', 'unknown')
@@ -2500,7 +2576,10 @@ class TradingUI(QMainWindow):
         price = order.get('price', 0)
         
         if order_type == 'open':
-            self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📈 开仓: {symbol} {side} {quantity:.4f}")
+            self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📈 开仓: {symbol} {side} {quantity:.4f} @ {price:.4f}")
+        elif order_type == 'add':
+            new_avg_price = order.get('new_avg_price', price)
+            self.live_log.append(f"[{datetime.now():%H:%M:%S}] ➕ 加仓: {symbol} {side} {quantity:.4f} @ {price:.4f} 新均价={new_avg_price:.4f}")
         elif order_type == 'close':
             self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📉 平仓: {symbol} {side} {quantity:.4f}")
         else:
@@ -2612,12 +2691,14 @@ class TradingUI(QMainWindow):
         self.data_limit = QSpinBox()
         self.data_limit.setRange(100, 100000)
         self.data_limit.setValue(1000)
+        self.data_limit.wheelEvent = lambda event: None  # 禁用滚轮事件
         config_grid.addWidget(self.data_limit, 1, 1)
         
         config_grid.addWidget(QLabel("初始资金"), 1, 2)
         self.capital = QDoubleSpinBox()
         self.capital.setRange(100, 1000000)
         self.capital.setValue(10000)
+        self.capital.wheelEvent = lambda event: None  # 禁用滚轮事件
         config_grid.addWidget(self.capital, 1, 3)
         
         layout.addLayout(config_grid)
@@ -3224,20 +3305,6 @@ class TradingUI(QMainWindow):
         
         layout.addStretch()
 
-        self.compact_btn = QPushButton("🪟 小窗模式")
-        self.compact_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2e39;
-                color: #eaecef;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover { background-color: #363a45; }
-        """)
-        self.compact_btn.clicked.connect(self._toggle_compact_mode)
-        layout.addWidget(self.compact_btn)
-
         self.status = QLabel("● 就绪")
         self.status.setStyleSheet("color: #0ecb81; font-size: 13px;")
         layout.addWidget(self.status)
@@ -3491,20 +3558,6 @@ class TradingUI(QMainWindow):
         
         layout.addStretch()
 
-        self.compact_btn = QPushButton("🪟 小窗模式")
-        self.compact_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2e39;
-                color: #eaecef;
-                border-radius: 6px;
-                padding: 6px 12px;
-                font-size: 12px;
-            }
-            QPushButton:hover { background-color: #363a45; }
-        """)
-        self.compact_btn.clicked.connect(self._toggle_compact_mode)
-        layout.addWidget(self.compact_btn)
-
         self.status = QLabel("● 就绪")
         self.status.setStyleSheet("color: #0ecb81;")
         layout.addWidget(self.status)
@@ -3743,10 +3796,12 @@ class TradingUI(QMainWindow):
                 w.setValue(float(p.get("default", 0)))
                 w.setSingleStep(0.1)
                 w.setDecimals(4)
+                w.wheelEvent = lambda event: None  # 禁用滚轮事件
             else:
                 w = QSpinBox()
                 w.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
                 w.setValue(int(p.get("default", 0)))
+                w.wheelEvent = lambda event: None  # 禁用滚轮事件
 
             w.setMinimumWidth(120)
             self._live_param_widgets[p["name"]] = w
@@ -4274,10 +4329,12 @@ class TradingUI(QMainWindow):
                 w.setRange(float(min_val), float(max_val))
                 w.setValue(float(default_val))
                 w.setSingleStep(0.1)
+                w.wheelEvent = lambda event: None  # 禁用滚轮事件
             else:
                 w = QSpinBox()
                 w.setRange(int(min_val), int(max_val))
                 w.setValue(int(default_val))
+                w.wheelEvent = lambda event: None  # 禁用滚轮事件
             
             w.setToolTip(tooltip_text)
             self._param_widgets[p["name"]] = w
@@ -4336,9 +4393,10 @@ class TradingUI(QMainWindow):
         self._last_config = data.get("config")
 
         # 保存参数到历史记录
-        if self._last_config:
-            strategy_params = self._last_config.get("strategy_params", {})
-            strategy_name = self._last_config.get("strategy", "")
+        raw_config = data.get("raw_config", {})
+        if raw_config:
+            strategy_params = raw_config.get("strategy_params", {})
+            strategy_name = raw_config.get("strategy", "")
             if strategy_params:
                 self._add_params_to_history(strategy_params, strategy_name)
 
@@ -4439,6 +4497,7 @@ class TradingUI(QMainWindow):
         try:
             params = {}
             
+            # 回测参数
             if hasattr(self, 'symbol'):
                 params['backtest'] = {
                     'symbol': self.symbol.currentText() if hasattr(self, 'symbol') else 'BTCUSDT',
@@ -4452,6 +4511,7 @@ class TradingUI(QMainWindow):
                     'position_size': self.position_size.value() if hasattr(self, 'position_size') else 20,
                 }
             
+            # 实盘交易参数
             if hasattr(self, 'live_symbol'):
                 params['live'] = {
                     'symbol': self.live_symbol.currentText() if hasattr(self, 'live_symbol') else 'BTCUSDT',
@@ -4461,18 +4521,25 @@ class TradingUI(QMainWindow):
                     'take_profit': self.live_take_profit.value() if hasattr(self, 'live_take_profit') else 10,
                     'position_size': self.live_position_size.value() if hasattr(self, 'live_position_size') else 10,
                     'max_trades': self.live_max_trades.value() if hasattr(self, 'live_max_trades') else 10,
+                    'max_daily_loss': self.live_max_daily_loss.value() if hasattr(self, 'live_max_daily_loss') else 20,
+                    'max_positions': self.live_max_positions.value() if hasattr(self, 'live_max_positions') else 3,
                     'mode_test': self.live_mode_test.isChecked() if hasattr(self, 'live_mode_test') else True,
                     'strategy_params': self._collect_live_strategy_params() if hasattr(self, '_collect_live_strategy_params') else {},
                 }
             
-            if hasattr(self, 'opt_strategy_combo'):
+            # 参数探索参数
+            if hasattr(self, 'opt_strategy'):
                 params['optimization'] = {
-                    'strategy': self.opt_strategy_combo.currentText() if hasattr(self, 'opt_strategy_combo') else 'MACD趋势策略',
-                    'method': self.opt_method_combo.currentText() if hasattr(self, 'opt_method_combo') else '贝叶斯优化',
+                    'strategy': self.opt_strategy.currentText() if hasattr(self, 'opt_strategy') else 'MACD趋势策略',
+                    'method': self.opt_method.currentText() if hasattr(self, 'opt_method') else '贝叶斯优化',
                     'iterations': self.opt_iterations.value() if hasattr(self, 'opt_iterations') else 50,
                     'data_limit': self.opt_data_limit.value() if hasattr(self, 'opt_data_limit') else 5000,
+                    'symbol': self.opt_symbol.currentText() if hasattr(self, 'opt_symbol') else 'BTCUSDT',
+                    'interval': self.opt_interval.currentText() if hasattr(self, 'opt_interval') else '30min',
+                    'capital': self.opt_capital.value() if hasattr(self, 'opt_capital') else 10000,
                 }
             
+            # 策略参数标签页的参数
             if hasattr(self, '_param_widgets'):
                 strategy_params = {}
                 for name, widget in self._param_widgets.items():
@@ -4481,6 +4548,12 @@ class TradingUI(QMainWindow):
                     elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
                         strategy_params[name] = widget.value()
                 params['strategy_params'] = strategy_params
+            
+            # 保存当前选中的策略
+            if hasattr(self, 'strategy'):
+                params['current_strategy'] = self.strategy.currentText()
+            if hasattr(self, 'live_strategy'):
+                params['current_live_strategy'] = self.live_strategy.currentText()
             
             self._params_file.parent.mkdir(parents=True, exist_ok=True)
             
@@ -4502,6 +4575,7 @@ class TradingUI(QMainWindow):
             with open(self._params_file, 'r', encoding='utf-8') as f:
                 params = json.load(f)
             
+            # 加载回测参数
             if 'backtest' in params:
                 bt = params['backtest']
                 if hasattr(self, 'symbol'):
@@ -4529,6 +4603,7 @@ class TradingUI(QMainWindow):
                 if hasattr(self, 'position_size'):
                     self.position_size.setValue(bt.get('position_size', 20))
             
+            # 加载实盘交易参数
             if 'live' in params:
                 lv = params['live']
                 if hasattr(self, 'live_symbol'):
@@ -4549,25 +4624,42 @@ class TradingUI(QMainWindow):
                     self.live_position_size.setValue(lv.get('position_size', 10))
                 if hasattr(self, 'live_max_trades'):
                     self.live_max_trades.setValue(lv.get('max_trades', 10))
+                if hasattr(self, 'live_max_daily_loss'):
+                    self.live_max_daily_loss.setValue(lv.get('max_daily_loss', 20))
+                if hasattr(self, 'live_max_positions'):
+                    self.live_max_positions.setValue(lv.get('max_positions', 3))
                 if hasattr(self, 'live_mode_test'):
                     self.live_mode_test.setChecked(lv.get('mode_test', True))
-                self._apply_live_strategy_params(lv.get('strategy_params', {}))
+                # 延迟加载策略参数，等待策略切换完成
+                QTimer.singleShot(100, lambda: self._apply_live_strategy_params(lv.get('strategy_params', {})))
             
+            # 加载参数探索参数
             if 'optimization' in params:
                 opt = params['optimization']
-                if hasattr(self, 'opt_strategy_combo'):
-                    idx = self.opt_strategy_combo.findText(opt.get('strategy', 'MACD趋势策略'))
+                if hasattr(self, 'opt_strategy'):
+                    idx = self.opt_strategy.findText(opt.get('strategy', 'MACD趋势策略'))
                     if idx >= 0:
-                        self.opt_strategy_combo.setCurrentIndex(idx)
-                if hasattr(self, 'opt_method_combo'):
-                    idx = self.opt_method_combo.findText(opt.get('method', '贝叶斯优化'))
+                        self.opt_strategy.setCurrentIndex(idx)
+                if hasattr(self, 'opt_method'):
+                    idx = self.opt_method.findText(opt.get('method', '贝叶斯优化'))
                     if idx >= 0:
-                        self.opt_method_combo.setCurrentIndex(idx)
+                        self.opt_method.setCurrentIndex(idx)
                 if hasattr(self, 'opt_iterations'):
                     self.opt_iterations.setValue(opt.get('iterations', 50))
                 if hasattr(self, 'opt_data_limit'):
                     self.opt_data_limit.setValue(opt.get('data_limit', 5000))
+                if hasattr(self, 'opt_symbol'):
+                    idx = self.opt_symbol.findText(opt.get('symbol', 'BTCUSDT'))
+                    if idx >= 0:
+                        self.opt_symbol.setCurrentIndex(idx)
+                if hasattr(self, 'opt_interval'):
+                    idx = self.opt_interval.findText(opt.get('interval', '30min'))
+                    if idx >= 0:
+                        self.opt_interval.setCurrentIndex(idx)
+                if hasattr(self, 'opt_capital'):
+                    self.opt_capital.setValue(opt.get('capital', 10000))
             
+            # 加载策略参数标签页的参数
             if 'strategy_params' in params and hasattr(self, '_param_widgets'):
                 strategy_params = params['strategy_params']
                 for name, value in strategy_params.items():

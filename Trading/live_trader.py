@@ -170,6 +170,20 @@ class LiveTrader:
         self._daily_trades = 0
         self._daily_pnl = 0.0
         self._last_reset = datetime.now().date()
+        
+        # 策略指标和信号信息
+        self._last_indicators: dict = {}
+        self._last_signal_reason: str = ""
+        
+        # 初始化API基础URL
+        self._base_url = BINANCE_TESTNET_FUTURES_API if self.config.testnet else BINANCE_FUTURES_API
+        
+        # 价格缓存，避免频繁请求
+        self._price_cache: dict[str, dict] = {}
+        self._price_cache_time: float = 0
+        self._ticker_cache: dict[str, dict] = {}
+        self._ticker_cache_time: float = 0
+        self._cache_ttl: float = 1.0  # 缓存有效期（秒）
 
         # 测试网/测试模式实时模拟缓冲
         self._sim_price: float = 100000.0
@@ -516,6 +530,9 @@ class LiveTrader:
 
     def _trading_loop(self) -> None:
         """交易循环"""
+        last_position_update = 0
+        position_update_interval = 2.0  # 持仓更新间隔（秒）
+        
         while self._running and not self._stop_event.is_set():
             try:
                 self._check_daily_reset()
@@ -523,7 +540,12 @@ class LiveTrader:
                 if self._strategy:
                     self._execute_strategy()
                 
-                self._update_positions()
+                # 降低持仓更新频率
+                import time
+                current_time = time.time()
+                if current_time - last_position_update >= position_update_interval:
+                    self._update_positions()
+                    last_position_update = current_time
                 
                 time.sleep(self._get_loop_sleep_seconds())
                 
@@ -647,17 +669,25 @@ class LiveTrader:
 
         result = strategy.on_bar(bar, context)
         signal = result.signal if result else None
+        
+        # 保存策略指标用于UI显示
+        if result and hasattr(result, 'indicators') and result.indicators:
+            self._last_indicators = result.indicators
+            self._last_signal_reason = signal.reason if signal else result.log
+        
         if not signal:
             return
 
         if signal.type == SignalType.OPEN_LONG:
             if current_position and current_position.side == "short":
                 self._close_position(symbol)
-            self._open_position(symbol, "long")
+            add_pct = signal.extra.get('add_position_pct') if signal.extra else None
+            self._open_position(symbol, "long", add_pct)
         elif signal.type == SignalType.OPEN_SHORT:
             if current_position and current_position.side == "long":
                 self._close_position(symbol)
-            self._open_position(symbol, "short")
+            add_pct = signal.extra.get('add_position_pct') if signal.extra else None
+            self._open_position(symbol, "short", add_pct)
         elif signal.type == SignalType.CLOSE_LONG and current_position and current_position.side == "long":
             self._close_position(symbol)
         elif signal.type == SignalType.CLOSE_SHORT and current_position and current_position.side == "short":
@@ -776,82 +806,237 @@ class LiveTrader:
             logger.error(f"获取K线数据失败: {e}")
             return None
     
-    def _open_position(self, symbol: str, side: str) -> bool:
-        """开仓"""
+    def _open_position(self, symbol: str, side: str, add_position_pct: float | None = None) -> bool:
+        """开仓或加仓"""
         try:
             account_balance = self._account.balance + self._account.unrealized_pnl
-            position_value = account_balance * self.config.position_size
             leverage = self.config.leverage
             
-            quantity = position_value * leverage / 100
+            # 检查是否已有持仓
+            existing_position = self._positions.get(symbol)
             
-            if quantity <= 0:
-                return False
+            if existing_position:
+                # 已有同方向持仓，执行加仓
+                if existing_position.side != side:
+                    # 不同方向，先平仓
+                    self._close_position(symbol)
+                    existing_position = None
             
-            if self.config.mode == TradingMode.TEST:
-                current_price = 100000
-                self._positions[symbol] = Position(
-                    symbol=symbol,
-                    side=side,
-                    quantity=quantity,
-                    entry_price=current_price,
-                    current_price=current_price,
-                    unrealized_pnl=0,
-                    leverage=leverage,
-                    margin=position_value,
+            if existing_position:
+                # 加仓逻辑
+                if add_position_pct is None:
+                    add_position_pct = self.config.position_size
+                
+                add_value = account_balance * add_position_pct
+                add_quantity = add_value * leverage / 100
+                
+                if add_quantity <= 0:
+                    return False
+                
+                if self.config.mode == TradingMode.TEST:
+                    # 获取当前市场价格
+                    current_price = self._get_mark_price(symbol)
+                    if current_price <= 0:
+                        ticker = self.get_ticker_24hr(symbol)
+                        current_price = float(ticker.get('lastPrice', 0))
+                    if current_price <= 0:
+                        logger.error(f"无法获取 {symbol} 的当前价格")
+                        return False
+                    
+                    # 计算新的均价
+                    old_value = existing_position.quantity * existing_position.entry_price
+                    new_value = add_quantity * current_price
+                    total_quantity = existing_position.quantity + add_quantity
+                    new_avg_price = (old_value + new_value) / total_quantity
+                    
+                    # 更新持仓
+                    existing_position.quantity = total_quantity
+                    existing_position.entry_price = new_avg_price
+                    existing_position.current_price = current_price
+                    existing_position.margin += add_value
+                    
+                    # 更新账户可用余额
+                    self._account.available -= add_value
+                    self._account.margin_used += add_value
+                    
+                    self._daily_trades += 1
+                    logger.info(f"测试模式: 加仓 {side} {symbol} 数量={add_quantity:.4f} 价格={current_price:.4f} 新均价={new_avg_price:.4f}")
+                    
+                    if self._order_callback:
+                        self._order_callback({
+                            'type': 'add',
+                            'symbol': symbol,
+                            'side': side,
+                            'quantity': add_quantity,
+                            'price': current_price,
+                            'new_avg_price': new_avg_price,
+                        })
+                    return True
+                
+                # 实盘加仓
+                order_side = "BUY" if side == "long" else "SELL"
+                
+                params = {
+                    'symbol': symbol,
+                    'side': order_side,
+                    'type': 'MARKET',
+                    'quantity': round(add_quantity, 3),
+                    'timestamp': self._get_server_time(),
+                    'recvWindow': 5000
+                }
+                params['signature'] = self._sign_request(params)
+                
+                headers = {'X-MBX-APIKEY': self.config.api_key}
+                
+                response = requests.post(
+                    f"{self._base_url}/fapi/v1/order",
+                    params=params,
+                    headers=headers,
+                    timeout=10
                 )
                 
-                self._daily_trades += 1
-                logger.info(f"测试模式: 开仓 {side} {symbol} 数量={quantity:.4f}")
-                
-                if self._order_callback:
-                    self._order_callback({
-                        'type': 'open',
-                        'symbol': symbol,
-                        'side': side,
-                        'quantity': quantity,
-                        'price': current_price,
-                    })
-                return True
+                if response.status_code == 200:
+                    order = response.json()
+                    avg_price = float(order.get('avgPrice', 0))
+                    if avg_price <= 0:
+                        cum_qty = float(order.get('cumQty', 0))
+                        cum_quote = float(order.get('cumQuote', 0))
+                        if cum_qty > 0:
+                            avg_price = cum_quote / cum_qty
+                    
+                    # 计算新的均价
+                    old_value = existing_position.quantity * existing_position.entry_price
+                    new_value = add_quantity * avg_price
+                    total_quantity = existing_position.quantity + add_quantity
+                    new_avg_price = (old_value + new_value) / total_quantity
+                    
+                    # 更新持仓
+                    existing_position.quantity = total_quantity
+                    existing_position.entry_price = new_avg_price
+                    existing_position.current_price = avg_price
+                    existing_position.margin += add_value
+                    
+                    self._daily_trades += 1
+                    logger.info(f"加仓成功: {side} {symbol} 数量={add_quantity:.4f} 价格={avg_price:.4f} 新均价={new_avg_price:.4f}")
+                    
+                    if self._order_callback:
+                        self._order_callback({
+                            'type': 'add',
+                            'symbol': symbol,
+                            'side': side,
+                            'quantity': add_quantity,
+                            'order_id': order.get('orderId'),
+                            'price': avg_price,
+                            'new_avg_price': new_avg_price,
+                        })
+                    return True
+                else:
+                    logger.error(f"加仓失败: {response.text}")
+                    return False
             
-            order_side = "BUY" if side == "long" else "SELL"
-            
-            params = {
-                'symbol': symbol,
-                'side': order_side,
-                'type': 'MARKET',
-                'quantity': round(quantity, 3),
-                'timestamp': self._get_server_time(),
-                'recvWindow': 5000
-            }
-            params['signature'] = self._sign_request(params)
-            
-            headers = {'X-MBX-APIKEY': self.config.api_key}
-            
-            response = requests.post(
-                f"{self._base_url}/fapi/v1/order",
-                params=params,
-                headers=headers,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                order = response.json()
-                self._daily_trades += 1
-                logger.info(f"开仓成功: {side} {symbol} 数量={quantity:.4f}")
-                
-                if self._order_callback:
-                    self._order_callback({
-                        'type': 'open',
-                        'symbol': symbol,
-                        'side': side,
-                        'quantity': quantity,
-                        'order_id': order.get('orderId'),
-                    })
-                return True
             else:
-                logger.error(f"开仓失败: {response.text}")
-                return False
+                # 新开仓逻辑
+                position_value = account_balance * self.config.position_size
+                quantity = position_value * leverage / 100
+                
+                if quantity <= 0:
+                    return False
+                
+                if self.config.mode == TradingMode.TEST:
+                    current_price = self._get_mark_price(symbol)
+                    if current_price <= 0:
+                        ticker = self.get_ticker_24hr(symbol)
+                        current_price = float(ticker.get('lastPrice', 0))
+                    if current_price <= 0:
+                        logger.error(f"无法获取 {symbol} 的当前价格")
+                        return False
+                    
+                    self._positions[symbol] = Position(
+                        symbol=symbol,
+                        side=side,
+                        quantity=quantity,
+                        entry_price=current_price,
+                        current_price=current_price,
+                        unrealized_pnl=0,
+                        leverage=leverage,
+                        margin=position_value,
+                    )
+                    
+                    # 更新账户可用余额
+                    self._account.available -= position_value
+                    self._account.margin_used += position_value
+                    
+                    self._daily_trades += 1
+                    logger.info(f"测试模式: 开仓 {side} {symbol} 数量={quantity:.4f} 价格={current_price:.4f}")
+                    
+                    if self._order_callback:
+                        self._order_callback({
+                            'type': 'open',
+                            'symbol': symbol,
+                            'side': side,
+                            'quantity': quantity,
+                            'price': current_price,
+                        })
+                    return True
+                
+                # 实盘新开仓
+                order_side = "BUY" if side == "long" else "SELL"
+                
+                params = {
+                    'symbol': symbol,
+                    'side': order_side,
+                    'type': 'MARKET',
+                    'quantity': round(quantity, 3),
+                    'timestamp': self._get_server_time(),
+                    'recvWindow': 5000
+                }
+                params['signature'] = self._sign_request(params)
+                
+                headers = {'X-MBX-APIKEY': self.config.api_key}
+                
+                response = requests.post(
+                    f"{self._base_url}/fapi/v1/order",
+                    params=params,
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    order = response.json()
+                    avg_price = float(order.get('avgPrice', 0))
+                    if avg_price <= 0:
+                        cum_qty = float(order.get('cumQty', 0))
+                        cum_quote = float(order.get('cumQuote', 0))
+                        if cum_qty > 0:
+                            avg_price = cum_quote / cum_qty
+                    
+                    self._daily_trades += 1
+                    logger.info(f"开仓成功: {side} {symbol} 数量={quantity:.4f} 价格={avg_price:.4f}")
+                    
+                    self._positions[symbol] = Position(
+                        symbol=symbol,
+                        side=side,
+                        quantity=quantity,
+                        entry_price=avg_price,
+                        current_price=avg_price,
+                        unrealized_pnl=0,
+                        leverage=leverage,
+                        margin=position_value,
+                    )
+                    
+                    if self._order_callback:
+                        self._order_callback({
+                            'type': 'open',
+                            'symbol': symbol,
+                            'side': side,
+                            'quantity': quantity,
+                            'order_id': order.get('orderId'),
+                            'price': avg_price,
+                        })
+                    return True
+                else:
+                    logger.error(f"开仓失败: {response.text}")
+                    return False
                 
         except Exception as e:
             logger.error(f"开仓错误: {e}")
@@ -867,9 +1052,27 @@ class LiveTrader:
             quantity = position.quantity
             
             if self.config.mode == TradingMode.TEST:
+                # 获取当前价格计算盈亏
+                current_price = self._get_mark_price(symbol)
+                if current_price <= 0:
+                    ticker = self.get_ticker_24hr(symbol)
+                    current_price = float(ticker.get('lastPrice', 0))
+                
+                # 计算盈亏
+                if position.side == "long":
+                    pnl = (current_price - position.entry_price) * quantity
+                else:
+                    pnl = (position.entry_price - current_price) * quantity
+                
+                # 更新账户
+                self._account.balance += pnl
+                self._account.available += pnl + position.margin
+                self._account.realized_pnl += pnl
+                self._daily_pnl += pnl
+                
                 del self._positions[symbol]
                 self._daily_trades += 1
-                logger.info(f"测试模式: 平仓 {symbol}")
+                logger.info(f"测试模式: 平仓 {symbol} 盈亏={pnl:.2f} USDT")
                 
                 if self._order_callback:
                     self._order_callback({
@@ -877,6 +1080,8 @@ class LiveTrader:
                         'symbol': symbol,
                         'side': position.side,
                         'quantity': quantity,
+                        'price': current_price,
+                        'pnl': pnl,
                     })
                 return True
             
@@ -927,9 +1132,23 @@ class LiveTrader:
     
     def _update_positions(self) -> None:
         """更新持仓"""
+        if not self._positions:
+            return
+        
         if self.config.mode == TradingMode.TEST:
-            for symbol, position in self._positions.items():
-                position.update_price(position.current_price)
+            # 复制键列表，避免迭代时字典被修改
+            symbols = list(self._positions.keys())
+            for symbol in symbols:
+                if symbol not in self._positions:
+                    continue
+                position = self._positions[symbol]
+                # 获取最新市场价格
+                current_price = self._get_mark_price(symbol)
+                if current_price <= 0:
+                    ticker = self.get_ticker_24hr(symbol)
+                    current_price = float(ticker.get('lastPrice', 0))
+                if current_price > 0:
+                    position.update_price(current_price)
         else:
             positions = self._get_positions()
             self._positions.clear()
@@ -938,7 +1157,12 @@ class LiveTrader:
                 symbol = p.get('symbol')
                 position_amt = float(p.get('positionAmt', 0))
                 entry_price = float(p.get('entryPrice', 0))
-                mark_price = float(p.get('markPrice', entry_price))
+                # 测试网可能不返回markPrice，需要单独获取
+                mark_price = float(p.get('markPrice', 0))
+                if mark_price == 0:
+                    mark_price = self._get_mark_price(symbol)
+                if mark_price == 0:
+                    mark_price = entry_price
                 unrealized_pnl = float(p.get('unRealizedProfit', 0))
                 
                 if position_amt != 0:
@@ -955,6 +1179,67 @@ class LiveTrader:
         
         total_unrealized = sum(p.unrealized_pnl for p in self._positions.values())
         self._account.unrealized_pnl = total_unrealized
+
+    def _get_mark_price(self, symbol: str) -> float:
+        """获取标记价格（带缓存）"""
+        import time
+        current_time = time.time()
+        
+        # 检查缓存
+        if symbol in self._price_cache and (current_time - self._price_cache_time) < self._cache_ttl:
+            return self._price_cache[symbol].get('markPrice', 0)
+        
+        try:
+            response = requests.get(
+                f"{self._base_url}/fapi/v1/premiumIndex",
+                params={"symbol": symbol},
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                mark_price = float(data.get('markPrice', 0))
+                self._price_cache[symbol] = {'markPrice': mark_price}
+                self._price_cache_time = current_time
+                return mark_price
+            return 0
+        except Exception as e:
+            logger.error(f"获取标记价格失败: {e}")
+            return 0
+    
+    def get_ticker_24hr(self, symbol: str) -> dict:
+        """获取24小时行情数据（带缓存）"""
+        import time
+        current_time = time.time()
+        
+        # 检查缓存
+        if symbol in self._ticker_cache and (current_time - self._ticker_cache_time) < self._cache_ttl:
+            return self._ticker_cache[symbol]
+        
+        try:
+            response = requests.get(
+                f"{self._base_url}/fapi/v1/ticker/24hr",
+                params={"symbol": symbol},
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                self._ticker_cache[symbol] = data
+                self._ticker_cache_time = current_time
+                return data
+            return {}
+        except Exception as e:
+            logger.error(f"获取24小时行情失败: {e}")
+            return {}
+    
+    def get_indicators(self) -> dict:
+        """获取策略指标"""
+        return self._last_indicators
+    
+    def get_signal_reason(self) -> str:
+        """获取最近信号原因"""
+        return self._last_signal_reason
     
     def place_order(
         self,
@@ -1001,9 +1286,15 @@ class LiveTrader:
     
     def _simulate_order(self, order: Order) -> None:
         """模拟订单执行"""
+        # 获取当前市场价格
+        current_price = self._get_mark_price(order.symbol)
+        if current_price <= 0:
+            ticker = self.get_ticker_24hr(order.symbol)
+            current_price = float(ticker.get('lastPrice', 0))
+        
         order.status = OrderStatus.FILLED
         order.filled_quantity = order.quantity
-        order.filled_price = order.price or 100000
+        order.filled_price = order.price or current_price
         order.update_time = datetime.now()
         
         if order.side == OrderSide.BUY:
@@ -1013,9 +1304,15 @@ class LiveTrader:
     
     def _submit_order(self, order: Order) -> None:
         """提交订单到交易所"""
+        # 获取当前市场价格作为备选
+        current_price = self._get_mark_price(order.symbol)
+        if current_price <= 0:
+            ticker = self.get_ticker_24hr(order.symbol)
+            current_price = float(ticker.get('lastPrice', 0))
+        
         order.status = OrderStatus.FILLED
         order.filled_quantity = order.quantity
-        order.filled_price = order.price or 100000
+        order.filled_price = order.price or current_price
         order.update_time = datetime.now()
         
         if order.side == OrderSide.BUY:

@@ -75,8 +75,8 @@ class DataServiceConfig:
     proxy_port: int = 7890
     testnet: bool = True
     prefer_database: bool = True
-    auto_init: bool = True
-    init_days: int = 1000
+    auto_init: bool = False  # 默认关闭自动初始化，避免卡死
+    init_days: int = 100
     
     enable_rate_limit: bool = True
     requests_per_second: float = 3.0
