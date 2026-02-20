@@ -606,7 +606,8 @@ class TradingUI(QMainWindow):
         "布林带策略": "BollingerBandsStrategy",
         "多指标组合策略": "MultiIndicatorStrategy",
         "自适应多指标策略": "AdaptiveMultiIndicatorStrategy",
-        "订单流回调策略": "OrderFlowPullbackStrategy",
+        "订单流-追涨策略": "OrderFlowPullbackStrategy",
+        "订单流-薅羊毛策略": "OrderFlowWoolStrategy",
     }
     
     SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "TRXUSDT", "LINKUSDT", "LTCUSDT", "BCHUSDT", "MATICUSDT", "WIFUSDT", "PEPEUSDT", "1000BONKUSDT", "SUIUSDT", "APTUSDT", "ARBUSDT", "OPUSDT"]

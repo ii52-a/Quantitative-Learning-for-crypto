@@ -388,7 +388,7 @@ class LiveTrader:
         try:
             strategy_params = self._strategy.get_parameters() if hasattr(self._strategy, "get_parameters") else {}
             auto_select = str(strategy_params.get("auto_select_symbol", "true")).lower() == "true"
-            if self._strategy.__class__.__name__ == "OrderFlowPullbackStrategy" and auto_select:
+            if self._strategy.__class__.__name__ in {"OrderFlowPullbackStrategy", "OrderFlowWoolStrategy"} and auto_select:
                 selected_symbol = self._pick_volatile_symbol()
                 if selected_symbol and selected_symbol != self.config.symbol:
                     self.config.symbol = selected_symbol
