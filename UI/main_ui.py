@@ -13,7 +13,9 @@ import sys
 import traceback
 import webbrowser
 import os
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -36,6 +38,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
 import logging
 
@@ -609,7 +614,9 @@ class TradingUI(QMainWindow):
         self._last_visualizer = None
         self._last_config = None
         self._selected_indicators = ["MACD", "MA"]
+        self._params_file = Path(__file__).parent.parent / "saved_params" / "last_session.json"
         self._init_ui()
+        self._load_last_session_params()
     
     def _init_ui(self):
         self.setWindowTitle("量化交易系统 v2.0")
@@ -1727,19 +1734,19 @@ class TradingUI(QMainWindow):
                 line_color = '#f6465d'
                 fill_color = '#f6465d'
             
-            ax.plot(x, y, color=line_color, linewidth=2, label='总资产')
+            ax.plot(x, y, color=line_color, linewidth=2, label='Equity')
             ax.fill_between(x, y, alpha=0.3, color=fill_color)
             
-            ax.axhline(y=first_equity, color='#848e9c', linestyle='--', linewidth=1, alpha=0.5, label='初始资产')
+            ax.axhline(y=first_equity, color='#848e9c', linestyle='--', linewidth=1, alpha=0.5, label='Initial')
             
             max_equity = max(self._equity_full_history)
             min_equity = min(self._equity_full_history)
             ax.axhline(y=max_equity, color='#0ecb81', linestyle=':', linewidth=1, alpha=0.5)
             ax.axhline(y=min_equity, color='#f6465d', linestyle=':', linewidth=1, alpha=0.5)
             
-            ax.set_xlabel('时间', color='#848e9c', fontsize=10)
-            ax.set_ylabel('资产 (USDT)', color='#848e9c', fontsize=10)
-            ax.set_title(f'资产曲线 | 当前: {last_equity:.2f} USDT ({change_pct:+.2f}%)', 
+            ax.set_xlabel('Time', color='#848e9c', fontsize=10)
+            ax.set_ylabel('Equity (USDT)', color='#848e9c', fontsize=10)
+            ax.set_title(f'Equity Curve | Current: {last_equity:.2f} USDT ({change_pct:+.2f}%)', 
                         color='#eaecef', fontsize=12, fontweight='bold')
             
             ax.tick_params(colors='#848e9c', labelsize=8)
@@ -2375,7 +2382,7 @@ class TradingUI(QMainWindow):
         
         config_grid.addWidget(QLabel("数据量"), 1, 0)
         self.data_limit = QSpinBox()
-        self.data_limit.setRange(100, 50000)
+        self.data_limit.setRange(100, 100000)
         self.data_limit.setValue(1000)
         config_grid.addWidget(self.data_limit, 1, 1)
         
@@ -2524,7 +2531,7 @@ class TradingUI(QMainWindow):
         
         config_grid.addWidget(QLabel("数据量"), 0, 4)
         self.opt_data_limit = QSpinBox()
-        self.opt_data_limit.setRange(5000, 50000)
+        self.opt_data_limit.setRange(5000, 100000)
         self.opt_data_limit.setValue(5000)
         self.opt_data_limit.setSingleStep(1000)
         config_grid.addWidget(self.opt_data_limit, 0, 5)
@@ -3727,6 +3734,8 @@ class TradingUI(QMainWindow):
             logger.warning(f"停止线程 {name} 失败: {e}")
     
     def closeEvent(self, event):
+        self._save_session_params()
+        
         if hasattr(self, '_status_timer') and self._status_timer:
             self._status_timer.stop()
 
@@ -3749,6 +3758,155 @@ class TradingUI(QMainWindow):
                 logger.warning(f"停止交易器失败: {e}")
 
         event.accept()
+    
+    def _save_session_params(self):
+        """保存当前会话参数"""
+        try:
+            params = {}
+            
+            if hasattr(self, 'symbol'):
+                params['backtest'] = {
+                    'symbol': self.symbol.currentText() if hasattr(self, 'symbol') else 'BTCUSDT',
+                    'interval': self.interval.currentText() if hasattr(self, 'interval') else '30min',
+                    'data_limit': self.data_limit.value() if hasattr(self, 'data_limit') else 1000,
+                    'strategy': self.strategy.currentText() if hasattr(self, 'strategy') else 'MACD趋势策略',
+                    'capital': self.capital.value() if hasattr(self, 'capital') else 10000,
+                    'leverage': self.leverage.value() if hasattr(self, 'leverage') else 5,
+                    'stop_loss': self.stop_loss.value() if hasattr(self, 'stop_loss') else 5,
+                    'take_profit': self.take_profit.value() if hasattr(self, 'take_profit') else 10,
+                    'position_size': self.position_size.value() if hasattr(self, 'position_size') else 20,
+                }
+            
+            if hasattr(self, 'live_symbol'):
+                params['live'] = {
+                    'symbol': self.live_symbol.currentText() if hasattr(self, 'live_symbol') else 'BTCUSDT',
+                    'strategy': self.live_strategy.currentText() if hasattr(self, 'live_strategy') else 'MACD趋势策略',
+                    'leverage': self.live_leverage.value() if hasattr(self, 'live_leverage') else 5,
+                    'stop_loss': self.live_stop_loss.value() if hasattr(self, 'live_stop_loss') else 5,
+                    'take_profit': self.live_take_profit.value() if hasattr(self, 'live_take_profit') else 10,
+                    'position_size': self.live_position_size.value() if hasattr(self, 'live_position_size') else 10,
+                    'max_trades': self.live_max_trades.value() if hasattr(self, 'live_max_trades') else 10,
+                    'mode_test': self.live_mode_test.isChecked() if hasattr(self, 'live_mode_test') else True,
+                }
+            
+            if hasattr(self, 'opt_strategy_combo'):
+                params['optimization'] = {
+                    'strategy': self.opt_strategy_combo.currentText() if hasattr(self, 'opt_strategy_combo') else 'MACD趋势策略',
+                    'method': self.opt_method_combo.currentText() if hasattr(self, 'opt_method_combo') else '贝叶斯优化',
+                    'iterations': self.opt_iterations.value() if hasattr(self, 'opt_iterations') else 50,
+                    'data_limit': self.opt_data_limit.value() if hasattr(self, 'opt_data_limit') else 5000,
+                }
+            
+            if hasattr(self, '_param_widgets'):
+                strategy_params = {}
+                for name, widget in self._param_widgets.items():
+                    if isinstance(widget, QComboBox):
+                        strategy_params[name] = widget.currentText()
+                    elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                        strategy_params[name] = widget.value()
+                params['strategy_params'] = strategy_params
+            
+            self._params_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(self._params_file, 'w', encoding='utf-8') as f:
+                json.dump(params, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"会话参数已保存到 {self._params_file}")
+            
+        except Exception as e:
+            logger.warning(f"保存会话参数失败: {e}")
+    
+    def _load_last_session_params(self):
+        """加载上次会话参数"""
+        try:
+            if not self._params_file.exists():
+                logger.info("未找到上次会话参数文件")
+                return
+            
+            with open(self._params_file, 'r', encoding='utf-8') as f:
+                params = json.load(f)
+            
+            if 'backtest' in params:
+                bt = params['backtest']
+                if hasattr(self, 'symbol'):
+                    idx = self.symbol.findText(bt.get('symbol', 'BTCUSDT'))
+                    if idx >= 0:
+                        self.symbol.setCurrentIndex(idx)
+                if hasattr(self, 'interval'):
+                    idx = self.interval.findText(bt.get('interval', '30min'))
+                    if idx >= 0:
+                        self.interval.setCurrentIndex(idx)
+                if hasattr(self, 'data_limit'):
+                    self.data_limit.setValue(bt.get('data_limit', 1000))
+                if hasattr(self, 'strategy'):
+                    idx = self.strategy.findText(bt.get('strategy', 'MACD趋势策略'))
+                    if idx >= 0:
+                        self.strategy.setCurrentIndex(idx)
+                if hasattr(self, 'capital'):
+                    self.capital.setValue(bt.get('capital', 10000))
+                if hasattr(self, 'leverage'):
+                    self.leverage.setValue(bt.get('leverage', 5))
+                if hasattr(self, 'stop_loss'):
+                    self.stop_loss.setValue(bt.get('stop_loss', 5))
+                if hasattr(self, 'take_profit'):
+                    self.take_profit.setValue(bt.get('take_profit', 10))
+                if hasattr(self, 'position_size'):
+                    self.position_size.setValue(bt.get('position_size', 20))
+            
+            if 'live' in params:
+                lv = params['live']
+                if hasattr(self, 'live_symbol'):
+                    idx = self.live_symbol.findText(lv.get('symbol', 'BTCUSDT'))
+                    if idx >= 0:
+                        self.live_symbol.setCurrentIndex(idx)
+                if hasattr(self, 'live_strategy'):
+                    idx = self.live_strategy.findText(lv.get('strategy', 'MACD趋势策略'))
+                    if idx >= 0:
+                        self.live_strategy.setCurrentIndex(idx)
+                if hasattr(self, 'live_leverage'):
+                    self.live_leverage.setValue(lv.get('leverage', 5))
+                if hasattr(self, 'live_stop_loss'):
+                    self.live_stop_loss.setValue(lv.get('stop_loss', 5))
+                if hasattr(self, 'live_take_profit'):
+                    self.live_take_profit.setValue(lv.get('take_profit', 10))
+                if hasattr(self, 'live_position_size'):
+                    self.live_position_size.setValue(lv.get('position_size', 10))
+                if hasattr(self, 'live_max_trades'):
+                    self.live_max_trades.setValue(lv.get('max_trades', 10))
+                if hasattr(self, 'live_mode_test'):
+                    self.live_mode_test.setChecked(lv.get('mode_test', True))
+            
+            if 'optimization' in params:
+                opt = params['optimization']
+                if hasattr(self, 'opt_strategy_combo'):
+                    idx = self.opt_strategy_combo.findText(opt.get('strategy', 'MACD趋势策略'))
+                    if idx >= 0:
+                        self.opt_strategy_combo.setCurrentIndex(idx)
+                if hasattr(self, 'opt_method_combo'):
+                    idx = self.opt_method_combo.findText(opt.get('method', '贝叶斯优化'))
+                    if idx >= 0:
+                        self.opt_method_combo.setCurrentIndex(idx)
+                if hasattr(self, 'opt_iterations'):
+                    self.opt_iterations.setValue(opt.get('iterations', 50))
+                if hasattr(self, 'opt_data_limit'):
+                    self.opt_data_limit.setValue(opt.get('data_limit', 5000))
+            
+            if 'strategy_params' in params and hasattr(self, '_param_widgets'):
+                strategy_params = params['strategy_params']
+                for name, value in strategy_params.items():
+                    if name in self._param_widgets:
+                        widget = self._param_widgets[name]
+                        if isinstance(widget, QComboBox):
+                            idx = widget.findText(str(value))
+                            if idx >= 0:
+                                widget.setCurrentIndex(idx)
+                        elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                            widget.setValue(value)
+            
+            logger.info(f"已加载上次会话参数")
+            
+        except Exception as e:
+            logger.warning(f"加载会话参数失败: {e}")
 
 
 def main():
