@@ -542,7 +542,7 @@ class BacktestVisualizer:
             </div>
             <div class="metric-card">
                 <div class="title">盈亏比</div>
-                <div class="value {"positive" if result.profit_factor > 1 else ""}">{result.profit_factor:.2f}</div>
+                <div class="value {"positive" if result.profit_factor > 1 else ""}">{"∞" if result.profit_factor == float('inf') else f"{result.profit_factor:.2f}"}</div>
             </div>
             <div class="metric-card">
                 <div class="title">交易次数</div>

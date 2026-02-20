@@ -566,14 +566,6 @@ class OrderFlowPullbackStrategy(BaseStrategy):
 
     parameters = [
         StrategyParameter(
-            name="auto_select_symbol",
-            display_name="自动选币",
-            description="实盘时自动切换至高波动USDT交易对",
-            value_type=str,
-            default_value="true",
-            options=["true", "false"],
-        ),
-        StrategyParameter(
             name="momentum_bars",
             display_name="动量K线数",
             description="动量判断窗口",
@@ -590,24 +582,6 @@ class OrderFlowPullbackStrategy(BaseStrategy):
             default_value=68.0,
             min_value=55.0,
             max_value=90.0,
-        ),
-        StrategyParameter(
-            name="min_volume_ratio",
-            display_name="最低量比",
-            description="过滤量能不足币对",
-            value_type=float,
-            default_value=1.1,
-            min_value=0.8,
-            max_value=3.0,
-        ),
-        StrategyParameter(
-            name="max_volume_ratio",
-            display_name="最高量比",
-            description="过滤过热币对，选择量能适中标的",
-            value_type=float,
-            default_value=3.0,
-            min_value=1.2,
-            max_value=8.0,
         ),
         StrategyParameter(
             name="base_add_position_pct",
@@ -757,9 +731,6 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         recent_closes = self._closes[-momentum_bars:]
         consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
 
-        avg_volume = float(pd.Series(self._volumes[-20:]).mean())
-        curr_volume = self._volumes[-1]
-        volume_boost = (curr_volume / avg_volume) if avg_volume > 0 else 0
         rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
         in_overbought = rsi_value >= overbought_rsi
 
@@ -771,19 +742,18 @@ class OrderFlowPullbackStrategy(BaseStrategy):
                 return StrategyResult(
                     signal=None,
                     indicators={
-                        "volume_ratio": volume_boost,
                         "momentum_pct": momentum_pct,
                         "rsi": rsi_value,
                         "peak_price": self._peak_price,
                     },
-                    log=f"冷却中({self._cooldown_left}), 量比={volume_boost:.2f}, RSI={rsi_value:.1f}"
+                    log=f"冷却中({self._cooldown_left}), RSI={rsi_value:.1f}"
                 )
-            if consecutive_up and in_overbought and min_volume_ratio <= volume_boost <= max_volume_ratio:
+            if consecutive_up and in_overbought:
                 signal = Signal(
                     type=SignalType.OPEN_LONG,
                     price=bar.close,
                     reason=(
-                        f"订单流追涨开仓: RSI{rsi_value:.1f}超买 + 量比{volume_boost:.2f} + 动量{momentum_pct:.2f}%"
+                        f"订单流追涨开仓: RSI{rsi_value:.1f}超买 + 动量{momentum_pct:.2f}%"
                     ),
                 )
                 self._peak_price = bar.close
@@ -811,7 +781,7 @@ class OrderFlowPullbackStrategy(BaseStrategy):
                 self._cooldown_left = cooldown_bars
                 return StrategyResult(
                     signal=signal,
-                    indicators={"volume_ratio": volume_boost, "momentum_pct": momentum_pct, "rsi": rsi_value, "peak_price": self._peak_price},
+                    indicators={"momentum_pct": momentum_pct, "rsi": rsi_value, "peak_price": self._peak_price},
                     log=f"硬止损触发, 回撤={entry_drawdown_pct:.2f}%"
                 )
 
@@ -846,12 +816,11 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         return StrategyResult(
             signal=signal,
             indicators={
-                "volume_ratio": volume_boost,
                 "momentum_pct": momentum_pct,
                 "rsi": rsi_value,
                 "peak_price": self._peak_price,
             },
-            log=f"量比={volume_boost:.2f}, RSI={rsi_value:.1f}, 动量={momentum_pct:.2f}%, 峰值={self._peak_price:.2f}"
+            log=f"RSI={rsi_value:.1f}, 动量={momentum_pct:.2f}%, 峰值={self._peak_price:.2f}"
         )
 
     def get_required_data_count(self) -> int:
@@ -875,8 +844,6 @@ class OrderFlowWoolStrategy(BaseStrategy):
     risk_level = "high"
 
     parameters = [
-        StrategyParameter(name="auto_select_symbol", display_name="自动选币", description="实盘时自动切换至高波动USDT交易对", value_type=str, default_value="true", options=["true", "false"]),
-        StrategyParameter(name="auto_filter_symbol", display_name="自动筛量", description="是否自动筛选量能适中的标的", value_type=str, default_value="true", options=["true", "false"]),
         StrategyParameter(name="momentum_bars", display_name="动量K线数", description="动量判断窗口", value_type=int, default_value=4, min_value=2, max_value=10),
         StrategyParameter(name="overbought_rsi", display_name="超买RSI阈值", description="进入超买区才允许持续加仓", value_type=float, default_value=68.0, min_value=55.0, max_value=90.0),
         StrategyParameter(name="min_volume_ratio", display_name="最低量比", description="过滤量能不足币对", value_type=float, default_value=1.1, min_value=0.8, max_value=3.0),
@@ -923,7 +890,6 @@ class OrderFlowWoolStrategy(BaseStrategy):
         overbought_rsi = float(self._params.get("overbought_rsi", 68.0))
         min_volume_ratio = float(self._params.get("min_volume_ratio", 1.1))
         max_volume_ratio = float(self._params.get("max_volume_ratio", 3.0))
-        auto_filter_symbol = str(self._params.get("auto_filter_symbol", "true")).lower() == "true"
         base_add_pct = float(self._params.get("base_add_position_pct", 8.0)) / 100
         base_gap_pct = float(self._params.get("base_price_gap_pct", 0.25))
         gap_boost = float(self._params.get("momentum_gap_boost", 0.9))
@@ -946,7 +912,7 @@ class OrderFlowWoolStrategy(BaseStrategy):
         volume_boost = (curr_volume / avg_volume) if avg_volume > 0 else 0
         rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
         in_overbought = rsi_value >= overbought_rsi
-        volume_ok = (min_volume_ratio <= volume_boost <= max_volume_ratio) if auto_filter_symbol else (volume_boost >= min_volume_ratio)
+        volume_ok = min_volume_ratio <= volume_boost <= max_volume_ratio
 
         signal = None
 

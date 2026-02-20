@@ -1,0 +1,55 @@
+{
+  "backtest": {
+    "symbol": "BNBUSDT",
+    "interval": "1min",
+    "data_limit": 10000,
+    "strategy": "订单流-薅羊毛策略",
+    "capital": 100.0,
+    "leverage": 125,
+    "stop_loss": 15.07,
+    "take_profit": 0.29,
+    "position_size": 49.0
+  },
+  "live": {
+    "symbol": "BTCUSDT",
+    "strategy": "订单流-追涨策略",
+    "leverage": 125,
+    "stop_loss": 15.07,
+    "take_profit": 0.29,
+    "position_size": 49.0,
+    "max_trades": 10,
+    "mode_test": true,
+    "strategy_params": {
+      "momentum_bars": 4,
+      "overbought_rsi": 68.0,
+      "base_add_position_pct": 8.0,
+      "base_price_gap_pct": 0.35,
+      "momentum_gap_boost": 0.5,
+      "pullback_take_profit_pct": 1.0,
+      "trail_activation_pct": 0.2,
+      "trailing_stop_pct": 0.8,
+      "hard_stop_loss_pct": 4.0,
+      "max_add_count": 4,
+      "add_size_decay": 0.9,
+      "momentum_add_boost": 0.25,
+      "cooldown_bars": 2
+    }
+  },
+  "strategy_params": {
+    "momentum_bars": 7,
+    "overbought_rsi": 59.0,
+    "min_volume_ratio": 1.73,
+    "max_volume_ratio": 6.17,
+    "base_add_position_pct": 15.62,
+    "base_price_gap_pct": 0.05,
+    "momentum_gap_boost": 1.62,
+    "pullback_take_profit_pct": 1.56,
+    "trail_activation_pct": 5.98,
+    "trailing_stop_pct": 9.04,
+    "hard_stop_loss_pct": 15.7,
+    "max_add_count": 12,
+    "add_size_decay": 0.6,
+    "momentum_add_boost": 2.0,
+    "cooldown_bars": 2
+  }
+}

@@ -1081,13 +1081,13 @@ class ParameterOptimizer:
             risk_params = {}
             
             for key, value in params.items():
-                if key in ["leverage", "stop_loss_pct", "take_profit_pct", "position_size", "commission_rate", "slippage"]:
+                if key in ["leverage", "stop_loss_pct", "take_profit_pct", "position_size"]:
                     risk_params[key] = value
                 else:
                     strategy_params[key] = value
-            
+
             strategy = self.strategy_class(strategy_params)
-            
+
             config = BacktestConfig(
                 symbol=self.base_config.symbol,
                 interval=self.base_config.interval,
@@ -1096,8 +1096,8 @@ class ParameterOptimizer:
                 position_size=risk_params.get("position_size", self.base_config.position_size),
                 stop_loss_pct=risk_params.get("stop_loss_pct", self.base_config.stop_loss_pct),
                 take_profit_pct=risk_params.get("take_profit_pct", self.base_config.take_profit_pct),
-                commission_rate=float(risk_params.get("commission_rate", self.base_config.commission_rate)),
-                slippage=float(risk_params.get("slippage", self.base_config.slippage)),
+                commission_rate=0.0004,  # 固定手续费率（开仓时收取）
+                slippage=0.0001,  # 固定滑点率
             )
             
             engine = BacktestEngine(strategy, config)
@@ -1253,7 +1253,7 @@ def get_all_optimizable_params(
         "strategy": get_parameter_ranges_from_strategy(strategy),
         "risk": [],
     }
-    
+
     if include_risk_params:
         result["risk"] = [
             ParameterRange(
@@ -1288,24 +1288,11 @@ def get_all_optimizable_params(
                 category="risk",
                 display_name="仓位比例",
             ),
-            ParameterRange(
-                name="commission_rate",
-                min_value=0.0,
-                max_value=0.002,
-                step=0.0002,
-                category="risk",
-                display_name="手续费率",
-            ),
-            ParameterRange(
-                name="slippage",
-                min_value=0.0,
-                max_value=0.002,
-                step=0.0002,
-                category="risk",
-                display_name="滑点率",
-            ),
+            # 手续费和滑点使用固定值，不在参数列表中显示
+            # commission_rate: 固定 0.0004 (开仓时收取)
+            # slippage: 固定 0.0001
         ]
-    
+
     return result
 
 

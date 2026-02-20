@@ -585,12 +585,16 @@ class MetricCard(QFrame):
     
     def set_value(self, value: float, is_positive: bool = None):
         if isinstance(value, (int, float)):
-            text = f"{value:.2f}{self.unit}"
+            # 处理 inf 和 -inf 的情况
+            if value == float('inf') or value == float('-inf'):
+                text = f"∞{self.unit}"
+            else:
+                text = f"{value:.2f}{self.unit}"
         else:
             text = str(value)
-        
+
         self.value_label.setText(text)
-        
+
         if is_positive is not None:
             color = "#0ecb81" if is_positive else "#f6465d"
             self.value_label.setStyleSheet(f"color: {color}; font-size: 22px; font-weight: bold; border: none;")
@@ -650,6 +654,7 @@ class TradingUI(QMainWindow):
         self.main_tabs = QTabWidget()
         self.main_tabs.addTab(self._create_backtest_tab(), "📊 回测")
         self.main_tabs.addTab(self._create_optimizer_tab(), "🔍 参数探索")
+        self.main_tabs.addTab(self._create_strategy_params_tab(), "⚙️ 策略参数")
         self.main_tabs.addTab(self._create_live_trading_tab(), "💹 实盘交易")
         self.main_tabs.addTab(self._create_equity_tab(), "📈 资产曲线")
         self.main_tabs.addTab(self._create_version_tab(), "📝 版本更新")
@@ -687,11 +692,102 @@ class TradingUI(QMainWindow):
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
-        
+
         layout.addWidget(self._create_optimizer_config_panel(), 1)
-        
+
         return widget
-    
+
+    def _create_strategy_params_tab(self) -> QWidget:
+        """创建策略参数标签页 - 查看历史回测参数"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
+
+        # 标题
+        title_label = QLabel("📋 历史回测参数记录")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #f0b90b;")
+        layout.addWidget(title_label)
+
+        # 说明文字
+        desc_label = QLabel("查看和加载历史回测使用的策略参数组合")
+        desc_label.setStyleSheet("color: #848e9c; font-size: 12px;")
+        layout.addWidget(desc_label)
+
+        # 参数记录表格
+        self.params_history_table = QTableWidget()
+        self.params_history_table.setColumnCount(4)
+        self.params_history_table.setHorizontalHeaderLabels(["时间", "策略", "参数摘要", "操作"])
+        self.params_history_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.params_history_table.verticalHeader().setVisible(False)
+        self.params_history_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #1e222d;
+                border: 1px solid #2a2e39;
+                border-radius: 8px;
+                gridline-color: #2a2e39;
+                font-size: 12px;
+            }
+            QTableWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid #2a2e39;
+            }
+            QTableWidget::item:selected {
+                background-color: #2a2e39;
+                color: #f0b90b;
+            }
+            QHeaderView::section {
+                background-color: #2a2e39;
+                color: #eaecef;
+                padding: 12px;
+                border: none;
+                font-weight: bold;
+            }
+        """)
+        self.params_history_table.setMinimumHeight(400)
+        layout.addWidget(self.params_history_table)
+
+        # 按钮区域
+        btn_layout = QHBoxLayout()
+
+        self.load_params_btn = QPushButton("📂 加载选中参数")
+        self.load_params_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f0b90b;
+                color: #0b0e11;
+                font-weight: bold;
+                padding: 10px 20px;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #d4a50a;
+            }
+            QPushButton:disabled {
+                background-color: #2a2e39;
+                color: #848e9c;
+            }
+        """)
+        self.load_params_btn.clicked.connect(self._load_selected_params)
+        self.load_params_btn.setEnabled(False)
+        btn_layout.addWidget(self.load_params_btn)
+
+        self.clear_params_history_btn = QPushButton("🗑️ 清空记录")
+        self.clear_params_history_btn.clicked.connect(self._clear_params_history)
+        btn_layout.addWidget(self.clear_params_history_btn)
+
+        self.export_params_btn = QPushButton("💾 导出参数")
+        self.export_params_btn.clicked.connect(self._export_params_history)
+        btn_layout.addWidget(self.export_params_btn)
+
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+        # 初始化参数历史
+        self._params_history = []
+        self._update_params_history_display()
+
+        return widget
+
     def _create_live_trading_tab(self) -> QWidget:
         """创建实盘交易标签页 - 专业级界面"""
         widget = QWidget()
@@ -2545,23 +2641,20 @@ class TradingUI(QMainWindow):
         self.strategy.currentTextChanged.connect(self._on_strategy_changed)
         layout.addWidget(self.strategy)
         
+        # 使用ScrollArea包裹参数区域，防止参数过多时按钮被挤出
+        self.params_scroll = QScrollArea()
+        self.params_scroll.setWidgetResizable(True)
+        self.params_scroll.setFrameShape(QFrame.NoFrame)
+        self.params_scroll.setStyleSheet("QScrollArea { background-color: transparent; }")
+        
         self.params_frame = QFrame()
         self.params_layout = QGridLayout(self.params_frame)
         self.params_layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.params_frame)
-
-        self.strategy_param_help = QTextEdit()
-        self.strategy_param_help.setReadOnly(True)
-        self.strategy_param_help.setMaximumHeight(160)
-        self.strategy_param_help.setStyleSheet(
-            "QTextEdit { background-color: #0b0e11; border: 1px solid #2a2e39; border-radius: 4px; color: #848e9c; font-size: 11px; }"
-        )
-        layout.addWidget(self.strategy_param_help)
+        self.params_scroll.setWidget(self.params_frame)
+        layout.addWidget(self.params_scroll, 1)  # 给参数区域设置拉伸因子
         
         self._param_widgets = {}
         self._on_strategy_changed(self.strategy.currentText())
-        
-        layout.addStretch()
         
         btn_layout = QHBoxLayout()
         
@@ -3079,7 +3172,212 @@ class TradingUI(QMainWindow):
         layout.addWidget(self.status)
         
         return header
-    
+
+    def _update_params_history_display(self):
+        """更新参数历史显示"""
+        if not hasattr(self, 'params_history_table'):
+            return
+
+        self.params_history_table.setRowCount(len(self._params_history))
+
+        for row, record in enumerate(self._params_history):
+            # 时间
+            time_item = QTableWidgetItem(record.get("time", "-"))
+            time_item.setTextAlignment(Qt.AlignCenter)
+            self.params_history_table.setItem(row, 0, time_item)
+
+            # 策略
+            strategy_item = QTableWidgetItem(record.get("strategy", "-"))
+            strategy_item.setTextAlignment(Qt.AlignCenter)
+            self.params_history_table.setItem(row, 1, strategy_item)
+
+            # 参数摘要
+            params = record.get("params", {})
+            summary = self._format_params_summary(params)
+            summary_item = QTableWidgetItem(summary)
+            summary_item.setToolTip(self._format_params_detail(params))
+            self.params_history_table.setItem(row, 2, summary_item)
+
+            # 操作按钮
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout(btn_widget)
+            btn_layout.setContentsMargins(4, 4, 4, 4)
+
+            load_btn = QPushButton("加载")
+            load_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #0ecb81;
+                    color: #0b0e11;
+                    font-weight: bold;
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #0bc179;
+                }
+            """)
+            load_btn.clicked.connect(lambda checked, r=row: self._load_params_at_row(r))
+            btn_layout.addWidget(load_btn)
+
+            delete_btn = QPushButton("删除")
+            delete_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #f6465d;
+                    color: #ffffff;
+                    font-weight: bold;
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #d93d52;
+                }
+            """)
+            delete_btn.clicked.connect(lambda checked, r=row: self._delete_params_at_row(r))
+            btn_layout.addWidget(delete_btn)
+
+            self.params_history_table.setCellWidget(row, 3, btn_widget)
+
+        # 如果有记录，启用加载按钮
+        if self._params_history:
+            self.load_params_btn.setEnabled(True)
+
+    def _format_params_summary(self, params: dict) -> str:
+        """格式化参数摘要"""
+        if not params:
+            return "无参数"
+
+        # 显示关键参数
+        key_params = []
+        for k, v in list(params.items())[:3]:
+            key_params.append(f"{k}={v}")
+
+        summary = ", ".join(key_params)
+        if len(params) > 3:
+            summary += f" ... 等{len(params)}个参数"
+        return summary
+
+    def _format_params_detail(self, params: dict) -> str:
+        """格式化参数详情（用于tooltip）"""
+        if not params:
+            return "无参数"
+        return "\n".join([f"{k}: {v}" for k, v in params.items()])
+
+    def _load_params_at_row(self, row: int):
+        """加载指定行的参数"""
+        if 0 <= row < len(self._params_history):
+            record = self._params_history[row]
+            self._apply_params_to_backtest(record.get("params", {}), record.get("strategy", ""))
+
+    def _delete_params_at_row(self, row: int):
+        """删除指定行的参数记录"""
+        if 0 <= row < len(self._params_history):
+            del self._params_history[row]
+            self._update_params_history_display()
+
+            if not self._params_history:
+                self.load_params_btn.setEnabled(False)
+
+    def _load_selected_params(self):
+        """加载选中的参数"""
+        selected_rows = self.params_history_table.selectedItems()
+        if not selected_rows:
+            QMessageBox.information(self, "提示", "请先选择一条参数记录")
+            return
+
+        row = selected_rows[0].row()
+        if 0 <= row < len(self._params_history):
+            record = self._params_history[row]
+            self._apply_params_to_backtest(record.get("params", {}), record.get("strategy", ""))
+
+    def _apply_params_to_backtest(self, params: dict, strategy_name: str):
+        """应用参数到回测界面"""
+        try:
+            # 切换到回测标签页
+            self.main_tabs.setCurrentIndex(0)
+
+            # 设置策略
+            if strategy_name:
+                display_name = None
+                for name, class_name in self.STRATEGIES.items():
+                    if class_name == strategy_name:
+                        display_name = name
+                        break
+                if display_name:
+                    self.strategy.setCurrentText(display_name)
+
+            # 设置参数
+            for param_name, value in params.items():
+                if param_name in self._param_widgets:
+                    widget = self._param_widgets[param_name]
+                    if isinstance(widget, QComboBox):
+                        widget.setCurrentText(str(value))
+                    elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                        widget.setValue(float(value) if isinstance(widget, QDoubleSpinBox) else int(value))
+
+            QMessageBox.information(self, "成功", "参数已加载到回测界面")
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"加载参数失败: {e}")
+
+    def _clear_params_history(self):
+        """清空参数历史"""
+        reply = QMessageBox.question(
+            self,
+            "确认",
+            "确定要清空所有参数记录吗？",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self._params_history.clear()
+            self._update_params_history_display()
+            self.load_params_btn.setEnabled(False)
+
+    def _export_params_history(self):
+        """导出参数历史"""
+        try:
+            from datetime import datetime
+            import json
+
+            if not self._params_history:
+                QMessageBox.information(self, "提示", "没有可导出的参数记录")
+                return
+
+            filename = f"strategy_params_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filepath, _ = QFileDialog.getSaveFileName(
+                self,
+                "导出参数",
+                filename,
+                "JSON files (*.json)"
+            )
+
+            if filepath:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    json.dump(self._params_history, f, ensure_ascii=False, indent=2)
+                QMessageBox.information(self, "成功", f"参数已导出到:\n{filepath}")
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"导出失败: {e}")
+
+    def _add_params_to_history(self, params: dict, strategy_name: str):
+        """添加参数到历史记录（在回测完成时调用）"""
+        from datetime import datetime
+
+        record = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "strategy": strategy_name,
+            "params": params.copy(),
+        }
+
+        # 添加到开头
+        self._params_history.insert(0, record)
+
+        # 限制历史记录数量（最多50条）
+        if len(self._params_history) > 50:
+            self._params_history = self._params_history[:50]
+
+        self._update_params_history_display()
+
     def _stylesheet(self):
         return """
             QMainWindow, QWidget { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', sans-serif; }
@@ -3841,18 +4139,29 @@ class TradingUI(QMainWindow):
         for p in info.get("parameters", []):
             row, col = row_idx // 2, (row_idx % 2) * 2
             
+            # 创建参数标签并设置悬停提示
+            param_desc = p.get("description", "")
+            param_default = p.get("default", "-")
+            param_min = p.get("min", "-")
+            param_max = p.get("max", "-")
+            
+            tooltip_text = f"{param_desc}\n默认值: {param_default}"
+            if param_min != "-" and param_max != "-":
+                tooltip_text += f" | 范围: {param_min} ~ {param_max}"
+            
+            label = QLabel(p["display_name"])
+            label.setToolTip(tooltip_text)
+            self.params_layout.addWidget(label, row, col)
+            
             if p.get("options"):
-                self.params_layout.addWidget(QLabel(p["display_name"]), row, col)
-                
                 combo = QComboBox()
                 combo.addItems(p["options"])
                 combo.setCurrentText(str(p.get("default", p["options"][0])))
+                combo.setToolTip(tooltip_text)
                 self._param_widgets[p["name"]] = combo
                 self.params_layout.addWidget(combo, row, col + 1)
                 row_idx += 1
                 continue
-            
-            self.params_layout.addWidget(QLabel(p["display_name"]), row, col)
             
             min_val = p.get("min")
             max_val = p.get("max")
@@ -3873,30 +4182,10 @@ class TradingUI(QMainWindow):
                 w.setRange(int(min_val), int(max_val))
                 w.setValue(int(default_val))
             
+            w.setToolTip(tooltip_text)
             self._param_widgets[p["name"]] = w
             self.params_layout.addWidget(w, row, col + 1)
             row_idx += 1
-
-        desc_lines = [
-            f"策略说明：{info.get('description', '-')}",
-            f"最小历史数据需求：{info.get('required_data_count', '-')}",
-            "",
-            "参数说明：",
-        ]
-        for p in info.get("parameters", []):
-            default_val = p.get("default")
-            range_text = ""
-            if p.get("options"):
-                range_text = f"可选: {', '.join(str(v) for v in p['options'])}"
-            else:
-                range_text = f"范围: {p.get('min', '-') } ~ {p.get('max', '-') }"
-            desc_lines.append(
-                f"• {p.get('display_name', p['name'])} [{p['name']}]\n"
-                f"  {p.get('description', '')}\n"
-                f"  默认: {default_val} | {range_text}"
-            )
-
-        self.strategy_param_help.setText("\n".join(desc_lines))
     
     def _run(self):
         params = {}
@@ -3943,21 +4232,28 @@ class TradingUI(QMainWindow):
     def _on_finished(self, data):
         result = data["result"]
         report = data["report"]
-        
+
         self._last_result = result
         self._last_data = data.get("data")
         self._last_visualizer = data.get("visualizer")
         self._last_config = data.get("config")
-        
+
+        # 保存参数到历史记录
+        if self._last_config:
+            strategy_params = self._last_config.get("strategy_params", {})
+            strategy_name = self._last_config.get("strategy", "")
+            if strategy_params:
+                self._add_params_to_history(strategy_params, strategy_name)
+
         self.metrics["return"].set_value(result.total_return_pct, result.total_return_pct > 0)
         self.metrics["drawdown"].set_value(result.max_drawdown_pct, False)
         self.metrics["sharpe"].set_value(result.sharpe_ratio, result.sharpe_ratio > 0)
         self.metrics["winrate"].set_value(result.win_rate, result.win_rate > 50)
         self.metrics["profit"].set_value(result.profit_factor, result.profit_factor > 1)
         self.metrics["trades"].set_value(result.total_trades)
-        
+
         self.report_output.setText(report.format_text_report())
-        
+
         trades = result.completed_trades
         self.trades_table.setRowCount(len(trades))
         for i, t in enumerate(trades):
@@ -3965,13 +4261,13 @@ class TradingUI(QMainWindow):
             self.trades_table.setItem(i, 1, QTableWidgetItem(str(t.exit_time)))
             self.trades_table.setItem(i, 2, QTableWidgetItem(f"{t.entry_price:.2f}"))
             self.trades_table.setItem(i, 3, QTableWidgetItem(f"{t.exit_price:.2f}"))
-            
+
             pnl_item = QTableWidgetItem(f"{t.pnl:.2f}")
             pnl_item.setForeground(QColor("#0ecb81") if t.pnl > 0 else QColor("#f6465d"))
             self.trades_table.setItem(i, 4, pnl_item)
-        
+
         self.log_output.append(f"[{datetime.now():%H:%M:%S}] 完成: {result.total_trades}笔交易, 胜率{result.win_rate:.1f}%")
-        
+
         self.run_btn.setEnabled(True)
         self.export_btn.setEnabled(True)
         self.sync_to_live_btn.setEnabled(True)

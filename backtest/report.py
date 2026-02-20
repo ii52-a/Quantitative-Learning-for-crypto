@@ -107,7 +107,7 @@ class BacktestReport:
             f"  盈利次数:     {perf['winning_trades']}",
             f"  亏损次数:     {perf['losing_trades']}",
             f"  胜率:         {perf['win_rate']:.1f}%",
-            f"  盈亏比:       {perf['profit_factor']:.2f}",
+            f"  盈亏比:       {'∞' if perf['profit_factor'] == float('inf') else f"{perf['profit_factor']:.2f}"}",
             f"  平均盈利:     {perf['avg_win']:,.2f} USDT",
             f"  平均亏损:     {perf['avg_loss']:,.2f} USDT",
             "",
