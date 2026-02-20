@@ -550,17 +550,17 @@ class BollingerBandsStrategy(BaseStrategy):
 
 
 class OrderFlowPullbackStrategy(BaseStrategy):
-    """订单流波动回调策略
+    """订单流超买加仓回撤策略
 
     逻辑：
-    1. 自动选择高波动币（由实盘交易器执行）
-    2. 连续阳线+成交量放大触发小幅持续加仓
-    3. 发生一次有效回调后止盈
+    1. 在上涨榜中筛选量能适中的高动量币（实盘由交易器选币）
+    2. 进入超买区后，按动量动态调整加仓价差，小额连续加仓抬升持仓成本
+    3. 暴涨后出现回撤即分段止盈，回撤越深收益空间越大
     """
 
     name = "OrderFlowPullbackStrategy"
     display_name = "订单流回调策略"
-    description = "自动筛选高波动币种，顺势小步加仓，单次回调止盈"
+    description = "针对涨幅榜空气币，超买区按动量动态小额加仓，回撤止盈"
     strategy_type = "order_flow"
     risk_level = "high"
 
@@ -576,38 +576,74 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         StrategyParameter(
             name="momentum_bars",
             display_name="动量K线数",
-            description="连续阳线数量阈值",
+            description="动量判断窗口",
             value_type=int,
-            default_value=3,
+            default_value=4,
             min_value=2,
-            max_value=8,
+            max_value=10,
         ),
         StrategyParameter(
-            name="volume_ratio",
-            display_name="量能放大倍数",
-            description="当前量/均量阈值",
+            name="overbought_rsi",
+            display_name="超买RSI阈值",
+            description="进入超买区才允许持续加仓",
             value_type=float,
-            default_value=1.2,
+            default_value=68.0,
+            min_value=55.0,
+            max_value=90.0,
+        ),
+        StrategyParameter(
+            name="min_volume_ratio",
+            display_name="最低量比",
+            description="过滤量能不足币对",
+            value_type=float,
+            default_value=1.1,
+            min_value=0.8,
+            max_value=3.0,
+        ),
+        StrategyParameter(
+            name="max_volume_ratio",
+            display_name="最高量比",
+            description="过滤过热币对，选择量能适中标的",
+            value_type=float,
+            default_value=3.0,
+            min_value=1.2,
+            max_value=8.0,
+        ),
+        StrategyParameter(
+            name="base_add_position_pct",
+            display_name="基础加仓比例%",
+            description="低动量时每次小额加仓比例",
+            value_type=float,
+            default_value=8.0,
             min_value=1.0,
-            max_value=5.0,
+            max_value=30.0,
         ),
         StrategyParameter(
-            name="add_position_pct",
-            display_name="每次加仓比例%",
-            description="每次信号触发追加仓位比例",
+            name="base_price_gap_pct",
+            display_name="基础加仓价差%",
+            description="低动量小价差，持续跟进成本",
             value_type=float,
-            default_value=20.0,
-            min_value=5.0,
-            max_value=50.0,
+            default_value=0.25,
+            min_value=0.05,
+            max_value=2.0,
+        ),
+        StrategyParameter(
+            name="momentum_gap_boost",
+            display_name="动量价差增益",
+            description="动量越大，加仓价差放大以防插针",
+            value_type=float,
+            default_value=0.9,
+            min_value=0.1,
+            max_value=3.0,
         ),
         StrategyParameter(
             name="pullback_take_profit_pct",
             display_name="回调止盈%",
-            description="从近期高点回调达到阈值时止盈",
+            description="从阶段高点回撤达到阈值平仓",
             value_type=float,
-            default_value=0.8,
+            default_value=1.0,
             min_value=0.2,
-            max_value=5.0,
+            max_value=8.0,
         ),
     ]
 
@@ -616,11 +652,14 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         self._closes: list[float] = []
         self._volumes: list[float] = []
         self._peak_price: float = 0.0
+        self._last_add_price: float = 0.0
+        self._rsi = RSI(period=14)
 
     def initialize(self, context: StrategyContext) -> None:
         self._closes = []
         self._volumes = []
         self._peak_price = 0.0
+        self._last_add_price = 0.0
         self._initialized = True
 
     def on_bar(self, bar: Bar, context: StrategyContext) -> StrategyResult:
@@ -630,46 +669,74 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         if len(self._closes) < 25:
             return StrategyResult(log=f"数据收集中: {len(self._closes)}/25")
 
-        momentum_bars = int(self._params.get("momentum_bars", 3))
-        volume_ratio = float(self._params.get("volume_ratio", 1.2))
-        pullback_take_profit = float(self._params.get("pullback_take_profit_pct", 0.8))
+        momentum_bars = int(self._params.get("momentum_bars", 4))
+        overbought_rsi = float(self._params.get("overbought_rsi", 68.0))
+        min_volume_ratio = float(self._params.get("min_volume_ratio", 1.1))
+        max_volume_ratio = float(self._params.get("max_volume_ratio", 3.0))
+        base_add_pct = float(self._params.get("base_add_position_pct", 8.0)) / 100
+        base_gap_pct = float(self._params.get("base_price_gap_pct", 0.25))
+        gap_boost = float(self._params.get("momentum_gap_boost", 0.9))
+        pullback_take_profit = float(self._params.get("pullback_take_profit_pct", 1.0))
 
+        recent = pd.Series(self._closes[-(momentum_bars + 1):])
+        momentum_pct = max(0.0, (recent.iloc[-1] - recent.iloc[0]) / recent.iloc[0] * 100)
         recent_closes = self._closes[-momentum_bars:]
         consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
 
         avg_volume = float(pd.Series(self._volumes[-20:]).mean())
         curr_volume = self._volumes[-1]
         volume_boost = (curr_volume / avg_volume) if avg_volume > 0 else 0
+        rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
+        in_overbought = rsi_value >= overbought_rsi
 
         signal = None
 
-        if not context.has_position and consecutive_up and volume_boost >= volume_ratio:
-            signal = Signal(
-                type=SignalType.OPEN_LONG,
-                price=bar.close,
-                reason=f"订单流动量开仓: 连阳{momentum_bars} + 量比{volume_boost:.2f}",
-                extra={"add_position_pct": float(self._params.get("add_position_pct", 20.0)) / 100},
-            )
-            self._peak_price = bar.close
-
-        elif context.has_position and context.position.side == PositionSide.LONG:
-            self._peak_price = max(self._peak_price, bar.close)
-            pullback_pct = (self._peak_price - bar.close) / self._peak_price * 100 if self._peak_price > 0 else 0
-            if pullback_pct >= pullback_take_profit:
+        if not context.has_position:
+            if consecutive_up and in_overbought and min_volume_ratio <= volume_boost <= max_volume_ratio:
                 signal = Signal(
-                    type=SignalType.CLOSE_LONG,
+                    type=SignalType.OPEN_LONG,
                     price=bar.close,
-                    reason=f"订单流回调止盈: 回调{pullback_pct:.2f}%",
+                    reason=(
+                        f"订单流开仓: RSI{rsi_value:.1f}超买 + 量比{volume_boost:.2f} + 动量{momentum_pct:.2f}%"
+                    ),
                 )
-                self._peak_price = 0.0
+                self._peak_price = bar.close
+                self._last_add_price = bar.close
+        elif context.position.side == PositionSide.LONG:
+            self._peak_price = max(self._peak_price, bar.close)
+
+            dynamic_gap = base_gap_pct + momentum_pct * gap_boost
+            add_gap_hit = self._last_add_price <= 0 or bar.close >= self._last_add_price * (1 + dynamic_gap / 100)
+            add_pct = min(0.35, base_add_pct * (1 + momentum_pct / 10))
+
+            if in_overbought and add_gap_hit:
+                signal = Signal(
+                    type=SignalType.OPEN_LONG,
+                    price=bar.close,
+                    reason=f"订单流加仓: 动量{momentum_pct:.2f}% 价差{dynamic_gap:.2f}%",
+                    extra={"add_position_pct": add_pct},
+                )
+                self._last_add_price = bar.close
+            else:
+                pullback_pct = (self._peak_price - bar.close) / self._peak_price * 100 if self._peak_price > 0 else 0
+                if pullback_pct >= pullback_take_profit:
+                    signal = Signal(
+                        type=SignalType.CLOSE_LONG,
+                        price=bar.close,
+                        reason=f"订单流回调止盈: 回调{pullback_pct:.2f}%",
+                    )
+                    self._peak_price = 0.0
+                    self._last_add_price = 0.0
 
         return StrategyResult(
             signal=signal,
             indicators={
                 "volume_ratio": volume_boost,
+                "momentum_pct": momentum_pct,
+                "rsi": rsi_value,
                 "peak_price": self._peak_price,
             },
-            log=f"量比={volume_boost:.2f}, 连阳={consecutive_up}, 峰值={self._peak_price:.2f}"
+            log=f"量比={volume_boost:.2f}, RSI={rsi_value:.1f}, 动量={momentum_pct:.2f}%, 峰值={self._peak_price:.2f}"
         )
 
     def get_required_data_count(self) -> int:

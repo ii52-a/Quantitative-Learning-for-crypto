@@ -600,7 +600,7 @@ class TradingUI(QMainWindow):
         "订单流回调策略": "OrderFlowPullbackStrategy",
     }
     
-    SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT"]
+    SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "TRXUSDT", "LINKUSDT", "LTCUSDT", "BCHUSDT", "MATICUSDT", "WIFUSDT", "PEPEUSDT", "1000BONKUSDT", "SUIUSDT", "APTUSDT", "ARBUSDT", "OPUSDT"]
     
     INTERVALS = ["1min", "5min", "15min", "30min", "1h", "4h", "1d"]
     
@@ -617,6 +617,10 @@ class TradingUI(QMainWindow):
         self._selected_indicators = ["MACD", "MA"]
         self._params_file = Path(__file__).parent.parent / "saved_params" / "last_session.json"
         self._custom_strategy_dir = Path(__file__).parent.parent / "saved_params" / "custom_strategies"
+        self._ui_log_queue: dict[str, list[str]] = {"backtest": [], "opt": [], "live": []}
+        self._ui_log_timer: QTimer | None = None
+        self._equity_last_redraw = datetime.min
+        self._equity_redraw_interval_ms = 1200
         self._init_ui()
         self._load_last_session_params()
     
@@ -642,6 +646,10 @@ class TradingUI(QMainWindow):
         layout.addWidget(self.main_tabs, 1)
         
         self._show_env_load_result()
+
+        self._ui_log_timer = QTimer(self)
+        self._ui_log_timer.timeout.connect(self._flush_ui_logs)
+        self._ui_log_timer.start(150)
     
     def _show_env_load_result(self) -> None:
         """显示API密钥加载结果"""
@@ -908,7 +916,8 @@ class TradingUI(QMainWindow):
         
         strategy_layout.addWidget(QLabel("交易对"), 0, 0)
         self.live_symbol = QComboBox()
-        self.live_symbol.addItems(self.SYMBOLS[:10])
+        self.live_symbol.setEditable(True)
+        self.live_symbol.addItems(self.SYMBOLS)
         strategy_layout.addWidget(self.live_symbol, 0, 1)
         
         strategy_layout.addWidget(QLabel("策略"), 0, 2)
@@ -1481,7 +1490,8 @@ class TradingUI(QMainWindow):
         
         trade_layout.addWidget(QLabel("交易对"), 0, 0)
         self.live_symbol = QComboBox()
-        self.live_symbol.addItems(self.SYMBOLS[:5])
+        self.live_symbol.setEditable(True)
+        self.live_symbol.addItems(self.SYMBOLS)
         trade_layout.addWidget(self.live_symbol, 0, 1)
         
         trade_layout.addWidget(QLabel("杠杆"), 0, 2)
@@ -1724,8 +1734,12 @@ class TradingUI(QMainWindow):
             self._equity_avg_label.setText(f"平均: {avg_equity:.2f}")
             self._equity_time_label.setText(f"更新: {datetime.now():%H:%M:%S}")
         
-        self._draw_equity_chart_full()
-        self._update_equity_history_table()
+        now = datetime.now()
+        elapsed_ms = (now - self._equity_last_redraw).total_seconds() * 1000
+        if elapsed_ms >= self._equity_redraw_interval_ms:
+            self._draw_equity_chart_full()
+            self._update_equity_history_table()
+            self._equity_last_redraw = now
     
     def _draw_equity_chart_full(self):
         """绘制完整资产曲线图"""
@@ -2085,7 +2099,7 @@ class TradingUI(QMainWindow):
     
     def _on_live_error(self, error: str):
         """错误回调"""
-        self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新错误: {error}")
+        self._queue_ui_log("live", f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新错误: {error}")
     
     def _update_equity_tab_from_stats(self, stats: dict):
         """从统计数据更新资产曲线"""
@@ -2135,8 +2149,12 @@ class TradingUI(QMainWindow):
             self._equity_avg_label.setText(f"平均: {avg_equity:.2f}")
             self._equity_time_label.setText(f"更新: {datetime.now():%H:%M:%S}")
         
-        self._draw_equity_chart_full()
-        self._update_equity_history_table()
+        now = datetime.now()
+        elapsed_ms = (now - self._equity_last_redraw).total_seconds() * 1000
+        if elapsed_ms >= self._equity_redraw_interval_ms:
+            self._draw_equity_chart_full()
+            self._update_equity_history_table()
+            self._equity_last_redraw = now
     
     def _auto_refresh_account(self):
         """自动刷新账户信息"""
@@ -2380,6 +2398,30 @@ class TradingUI(QMainWindow):
         if checked and self.api_key.text() and self.api_secret.text():
             self._connect_exchange()
     
+    def _queue_ui_log(self, channel: str, message: str) -> None:
+        if channel not in self._ui_log_queue:
+            self._ui_log_queue[channel] = []
+        self._ui_log_queue[channel].append(message)
+
+    def _flush_ui_logs(self) -> None:
+        try:
+            backtest_logs = self._ui_log_queue.get("backtest", [])
+            if backtest_logs and hasattr(self, "log_output"):
+                self.log_output.append("\n".join(backtest_logs[:30]))
+                del backtest_logs[:30]
+
+            opt_logs = self._ui_log_queue.get("opt", [])
+            if opt_logs and hasattr(self, "opt_result_text"):
+                self.opt_result_text.append("\n".join(opt_logs[:50]))
+                del opt_logs[:50]
+
+            live_logs = self._ui_log_queue.get("live", [])
+            if live_logs and hasattr(self, "live_log"):
+                self.live_log.append("\n".join(live_logs[:20]))
+                del live_logs[:20]
+        except Exception:
+            pass
+
     def _create_backtest_config_panel(self) -> QWidget:
         """创建回测配置面板"""
         panel = QFrame()
@@ -2393,6 +2435,7 @@ class TradingUI(QMainWindow):
         
         config_grid.addWidget(QLabel("交易对"), 0, 0)
         self.symbol = QComboBox()
+        self.symbol.setEditable(True)
         self.symbol.addItems(self.SYMBOLS)
         config_grid.addWidget(self.symbol, 0, 1)
         
@@ -2547,6 +2590,7 @@ class TradingUI(QMainWindow):
         
         config_grid.addWidget(QLabel("交易对"), 0, 0)
         self.opt_symbol = QComboBox()
+        self.opt_symbol.setEditable(True)
         self.opt_symbol.addItems(self.SYMBOLS)
         config_grid.addWidget(self.opt_symbol, 0, 1)
         
@@ -3421,8 +3465,8 @@ class TradingUI(QMainWindow):
         
         self._optimizer_worker = OptimizerWorker(config)
         self._optimizer_worker.progress.connect(self._on_optimization_progress)
-        self._optimizer_worker.log_message.connect(lambda m: self.opt_result_text.append(m))
-        self._optimizer_worker.iteration_log.connect(lambda m: self.opt_result_text.append(m))
+        self._optimizer_worker.log_message.connect(lambda m: self._queue_ui_log("opt", m))
+        self._optimizer_worker.iteration_log.connect(lambda m: self._queue_ui_log("opt", m))
         self._optimizer_worker.finished.connect(self._on_optimization_finished)
         self._optimizer_worker.error.connect(self._on_optimization_error)
         self._optimizer_worker.start()
@@ -3802,8 +3846,8 @@ class TradingUI(QMainWindow):
         self.status.setStyleSheet("color: #f0b90b;")
         
         self._worker = BacktestWorker(config)
-        self._worker.progress.connect(lambda m: self.log_output.append(m))
-        self._worker.trade_log.connect(lambda m: self.log_output.append(m))
+        self._worker.progress.connect(lambda m: self._queue_ui_log("backtest", m))
+        self._worker.trade_log.connect(lambda m: self._queue_ui_log("backtest", m))
         self._worker.finished.connect(self._on_finished)
         self._worker.error.connect(self._on_error)
         self._worker.start()
@@ -3885,6 +3929,9 @@ class TradingUI(QMainWindow):
         
         if hasattr(self, '_status_timer') and self._status_timer:
             self._status_timer.stop()
+
+        if self._ui_log_timer:
+            self._ui_log_timer.stop()
 
         if hasattr(self, '_optimizer_worker') and self._optimizer_worker:
             self._shutdown_thread(self._optimizer_worker, "OptimizerWorker")
