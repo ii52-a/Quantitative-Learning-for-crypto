@@ -180,6 +180,8 @@ class BacktestWorker(QThread):
             stop_loss_pct = self.config.get("stop_loss_pct", 0.0)
             take_profit_pct = self.config.get("take_profit_pct", 0.0)
             position_size = self.config.get("position_size", 0.1)
+            commission_rate = self.config.get("commission_rate", 0.0004)
+            slippage = self.config.get("slippage", 0.0001)
             
             self.progress.emit(f"📊 初始化回测环境...")
             self.progress.emit(f"   交易对: {symbol}")
@@ -192,6 +194,8 @@ class BacktestWorker(QThread):
                 self.progress.emit(f"   止损: {stop_loss_pct}%")
             if take_profit_pct > 0:
                 self.progress.emit(f"   止盈: {take_profit_pct}%")
+            self.progress.emit(f"   手续费率: {commission_rate:.5f}")
+            self.progress.emit(f"   滑点率: {slippage:.5f}")
             
             from Data.data_service import get_data_service, DataServiceConfig, RegionRestrictedError, DataSourceError
             from Strategy.templates import get_strategy
@@ -235,6 +239,8 @@ class BacktestWorker(QThread):
                 stop_loss_pct=stop_loss_pct,
                 take_profit_pct=take_profit_pct,
                 position_size=position_size,
+                commission_rate=commission_rate,
+                slippage=slippage,
             )
             
             self.progress.emit(f"\n🚀 开始回测...")
@@ -367,6 +373,9 @@ class OptimizerWorker(QThread):
                 leverage=self.config.get("leverage", 5),
                 stop_loss_pct=self.config.get("stop_loss_pct", 0.0),
                 take_profit_pct=self.config.get("take_profit_pct", 0.0),
+                position_size=self.config.get("position_size", 0.1),
+                commission_rate=self.config.get("commission_rate", 0.0004),
+                slippage=self.config.get("slippage", 0.0001),
             )
             
             optimizer = ParameterOptimizer(
@@ -2501,6 +2510,22 @@ class TradingUI(QMainWindow):
         self.position_size.setSingleStep(5)
         self.position_size.setValue(100)
         risk_grid.addWidget(self.position_size, 1, 3)
+
+        risk_grid.addWidget(QLabel("手续费率"), 2, 0)
+        self.commission_rate = QDoubleSpinBox()
+        self.commission_rate.setRange(0.0, 0.01)
+        self.commission_rate.setDecimals(5)
+        self.commission_rate.setSingleStep(0.0001)
+        self.commission_rate.setValue(0.0004)
+        risk_grid.addWidget(self.commission_rate, 2, 1)
+
+        risk_grid.addWidget(QLabel("滑点率"), 2, 2)
+        self.slippage = QDoubleSpinBox()
+        self.slippage.setRange(0.0, 0.01)
+        self.slippage.setDecimals(5)
+        self.slippage.setSingleStep(0.0001)
+        self.slippage.setValue(0.0001)
+        risk_grid.addWidget(self.slippage, 2, 3)
         
         self.risk_warning = QLabel("")
         self.risk_warning.setStyleSheet("color: #f6465d; font-size: 11px;")
@@ -2523,6 +2548,14 @@ class TradingUI(QMainWindow):
         self.params_layout = QGridLayout(self.params_frame)
         self.params_layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.params_frame)
+
+        self.strategy_param_help = QTextEdit()
+        self.strategy_param_help.setReadOnly(True)
+        self.strategy_param_help.setMaximumHeight(160)
+        self.strategy_param_help.setStyleSheet(
+            "QTextEdit { background-color: #0b0e11; border: 1px solid #2a2e39; border-radius: 4px; color: #848e9c; font-size: 11px; }"
+        )
+        layout.addWidget(self.strategy_param_help)
         
         self._param_widgets = {}
         self._on_strategy_changed(self.strategy.currentText())
@@ -2677,8 +2710,8 @@ class TradingUI(QMainWindow):
         left_layout.addWidget(params_label)
         
         self.param_table = QTableWidget()
-        self.param_table.setColumnCount(4)
-        self.param_table.setHorizontalHeaderLabels(["参数名", "最小值", "最大值", "步长"])
+        self.param_table.setColumnCount(5)
+        self.param_table.setHorizontalHeaderLabels(["参数名", "最小值", "最大值", "步长", "说明"])
         self.param_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.param_table.verticalHeader().setDefaultSectionSize(42)
         self.param_table.verticalHeader().setVisible(False)
@@ -2807,6 +2840,11 @@ class TradingUI(QMainWindow):
             strategy = get_strategy(strategy_name)
             all_params = get_all_optimizable_params(strategy, include_risk_params=True)
             
+            param_desc_map = {
+                p["name"]: p.get("description", "")
+                for p in strategy.get_info().get("parameters", [])
+            }
+
             all_ranges = all_params["strategy"] + all_params["risk"]
             
             self.param_table.blockSignals(True)
@@ -2814,10 +2852,12 @@ class TradingUI(QMainWindow):
             self._param_spinboxes = {}
             
             for row, pr in enumerate(all_ranges):
-                name_item = QTableWidgetItem(pr.name)
+                display_name = pr.display_name or pr.name
+                name_item = QTableWidgetItem(display_name)
                 name_item.setTextAlignment(Qt.AlignCenter)
                 name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
                 name_item.setBackground(QColor("#2a2e39"))
+                name_item.setToolTip(pr.name)
                 self.param_table.setItem(row, 0, name_item)
                 
                 if pr.values:
@@ -2883,6 +2923,24 @@ class TradingUI(QMainWindow):
                         "step": step_item,
                         "is_discrete": False,
                     }
+
+                desc_text = param_desc_map.get(pr.name, "")
+                if not desc_text and pr.category == "risk":
+                    risk_desc = {
+                        "leverage": "杠杆倍数，越高收益/风险放大越明显。",
+                        "stop_loss_pct": "固定止损阈值（%），控制单次风险敞口。",
+                        "take_profit_pct": "固定止盈阈值（%），用于锁定浮盈。",
+                        "position_size": "单次开仓仓位占总资金比例（0~1）。",
+                        "commission_rate": "成交手续费率，影响净收益与交易频率适应性。",
+                        "slippage": "成交滑点率，模拟实盘冲击成本与执行偏差。",
+                    }
+                    desc_text = risk_desc.get(pr.name, "")
+
+                desc_item = QTableWidgetItem(desc_text)
+                desc_item.setFlags(desc_item.flags() & ~Qt.ItemIsEditable)
+                desc_item.setToolTip(desc_text)
+                desc_item.setBackground(QColor("#1a2332"))
+                self.param_table.setItem(row, 4, desc_item)
             
             self.param_table.resizeRowsToContents()
             self.param_table.blockSignals(False)
@@ -2896,7 +2954,8 @@ class TradingUI(QMainWindow):
         
         ranges = []
         for row in range(self.param_table.rowCount()):
-            name = self.param_table.item(row, 0).text()
+            name_item = self.param_table.item(row, 0)
+            name = name_item.toolTip() if name_item and name_item.toolTip() else (name_item.text() if name_item else "")
             spinboxes = self._param_spinboxes.get(name, {})
             
             if spinboxes.get("is_discrete"):
@@ -2967,6 +3026,8 @@ class TradingUI(QMainWindow):
         self.stop_loss.setValue(0)
         self.take_profit.setValue(0)
         self.position_size.setValue(100)
+        self.commission_rate.setValue(0.0004)
+        self.slippage.setValue(0.0001)
         self._on_strategy_changed(self.strategy.currentText())
         self.log_output.append("🔄 回测参数已重置为默认值")
     
@@ -3442,9 +3503,12 @@ class TradingUI(QMainWindow):
             "data_num": self.opt_data_limit.value(),
             "strategy": self.STRATEGIES.get(self.opt_strategy.currentText()),
             "initial_capital": self.opt_capital.value(),
-            "leverage": 5,
-            "stop_loss_pct": 0,
-            "take_profit_pct": 0,
+            "leverage": self.leverage.value(),
+            "stop_loss_pct": self.stop_loss.value(),
+            "take_profit_pct": self.take_profit.value(),
+            "position_size": self.position_size.value() / 100,
+            "commission_rate": self.commission_rate.value(),
+            "slippage": self.slippage.value(),
             "opt_method": self.opt_method.currentText(),
             "iterations": self.opt_iterations.value(),
             "optimization_metric": metric_map.get(self.opt_metric.currentText(), "sharpe_ratio"),
@@ -3811,6 +3875,27 @@ class TradingUI(QMainWindow):
             self._param_widgets[p["name"]] = w
             self.params_layout.addWidget(w, row, col + 1)
             row_idx += 1
+
+        desc_lines = [
+            f"策略说明：{info.get('description', '-')}",
+            f"最小历史数据需求：{info.get('required_data_count', '-')}",
+            "",
+            "参数说明：",
+        ]
+        for p in info.get("parameters", []):
+            default_val = p.get("default")
+            range_text = ""
+            if p.get("options"):
+                range_text = f"可选: {', '.join(str(v) for v in p['options'])}"
+            else:
+                range_text = f"范围: {p.get('min', '-') } ~ {p.get('max', '-') }"
+            desc_lines.append(
+                f"• {p.get('display_name', p['name'])} [{p['name']}]\n"
+                f"  {p.get('description', '')}\n"
+                f"  默认: {default_val} | {range_text}"
+            )
+
+        self.strategy_param_help.setText("\n".join(desc_lines))
     
     def _run(self):
         params = {}
@@ -3831,6 +3916,8 @@ class TradingUI(QMainWindow):
             "stop_loss_pct": self.stop_loss.value(),
             "take_profit_pct": self.take_profit.value(),
             "position_size": self.position_size.value() / 100,
+            "commission_rate": self.commission_rate.value(),
+            "slippage": self.slippage.value(),
         }
         
         self.log_output.clear()

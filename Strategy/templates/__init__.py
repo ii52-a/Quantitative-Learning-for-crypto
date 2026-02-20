@@ -645,6 +645,69 @@ class OrderFlowPullbackStrategy(BaseStrategy):
             min_value=0.2,
             max_value=8.0,
         ),
+        StrategyParameter(
+            name="trail_activation_pct",
+            display_name="启动追踪止盈%",
+            description="盈利达到该比例后，启用追踪止盈",
+            value_type=float,
+            default_value=1.5,
+            min_value=0.2,
+            max_value=20.0,
+        ),
+        StrategyParameter(
+            name="trailing_stop_pct",
+            display_name="追踪回撤阈值%",
+            description="已启动追踪后，从高点回撤达到阈值平仓",
+            value_type=float,
+            default_value=0.8,
+            min_value=0.1,
+            max_value=10.0,
+        ),
+        StrategyParameter(
+            name="hard_stop_loss_pct",
+            display_name="硬止损%",
+            description="相对持仓均价的硬止损，防止急跌",
+            value_type=float,
+            default_value=4.0,
+            min_value=0.5,
+            max_value=20.0,
+        ),
+        StrategyParameter(
+            name="max_add_count",
+            display_name="最大加仓次数",
+            description="单次持仓允许连续加仓次数上限",
+            value_type=int,
+            default_value=4,
+            min_value=1,
+            max_value=12,
+        ),
+        StrategyParameter(
+            name="add_size_decay",
+            display_name="加仓衰减系数",
+            description="每次加仓后按该系数缩小后续加仓比例",
+            value_type=float,
+            default_value=0.9,
+            min_value=0.5,
+            max_value=1.2,
+        ),
+        StrategyParameter(
+            name="momentum_add_boost",
+            display_name="动量加仓增益",
+            description="动量越强时放大加仓比例，增强顺势能力",
+            value_type=float,
+            default_value=0.25,
+            min_value=0.0,
+            max_value=2.0,
+        ),
+        StrategyParameter(
+            name="cooldown_bars",
+            display_name="平仓冷却K线",
+            description="平仓后等待指定K线数再允许开仓，避免来回打脸",
+            value_type=int,
+            default_value=2,
+            min_value=0,
+            max_value=20,
+        ),
     ]
 
     def __init__(self, params: dict[str, Any] | None = None):
@@ -653,6 +716,8 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         self._volumes: list[float] = []
         self._peak_price: float = 0.0
         self._last_add_price: float = 0.0
+        self._add_count: int = 0
+        self._cooldown_left: int = 0
         self._rsi = RSI(period=14)
 
     def initialize(self, context: StrategyContext) -> None:
@@ -660,6 +725,8 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         self._volumes = []
         self._peak_price = 0.0
         self._last_add_price = 0.0
+        self._add_count = 0
+        self._cooldown_left = 0
         self._initialized = True
 
     def on_bar(self, bar: Bar, context: StrategyContext) -> StrategyResult:
@@ -677,6 +744,13 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         base_gap_pct = float(self._params.get("base_price_gap_pct", 0.25))
         gap_boost = float(self._params.get("momentum_gap_boost", 0.9))
         pullback_take_profit = float(self._params.get("pullback_take_profit_pct", 1.0))
+        trail_activation_pct = float(self._params.get("trail_activation_pct", 1.5))
+        trailing_stop_pct = float(self._params.get("trailing_stop_pct", 0.8))
+        hard_stop_loss_pct = float(self._params.get("hard_stop_loss_pct", 4.0))
+        max_add_count = int(self._params.get("max_add_count", 4))
+        add_size_decay = float(self._params.get("add_size_decay", 0.9))
+        momentum_add_boost = float(self._params.get("momentum_add_boost", 0.25))
+        cooldown_bars = int(self._params.get("cooldown_bars", 2))
 
         recent = pd.Series(self._closes[-(momentum_bars + 1):])
         momentum_pct = max(0.0, (recent.iloc[-1] - recent.iloc[0]) / recent.iloc[0] * 100)
@@ -692,6 +766,18 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         signal = None
 
         if not context.has_position:
+            if self._cooldown_left > 0:
+                self._cooldown_left -= 1
+                return StrategyResult(
+                    signal=None,
+                    indicators={
+                        "volume_ratio": volume_boost,
+                        "momentum_pct": momentum_pct,
+                        "rsi": rsi_value,
+                        "peak_price": self._peak_price,
+                    },
+                    log=f"冷却中({self._cooldown_left}), 量比={volume_boost:.2f}, RSI={rsi_value:.1f}"
+                )
             if consecutive_up and in_overbought and min_volume_ratio <= volume_boost <= max_volume_ratio:
                 signal = Signal(
                     type=SignalType.OPEN_LONG,
@@ -702,31 +788,60 @@ class OrderFlowPullbackStrategy(BaseStrategy):
                 )
                 self._peak_price = bar.close
                 self._last_add_price = bar.close
+                self._add_count = 0
         elif context.position.side == PositionSide.LONG:
             self._peak_price = max(self._peak_price, bar.close)
 
             dynamic_gap = base_gap_pct + momentum_pct * gap_boost
             add_gap_hit = self._last_add_price <= 0 or bar.close >= self._last_add_price * (1 + dynamic_gap / 100)
-            add_pct = min(0.35, base_add_pct * (1 + momentum_pct / 10))
+            dynamic_boost = 1 + momentum_pct * momentum_add_boost / 10
+            decay_factor = add_size_decay ** self._add_count
+            add_pct = min(0.35, base_add_pct * dynamic_boost * decay_factor)
 
-            if in_overbought and add_gap_hit:
+            entry_drawdown_pct = (context.position.entry_price - bar.close) / context.position.entry_price * 100
+            if entry_drawdown_pct >= hard_stop_loss_pct:
+                signal = Signal(
+                    type=SignalType.CLOSE_LONG,
+                    price=bar.close,
+                    reason=f"订单流硬止损: 回撤{entry_drawdown_pct:.2f}%",
+                )
+                self._peak_price = 0.0
+                self._last_add_price = 0.0
+                self._add_count = 0
+                self._cooldown_left = cooldown_bars
+                return StrategyResult(
+                    signal=signal,
+                    indicators={"volume_ratio": volume_boost, "momentum_pct": momentum_pct, "rsi": rsi_value, "peak_price": self._peak_price},
+                    log=f"硬止损触发, 回撤={entry_drawdown_pct:.2f}%"
+                )
+
+            if in_overbought and add_gap_hit and self._add_count < max_add_count:
                 signal = Signal(
                     type=SignalType.OPEN_LONG,
                     price=bar.close,
-                    reason=f"订单流加仓: 动量{momentum_pct:.2f}% 价差{dynamic_gap:.2f}%",
+                    reason=f"订单流加仓: 动量{momentum_pct:.2f}% 价差{dynamic_gap:.2f}% 次数{self._add_count + 1}/{max_add_count}",
                     extra={"add_position_pct": add_pct},
                 )
                 self._last_add_price = bar.close
+                self._add_count += 1
             else:
                 pullback_pct = (self._peak_price - bar.close) / self._peak_price * 100 if self._peak_price > 0 else 0
-                if pullback_pct >= pullback_take_profit:
+                entry_gain_pct = (bar.close - context.position.entry_price) / context.position.entry_price * 100
+                use_trailing = entry_gain_pct >= trail_activation_pct
+                target_pullback = trailing_stop_pct if use_trailing else pullback_take_profit
+                if pullback_pct >= target_pullback:
                     signal = Signal(
                         type=SignalType.CLOSE_LONG,
                         price=bar.close,
-                        reason=f"订单流回调止盈: 回调{pullback_pct:.2f}%",
+                        reason=(
+                            f"订单流{'追踪' if use_trailing else '回调'}止盈: "
+                            f"回调{pullback_pct:.2f}% / 阈值{target_pullback:.2f}%"
+                        ),
                     )
                     self._peak_price = 0.0
                     self._last_add_price = 0.0
+                    self._add_count = 0
+                    self._cooldown_left = cooldown_bars
 
         return StrategyResult(
             signal=signal,
@@ -740,7 +855,8 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         )
 
     def get_required_data_count(self) -> int:
-        return 25
+        momentum_bars = int(self._params.get("momentum_bars", 4))
+        return max(25, momentum_bars + 20)
 
 
 STRATEGY_REGISTRY: dict[str, type[BaseStrategy]] = {

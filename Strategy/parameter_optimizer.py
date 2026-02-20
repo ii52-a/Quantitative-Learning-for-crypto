@@ -1063,7 +1063,7 @@ class ParameterOptimizer:
             risk_params = {}
             
             for key, value in params.items():
-                if key in ["leverage", "stop_loss_pct", "take_profit_pct", "position_size"]:
+                if key in ["leverage", "stop_loss_pct", "take_profit_pct", "position_size", "commission_rate", "slippage"]:
                     risk_params[key] = value
                 else:
                     strategy_params[key] = value
@@ -1078,8 +1078,8 @@ class ParameterOptimizer:
                 position_size=risk_params.get("position_size", self.base_config.position_size),
                 stop_loss_pct=risk_params.get("stop_loss_pct", self.base_config.stop_loss_pct),
                 take_profit_pct=risk_params.get("take_profit_pct", self.base_config.take_profit_pct),
-                commission_rate=self.base_config.commission_rate,
-                slippage=self.base_config.slippage,
+                commission_rate=float(risk_params.get("commission_rate", self.base_config.commission_rate)),
+                slippage=float(risk_params.get("slippage", self.base_config.slippage)),
             )
             
             engine = BacktestEngine(strategy, config)
@@ -1265,6 +1265,22 @@ def get_all_optimizable_params(
                 step=0.05,
                 category="risk",
                 display_name="仓位比例",
+            ),
+            ParameterRange(
+                name="commission_rate",
+                min_value=0.0,
+                max_value=0.002,
+                step=0.0002,
+                category="risk",
+                display_name="手续费率",
+            ),
+            ParameterRange(
+                name="slippage",
+                min_value=0.0,
+                max_value=0.002,
+                step=0.0002,
+                category="risk",
+                display_name="滑点率",
             ),
         ]
     
