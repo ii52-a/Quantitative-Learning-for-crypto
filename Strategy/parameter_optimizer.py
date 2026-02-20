@@ -54,12 +54,30 @@ class ParameterRange:
             return self.values
         if self.step == 0:
             return [self.min_value]
-        
+
+        step = float(self.step)
+        if step < 0:
+            step = abs(step)
+        span = float(self.max_value) - float(self.min_value)
+        if span < 0:
+            return [self.min_value]
+
+        count = int(math.floor(span / step + 1e-12)) + 1
         values = []
-        current = self.min_value
-        while current <= self.max_value + 1e-9:
-            values.append(current)
-            current += self.step
+        for i in range(max(1, count)):
+            value = float(self.min_value) + i * step
+            value = min(value, float(self.max_value))
+            value = round(value, 10)
+            if abs(value - round(value)) < 1e-10:
+                value = int(round(value))
+            values.append(value)
+
+        if values and values[-1] != self.max_value and abs(float(values[-1]) - float(self.max_value)) > 1e-8:
+            max_value = round(float(self.max_value), 10)
+            if abs(max_value - round(max_value)) < 1e-10:
+                max_value = int(round(max_value))
+            values.append(max_value)
+
         return values
     
     def get_random_value(self) -> Any:
@@ -1201,11 +1219,15 @@ def get_parameter_ranges_from_strategy(
                 display_name=param.display_name,
             ))
         elif param.value_type == float:
+            min_val = param.min_value if param.min_value is not None else 0
+            max_val = param.max_value if param.max_value is not None else param.default_value * 2
+            raw_step = (max_val - min_val) / 10 if max_val is not None and min_val is not None else 0.1
+            step = max(1e-6, round(float(raw_step), 6))
             ranges.append(ParameterRange(
                 name=param.name,
-                min_value=param.min_value or 0,
-                max_value=param.max_value or param.default_value * 2,
-                step=(param.max_value - param.min_value) / 10 if param.max_value and param.min_value else 0.1,
+                min_value=min_val,
+                max_value=max_val,
+                step=step,
                 category="strategy",
                 display_name=param.display_name,
             ))

@@ -32,6 +32,12 @@ class TestParameterRange:
         assert len(values) == 5
         assert values[0] == 0.0
         assert values[-1] == 1.0
+
+    def test_get_values_avoids_floating_point_drift(self):
+        pr = ParameterRange("gap", 0.05, 2.0, 0.195)
+        values = pr.get_values()
+        assert all(abs(v) < 100 for v in values if isinstance(v, (int, float)))
+        assert abs(float(values[-1]) - 2.0) < 1e-8
     
     def test_get_values_with_explicit_values(self):
         pr = ParameterRange("type", 0, 0, values=["A", "B", "C"])
