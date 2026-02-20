@@ -57,6 +57,12 @@ INTERVAL_TO_MINUTES = {
     "1d": 1440, "1w": 10080, "1M": 43200,
 }
 
+SECOND_INTERVAL_TO_SECONDS = {
+    "1s": 1,
+    "5s": 5,
+    "15s": 15,
+}
+
 BASE_INTERVAL = "1min"
 AGGREGATABLE_INTERVALS = ["3min", "5min", "15min", "30min", "1h", "2h", "4h", "6h", "12h", "1d"]
 MAX_AGGREGATION_DELAY_SECONDS = 5
@@ -137,6 +143,9 @@ class UnifiedDataService:
             self._client = None
 
     def get_interval(self, interval: str) -> str:
+        if interval in SECOND_INTERVAL_TO_SECONDS:
+            # Binance标准K线接口不支持秒级，秒级数据走聚合成交逻辑
+            return interval
         if interval in INTERVAL_MAP:
             return INTERVAL_MAP[interval]
         if interval in INTERVAL_MAP.values():
@@ -461,6 +470,90 @@ class UnifiedDataService:
         
         return None
 
+    def _fetch_agg_trades(
+        self,
+        symbol: str,
+        start_time_ms: int,
+        end_time_ms: int,
+        limit: int = 1000,
+    ) -> list[dict[str, Any]]:
+        """获取聚合成交（用于秒级K线构造）"""
+        client = self._get_client()
+        trades = client.futures_aggregate_trades(
+            symbol=symbol,
+            startTime=start_time_ms,
+            endTime=end_time_ms,
+            limit=min(1000, max(1, limit)),
+        )
+        return trades or []
+
+    def get_second_klines_from_api(
+        self,
+        symbol: str,
+        interval: str,
+        limit: int = 500,
+    ) -> pd.DataFrame:
+        """从聚合成交构造秒级K线（1s/5s/15s）"""
+        if interval not in SECOND_INTERVAL_TO_SECONDS:
+            raise DataSourceError(f"不支持的秒级周期: {interval}")
+
+        sec = SECOND_INTERVAL_TO_SECONDS[interval]
+        end_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+        # 扩大窗口，降低无成交导致的样本不足
+        window_seconds = max(limit * sec * 3, 300)
+        start_ms = end_ms - window_seconds * 1000
+
+        all_trades: list[dict[str, Any]] = []
+        cursor = start_ms
+        max_rounds = 20
+
+        for _ in range(max_rounds):
+            trades = self._fetch_agg_trades(symbol, cursor, end_ms, 1000)
+            if not trades:
+                break
+
+            all_trades.extend(trades)
+            last_ts = int(trades[-1].get("T", cursor))
+            if len(trades) < 1000 or last_ts >= end_ms - 1:
+                break
+            cursor = last_ts + 1
+            time.sleep(0.05)
+
+        if not all_trades:
+            return pd.DataFrame()
+
+        trade_df = pd.DataFrame(all_trades)
+        trade_df["timestamp"] = pd.to_datetime(trade_df["T"].astype("int64"), unit="ms", utc=True)
+        trade_df["price"] = trade_df["p"].astype(float)
+        trade_df["qty"] = trade_df["q"].astype(float)
+        trade_df = trade_df.set_index("timestamp").sort_index()
+
+        ohlcv_1s = trade_df.resample("1s").agg(
+            open=("price", "first"),
+            high=("price", "max"),
+            low=("price", "min"),
+            close=("price", "last"),
+            volume=("qty", "sum"),
+        ).dropna(subset=["open", "high", "low", "close"])
+
+        if ohlcv_1s.empty:
+            return pd.DataFrame()
+
+        if sec > 1:
+            rule = f"{sec}s"
+            ohlcv = ohlcv_1s.resample(rule).agg({
+                "open": "first",
+                "high": "max",
+                "low": "min",
+                "close": "last",
+                "volume": "sum",
+            }).dropna(subset=["open", "high", "low", "close"])
+        else:
+            ohlcv = ohlcv_1s
+
+        ohlcv.index = ohlcv.index.tz_convert("Asia/Shanghai")
+        return ohlcv.tail(limit)
+
     def get_klines(
         self,
         symbol: str,
@@ -469,6 +562,13 @@ class UnifiedDataService:
         prefer_database: bool | None = None,
     ) -> pd.DataFrame:
         prefer_db = prefer_database if prefer_database is not None else self.config.prefer_database
+
+        if interval in SECOND_INTERVAL_TO_SECONDS:
+            try:
+                return self.get_second_klines_from_api(symbol, interval, limit)
+            except Exception as e:
+                logger.error(f"[{symbol}] 秒级数据获取失败: {e}")
+                return pd.DataFrame()
 
         if prefer_db:
             df = self.get_klines_from_database(symbol, interval, limit)

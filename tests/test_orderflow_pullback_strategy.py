@@ -111,3 +111,12 @@ def test_orderflow_wool_strategy_can_add_short_and_close_on_pullback():
     add_trades = [t for t in result.trades if t.side == "ADD_SHORT"]
     assert len(add_trades) >= 1
     assert any(t.side == "short" for t in result.completed_trades)
+
+
+def test_orderflow_pullback_exposes_volume_filter_parameters_for_optimizer():
+    strategy = get_strategy("OrderFlowPullbackStrategy")
+    info = strategy.get_info()
+    param_names = {p["name"] for p in info["parameters"]}
+
+    assert "min_volume_ratio" in param_names
+    assert "max_volume_ratio" in param_names
