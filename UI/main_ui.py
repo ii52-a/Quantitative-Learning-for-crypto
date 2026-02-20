@@ -597,6 +597,7 @@ class TradingUI(QMainWindow):
         "布林带策略": "BollingerBandsStrategy",
         "多指标组合策略": "MultiIndicatorStrategy",
         "自适应多指标策略": "AdaptiveMultiIndicatorStrategy",
+        "订单流回调策略": "OrderFlowPullbackStrategy",
     }
     
     SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT"]
@@ -615,6 +616,7 @@ class TradingUI(QMainWindow):
         self._last_config = None
         self._selected_indicators = ["MACD", "MA"]
         self._params_file = Path(__file__).parent.parent / "saved_params" / "last_session.json"
+        self._custom_strategy_dir = Path(__file__).parent.parent / "saved_params" / "custom_strategies"
         self._init_ui()
         self._load_last_session_params()
     
@@ -912,7 +914,16 @@ class TradingUI(QMainWindow):
         strategy_layout.addWidget(QLabel("策略"), 0, 2)
         self.live_strategy = QComboBox()
         self.live_strategy.addItems(list(self.STRATEGIES.keys()))
+        self.live_strategy.currentTextChanged.connect(self._on_live_strategy_changed)
         strategy_layout.addWidget(self.live_strategy, 0, 3)
+
+        strategy_layout.addWidget(QLabel("自定义策略"), 1, 2)
+        self.live_custom_strategy = QComboBox()
+        strategy_layout.addWidget(self.live_custom_strategy, 1, 3)
+
+        self.live_load_custom_btn = QPushButton("加载")
+        self.live_load_custom_btn.clicked.connect(self._load_custom_strategy_to_live)
+        strategy_layout.addWidget(self.live_load_custom_btn, 1, 4)
         
         strategy_layout.addWidget(QLabel("交易模式"), 1, 0)
         self.live_trade_mode = QComboBox()
@@ -950,6 +961,16 @@ class TradingUI(QMainWindow):
         mode_layout.addStretch()
         strategy_layout.addLayout(mode_layout, 4, 0, 1, 4)
         
+        self.live_params_frame = QFrame()
+        self.live_params_layout = QGridLayout(self.live_params_frame)
+        self.live_params_layout.setContentsMargins(0, 0, 0, 0)
+        self.live_params_layout.setSpacing(4)
+        self._live_param_widgets = {}
+        layout.addWidget(self.live_params_frame)
+
+        self._reload_custom_strategy_profiles()
+        self._on_live_strategy_changed(self.live_strategy.currentText())
+
         self._load_api_from_env()
         self.live_mode_live.toggled.connect(self._on_mode_changed)
         
@@ -2136,7 +2157,8 @@ class TradingUI(QMainWindow):
             from Strategy.templates import get_strategy
             
             strategy_name = self.live_strategy.currentText()
-            strategy = get_strategy(strategy_name, {})
+            strategy_params = self._collect_live_strategy_params()
+            strategy = get_strategy(self.STRATEGIES.get(strategy_name, strategy_name), strategy_params)
             
             self._trader.set_strategy(strategy)
             
@@ -2484,6 +2506,11 @@ class TradingUI(QMainWindow):
         self.sync_to_live_btn.clicked.connect(self._sync_to_live_trading)
         self.sync_to_live_btn.setEnabled(False)
         btn_layout.addWidget(self.sync_to_live_btn)
+
+        self.save_custom_btn = QPushButton("💾 保存为自定义策略")
+        self.save_custom_btn.clicked.connect(self._save_as_custom_strategy)
+        self.save_custom_btn.setEnabled(False)
+        btn_layout.addWidget(self.save_custom_btn)
         
         self.enhanced_btn = QPushButton("🔬 强化回测")
         self.enhanced_btn.clicked.connect(self._run_enhanced_backtest)
@@ -3171,23 +3198,12 @@ class TradingUI(QMainWindow):
         self.live_stop_loss.setValue(float(config.stop_loss_pct))
         self.live_take_profit.setValue(float(config.take_profit_pct))
         
-        strategy_name = result.strategy_name
-        idx = self.live_strategy.findText(strategy_name)
+        strategy_key = next((k for k, v in self.STRATEGIES.items() if v == result.strategy_name), result.strategy_name)
+        idx = self.live_strategy.findText(strategy_key)
         if idx >= 0:
             self.live_strategy.setCurrentIndex(idx)
-        
-        if hasattr(self, '_param_widgets'):
-            for name, widget in self._param_widgets.items():
-                if name in result.strategy_params:
-                    value = result.strategy_params[name]
-                    if isinstance(widget, QDoubleSpinBox):
-                        widget.setValue(float(value))
-                    elif isinstance(widget, QSpinBox):
-                        widget.setValue(int(value))
-                    elif isinstance(widget, QComboBox):
-                        idx = widget.findText(str(value))
-                        if idx >= 0:
-                            widget.setCurrentIndex(idx)
+
+        self._apply_live_strategy_params(result.strategy_params or {})
         
         self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📋 已同步回测参数到实盘交易")
         self.live_log.append(f"   交易对: {symbol}")
@@ -3205,6 +3221,136 @@ class TradingUI(QMainWindow):
         else:
             QMessageBox.information(self, "成功", "参数已同步到实盘交易\n请在实盘页面配置API后启动")
     
+    def _on_live_strategy_changed(self, name: str):
+        from Strategy.templates import get_strategy
+
+        strategy = get_strategy(self.STRATEGIES.get(name, name))
+        info = strategy.get_info()
+
+        while self.live_params_layout.count():
+            item = self.live_params_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        self._live_param_widgets = {}
+        for i, p in enumerate(info.get("parameters", [])):
+            self.live_params_layout.addWidget(QLabel(p["display_name"]), i, 0)
+            if p.get("options"):
+                w = QComboBox()
+                w.addItems([str(x) for x in p["options"]])
+                w.setCurrentText(str(p.get("default", p["options"][0])))
+            elif p["type"] == "float":
+                w = QDoubleSpinBox()
+                w.setRange(float(p.get("min", 0)), float(p.get("max", 1000000)))
+                w.setValue(float(p.get("default", 0)))
+                w.setSingleStep(0.1)
+            else:
+                w = QSpinBox()
+                w.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
+                w.setValue(int(p.get("default", 0)))
+            self._live_param_widgets[p["name"]] = w
+            self.live_params_layout.addWidget(w, i, 1)
+
+    def _collect_live_strategy_params(self) -> dict:
+        params = {}
+        for name, w in getattr(self, "_live_param_widgets", {}).items():
+            if isinstance(w, QComboBox):
+                params[name] = w.currentText()
+            else:
+                params[name] = w.value()
+        return params
+
+    def _apply_live_strategy_params(self, params: dict):
+        for name, value in params.items():
+            w = getattr(self, "_live_param_widgets", {}).get(name)
+            if not w:
+                continue
+            if isinstance(w, QComboBox):
+                idx = w.findText(str(value))
+                if idx >= 0:
+                    w.setCurrentIndex(idx)
+            elif isinstance(w, QSpinBox):
+                w.setValue(int(value))
+            elif isinstance(w, QDoubleSpinBox):
+                w.setValue(float(value))
+
+    def _save_as_custom_strategy(self):
+        if self._last_result is None or self._last_config is None:
+            QMessageBox.warning(self, "提示", "请先运行回测")
+            return
+
+        from PyQt5.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self, "保存自定义策略", "请输入策略名称")
+        if not ok or not name.strip():
+            return
+
+        self._custom_strategy_dir.mkdir(parents=True, exist_ok=True)
+        save_file = self._custom_strategy_dir / f"{name.strip()}.json"
+
+        data = {
+            "name": name.strip(),
+            "saved_at": datetime.now().isoformat(),
+            "symbol": self._last_config.symbol,
+            "interval": self._last_config.interval,
+            "strategy_display": next((k for k, v in self.STRATEGIES.items() if v == self._last_result.strategy_name), self._last_result.strategy_name),
+            "strategy": self._last_result.strategy_name,
+            "strategy_params": self._last_result.strategy_params or {},
+            "leverage": self._last_config.leverage,
+            "position_size": self._last_config.position_size,
+            "stop_loss_pct": self._last_config.stop_loss_pct,
+            "take_profit_pct": self._last_config.take_profit_pct,
+        }
+
+        with open(save_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        self._reload_custom_strategy_profiles()
+        self.live_log.append(f"[{datetime.now():%H:%M:%S}] 💾 已保存自定义策略: {save_file.name}")
+        QMessageBox.information(self, "成功", f"已保存为自定义策略:\n{save_file}")
+
+    def _reload_custom_strategy_profiles(self):
+        if not hasattr(self, "live_custom_strategy"):
+            return
+        self.live_custom_strategy.clear()
+        self.live_custom_strategy.addItem("(未选择)")
+
+        self._custom_strategy_dir.mkdir(parents=True, exist_ok=True)
+        for f in sorted(self._custom_strategy_dir.glob("*.json")):
+            self.live_custom_strategy.addItem(f.stem)
+
+    def _load_custom_strategy_to_live(self):
+        name = self.live_custom_strategy.currentText()
+        if not name or name == "(未选择)":
+            return
+        file = self._custom_strategy_dir / f"{name}.json"
+        if not file.exists():
+            QMessageBox.warning(self, "提示", "自定义策略文件不存在")
+            return
+
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        idx = self.live_symbol.findText(data.get("symbol", ""))
+        if idx >= 0:
+            self.live_symbol.setCurrentIndex(idx)
+
+        strategy_display = data.get("strategy_display") or next((k for k, v in self.STRATEGIES.items() if v == data.get("strategy")), "")
+        idx = self.live_strategy.findText(strategy_display)
+        if idx >= 0:
+            self.live_strategy.setCurrentIndex(idx)
+
+        if "leverage" in data:
+            self.live_leverage.setValue(int(data["leverage"]))
+        if "position_size" in data:
+            self.live_position_size.setValue(float(data["position_size"]) * 100)
+        if "stop_loss_pct" in data:
+            self.live_stop_loss.setValue(float(data["stop_loss_pct"]))
+        if "take_profit_pct" in data:
+            self.live_take_profit.setValue(float(data["take_profit_pct"]))
+
+        self._apply_live_strategy_params(data.get("strategy_params", {}))
+        self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📥 已加载自定义策略: {name}")
+
     def _check_live_trading_issues(self, result) -> list[str]:
         """检测实盘交易潜在问题"""
         issues = []
@@ -3698,6 +3844,7 @@ class TradingUI(QMainWindow):
         self.export_btn.setEnabled(True)
         self.sync_to_live_btn.setEnabled(True)
         self.enhanced_btn.setEnabled(True)
+        self.save_custom_btn.setEnabled(True)
         self.progress.setVisible(False)
         self.status.setText("● 完成")
         self.status.setStyleSheet("color: #0ecb81;")
@@ -3787,6 +3934,7 @@ class TradingUI(QMainWindow):
                     'position_size': self.live_position_size.value() if hasattr(self, 'live_position_size') else 10,
                     'max_trades': self.live_max_trades.value() if hasattr(self, 'live_max_trades') else 10,
                     'mode_test': self.live_mode_test.isChecked() if hasattr(self, 'live_mode_test') else True,
+                    'strategy_params': self._collect_live_strategy_params() if hasattr(self, '_collect_live_strategy_params') else {},
                 }
             
             if hasattr(self, 'opt_strategy_combo'):
@@ -3875,6 +4023,7 @@ class TradingUI(QMainWindow):
                     self.live_max_trades.setValue(lv.get('max_trades', 10))
                 if hasattr(self, 'live_mode_test'):
                     self.live_mode_test.setChecked(lv.get('mode_test', True))
+                self._apply_live_strategy_params(lv.get('strategy_params', {}))
             
             if 'optimization' in params:
                 opt = params['optimization']

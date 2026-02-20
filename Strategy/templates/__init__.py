@@ -549,11 +549,139 @@ class BollingerBandsStrategy(BaseStrategy):
         return self._params.get("period", 20) + 5
 
 
+class OrderFlowPullbackStrategy(BaseStrategy):
+    """订单流波动回调策略
+
+    逻辑：
+    1. 自动选择高波动币（由实盘交易器执行）
+    2. 连续阳线+成交量放大触发小幅持续加仓
+    3. 发生一次有效回调后止盈
+    """
+
+    name = "OrderFlowPullbackStrategy"
+    display_name = "订单流回调策略"
+    description = "自动筛选高波动币种，顺势小步加仓，单次回调止盈"
+    strategy_type = "order_flow"
+    risk_level = "high"
+
+    parameters = [
+        StrategyParameter(
+            name="auto_select_symbol",
+            display_name="自动选币",
+            description="实盘时自动切换至高波动USDT交易对",
+            value_type=str,
+            default_value="true",
+            options=["true", "false"],
+        ),
+        StrategyParameter(
+            name="momentum_bars",
+            display_name="动量K线数",
+            description="连续阳线数量阈值",
+            value_type=int,
+            default_value=3,
+            min_value=2,
+            max_value=8,
+        ),
+        StrategyParameter(
+            name="volume_ratio",
+            display_name="量能放大倍数",
+            description="当前量/均量阈值",
+            value_type=float,
+            default_value=1.2,
+            min_value=1.0,
+            max_value=5.0,
+        ),
+        StrategyParameter(
+            name="add_position_pct",
+            display_name="每次加仓比例%",
+            description="每次信号触发追加仓位比例",
+            value_type=float,
+            default_value=20.0,
+            min_value=5.0,
+            max_value=50.0,
+        ),
+        StrategyParameter(
+            name="pullback_take_profit_pct",
+            display_name="回调止盈%",
+            description="从近期高点回调达到阈值时止盈",
+            value_type=float,
+            default_value=0.8,
+            min_value=0.2,
+            max_value=5.0,
+        ),
+    ]
+
+    def __init__(self, params: dict[str, Any] | None = None):
+        super().__init__(params)
+        self._closes: list[float] = []
+        self._volumes: list[float] = []
+        self._peak_price: float = 0.0
+
+    def initialize(self, context: StrategyContext) -> None:
+        self._closes = []
+        self._volumes = []
+        self._peak_price = 0.0
+        self._initialized = True
+
+    def on_bar(self, bar: Bar, context: StrategyContext) -> StrategyResult:
+        self._closes.append(bar.close)
+        self._volumes.append(bar.volume)
+
+        if len(self._closes) < 25:
+            return StrategyResult(log=f"数据收集中: {len(self._closes)}/25")
+
+        momentum_bars = int(self._params.get("momentum_bars", 3))
+        volume_ratio = float(self._params.get("volume_ratio", 1.2))
+        pullback_take_profit = float(self._params.get("pullback_take_profit_pct", 0.8))
+
+        recent_closes = self._closes[-momentum_bars:]
+        consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
+
+        avg_volume = float(pd.Series(self._volumes[-20:]).mean())
+        curr_volume = self._volumes[-1]
+        volume_boost = (curr_volume / avg_volume) if avg_volume > 0 else 0
+
+        signal = None
+
+        if not context.has_position and consecutive_up and volume_boost >= volume_ratio:
+            signal = Signal(
+                type=SignalType.OPEN_LONG,
+                price=bar.close,
+                reason=f"订单流动量开仓: 连阳{momentum_bars} + 量比{volume_boost:.2f}",
+                extra={"add_position_pct": float(self._params.get("add_position_pct", 20.0)) / 100},
+            )
+            self._peak_price = bar.close
+
+        elif context.has_position and context.position.side == PositionSide.LONG:
+            self._peak_price = max(self._peak_price, bar.close)
+            pullback_pct = (self._peak_price - bar.close) / self._peak_price * 100 if self._peak_price > 0 else 0
+            if pullback_pct >= pullback_take_profit:
+                signal = Signal(
+                    type=SignalType.CLOSE_LONG,
+                    price=bar.close,
+                    reason=f"订单流回调止盈: 回调{pullback_pct:.2f}%",
+                )
+                self._peak_price = 0.0
+
+        return StrategyResult(
+            signal=signal,
+            indicators={
+                "volume_ratio": volume_boost,
+                "peak_price": self._peak_price,
+            },
+            log=f"量比={volume_boost:.2f}, 连阳={consecutive_up}, 峰值={self._peak_price:.2f}"
+        )
+
+    def get_required_data_count(self) -> int:
+        return 25
+
+
 STRATEGY_REGISTRY: dict[str, type[BaseStrategy]] = {
     "MACDStrategy": MACDStrategy,
     "TrendFollowingStrategy": TrendFollowingStrategy,
     "MeanReversionStrategy": MeanReversionStrategy,
     "BollingerBandsStrategy": BollingerBandsStrategy,
+    "OrderFlowPullbackStrategy": OrderFlowPullbackStrategy,
 }
 
 
