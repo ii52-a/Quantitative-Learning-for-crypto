@@ -1223,6 +1223,11 @@ def get_parameter_ranges_from_strategy(
             max_val = param.max_value if param.max_value is not None else param.default_value * 2
             raw_step = (max_val - min_val) / 10 if max_val is not None and min_val is not None else 0.1
             step = max(1e-6, round(float(raw_step), 6))
+
+            # 对订单流类细粒度百分比参数采用更小步长，提升回测/优化稳定性
+            if any(k in param.name for k in ("_pct", "_ratio", "_boost")):
+                step = min(step, 0.1)
+
             ranges.append(ParameterRange(
                 name=param.name,
                 min_value=min_val,

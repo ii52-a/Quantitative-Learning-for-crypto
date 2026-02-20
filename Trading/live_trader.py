@@ -189,6 +189,47 @@ class LiveTrader:
     def set_strategy(self, strategy) -> None:
         """设置策略"""
         self._strategy = strategy
+        health = self.check_strategy_runtime_health()
+        if health["ok"]:
+            logger.info(f"策略运行检测通过: {health['strategy']} | {health['message']}")
+        else:
+            logger.warning(f"策略运行检测告警: {health['strategy']} | {health['message']}")
+
+    def check_strategy_runtime_health(self) -> dict[str, Any]:
+        """检测当前策略是否具备实盘运行的最低条件"""
+        if self._strategy is None:
+            return {"ok": False, "strategy": "None", "message": "未设置策略"}
+
+        strategy = self._strategy
+        strategy_name = strategy.__class__.__name__
+        issues: list[str] = []
+
+        if not hasattr(strategy, "on_bar") and not hasattr(strategy, "generate_signal"):
+            issues.append("缺少 on_bar/generate_signal 信号接口")
+
+        if hasattr(strategy, "parameters") and hasattr(strategy, "get_parameters"):
+            try:
+                param_defs = {p.name for p in strategy.parameters}
+                params = strategy.get_parameters()
+                unknown = [k for k in params.keys() if k not in param_defs]
+                if unknown:
+                    issues.append(f"存在未声明参数: {unknown[:3]}")
+            except Exception as e:
+                issues.append(f"参数读取失败: {e}")
+
+        if hasattr(strategy, "get_required_data_count"):
+            try:
+                required = int(strategy.get_required_data_count())
+                if required > 300:
+                    issues.append(f"预热K线需求过高({required})，可能导致实盘信号延迟")
+            except Exception as e:
+                issues.append(f"required_data_count异常: {e}")
+
+        return {
+            "ok": len(issues) == 0,
+            "strategy": strategy_name,
+            "message": "通过" if not issues else "；".join(issues),
+        }
     
     def set_callbacks(
         self,

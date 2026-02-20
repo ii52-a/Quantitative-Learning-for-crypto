@@ -584,6 +584,24 @@ class OrderFlowPullbackStrategy(BaseStrategy):
             max_value=90.0,
         ),
         StrategyParameter(
+            name="min_volume_ratio",
+            display_name="最低量比",
+            description="过滤量能不足标的",
+            value_type=float,
+            default_value=1.0,
+            min_value=0.6,
+            max_value=3.0,
+        ),
+        StrategyParameter(
+            name="max_volume_ratio",
+            display_name="最高量比",
+            description="过滤过热标的，避免极端拥挤成交",
+            value_type=float,
+            default_value=4.0,
+            min_value=1.2,
+            max_value=10.0,
+        ),
+        StrategyParameter(
             name="base_add_position_pct",
             display_name="基础加仓比例%",
             description="低动量时每次小额加仓比例",
@@ -731,8 +749,12 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         recent_closes = self._closes[-momentum_bars:]
         consecutive_up = all(recent_closes[i] > recent_closes[i - 1] for i in range(1, len(recent_closes)))
 
+        avg_volume = float(pd.Series(self._volumes[-20:]).mean())
+        curr_volume = self._volumes[-1]
+        volume_ratio = (curr_volume / avg_volume) if avg_volume > 0 else 0
         rsi_value = float(self._rsi.calculate(pd.Series(self._closes[-60:])).iloc[-1])
         in_overbought = rsi_value >= overbought_rsi
+        volume_ok = min_volume_ratio <= volume_ratio <= max_volume_ratio
 
         signal = None
 
@@ -748,7 +770,7 @@ class OrderFlowPullbackStrategy(BaseStrategy):
                     },
                     log=f"冷却中({self._cooldown_left}), RSI={rsi_value:.1f}"
                 )
-            if consecutive_up and in_overbought:
+            if consecutive_up and in_overbought and volume_ok:
                 signal = Signal(
                     type=SignalType.OPEN_LONG,
                     price=bar.close,
@@ -816,11 +838,12 @@ class OrderFlowPullbackStrategy(BaseStrategy):
         return StrategyResult(
             signal=signal,
             indicators={
+                "volume_ratio": volume_ratio,
                 "momentum_pct": momentum_pct,
                 "rsi": rsi_value,
                 "peak_price": self._peak_price,
             },
-            log=f"RSI={rsi_value:.1f}, 动量={momentum_pct:.2f}%, 峰值={self._peak_price:.2f}"
+            log=f"量比={volume_ratio:.2f}, RSI={rsi_value:.1f}, 动量={momentum_pct:.2f}%, 峰值={self._peak_price:.2f}"
         )
 
     def get_required_data_count(self) -> int:
@@ -846,12 +869,12 @@ class OrderFlowWoolStrategy(BaseStrategy):
     parameters = [
         StrategyParameter(name="momentum_bars", display_name="动量K线数", description="动量判断窗口", value_type=int, default_value=4, min_value=2, max_value=10),
         StrategyParameter(name="overbought_rsi", display_name="超买RSI阈值", description="进入超买区才允许持续加仓", value_type=float, default_value=68.0, min_value=55.0, max_value=90.0),
-        StrategyParameter(name="min_volume_ratio", display_name="最低量比", description="过滤量能不足币对", value_type=float, default_value=1.1, min_value=0.8, max_value=3.0),
-        StrategyParameter(name="max_volume_ratio", display_name="最高量比", description="过滤过热币对，选择量能适中标的", value_type=float, default_value=3.0, min_value=1.2, max_value=8.0),
-        StrategyParameter(name="base_add_position_pct", display_name="基础加仓比例%", description="低动量时每次小额加仓比例", value_type=float, default_value=8.0, min_value=1.0, max_value=30.0),
+        StrategyParameter(name="min_volume_ratio", display_name="最低量比", description="过滤量能不足币对", value_type=float, default_value=0.9, min_value=0.6, max_value=3.0),
+        StrategyParameter(name="max_volume_ratio", display_name="最高量比", description="过滤过热币对，选择量能适中标的", value_type=float, default_value=5.0, min_value=1.2, max_value=10.0),
+        StrategyParameter(name="base_add_position_pct", display_name="基础加仓比例%", description="低动量时每次小额加仓比例", value_type=float, default_value=6.0, min_value=1.0, max_value=30.0),
         StrategyParameter(name="base_price_gap_pct", display_name="基础加仓价差%", description="低动量小价差，高动量拉大价差", value_type=float, default_value=0.25, min_value=0.05, max_value=2.0),
         StrategyParameter(name="momentum_gap_boost", display_name="动量价差增益", description="动量越大，加仓价差放大以防插针", value_type=float, default_value=0.9, min_value=0.1, max_value=3.0),
-        StrategyParameter(name="pullback_take_profit_pct", display_name="回调止盈%", description="从阶段高点回撤达到阈值平仓", value_type=float, default_value=1.0, min_value=0.2, max_value=8.0),
+        StrategyParameter(name="pullback_take_profit_pct", display_name="回调止盈%", description="从阶段高点回撤达到阈值平仓", value_type=float, default_value=0.8, min_value=0.2, max_value=8.0),
         StrategyParameter(name="trail_activation_pct", display_name="启动追踪止盈%", description="盈利达到该比例后，启用追踪止盈", value_type=float, default_value=1.5, min_value=0.2, max_value=20.0),
         StrategyParameter(name="trailing_stop_pct", display_name="追踪回撤阈值%", description="已启动追踪后，从高点回撤达到阈值平仓", value_type=float, default_value=0.8, min_value=0.1, max_value=10.0),
         StrategyParameter(name="hard_stop_loss_pct", display_name="硬止损%", description="相对持仓均价的硬止损，防止继续暴涨", value_type=float, default_value=4.0, min_value=0.5, max_value=20.0),
