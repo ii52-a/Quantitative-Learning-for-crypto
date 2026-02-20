@@ -6,6 +6,7 @@ from enum import Enum
 import threading
 import time
 import hashlib
+from collections import deque
 import hmac
 import requests
 
@@ -169,6 +170,10 @@ class LiveTrader:
         self._daily_trades = 0
         self._daily_pnl = 0.0
         self._last_reset = datetime.now().date()
+
+        # 测试网/测试模式实时模拟缓冲
+        self._sim_price: float = 100000.0
+        self._realtime_buffers: dict[str, deque] = {}
     
     @property
     def account(self) -> TradingAccount:
@@ -189,6 +194,47 @@ class LiveTrader:
     def set_strategy(self, strategy) -> None:
         """设置策略"""
         self._strategy = strategy
+        health = self.check_strategy_runtime_health()
+        if health["ok"]:
+            logger.info(f"策略运行检测通过: {health['strategy']} | {health['message']}")
+        else:
+            logger.warning(f"策略运行检测告警: {health['strategy']} | {health['message']}")
+
+    def check_strategy_runtime_health(self) -> dict[str, Any]:
+        """检测当前策略是否具备实盘运行的最低条件"""
+        if self._strategy is None:
+            return {"ok": False, "strategy": "None", "message": "未设置策略"}
+
+        strategy = self._strategy
+        strategy_name = strategy.__class__.__name__
+        issues: list[str] = []
+
+        if not hasattr(strategy, "on_bar") and not hasattr(strategy, "generate_signal"):
+            issues.append("缺少 on_bar/generate_signal 信号接口")
+
+        if hasattr(strategy, "parameters") and hasattr(strategy, "get_parameters"):
+            try:
+                param_defs = {p.name for p in strategy.parameters}
+                params = strategy.get_parameters()
+                unknown = [k for k in params.keys() if k not in param_defs]
+                if unknown:
+                    issues.append(f"存在未声明参数: {unknown[:3]}")
+            except Exception as e:
+                issues.append(f"参数读取失败: {e}")
+
+        if hasattr(strategy, "get_required_data_count"):
+            try:
+                required = int(strategy.get_required_data_count())
+                if required > 300:
+                    issues.append(f"预热K线需求过高({required})，可能导致实盘信号延迟")
+            except Exception as e:
+                issues.append(f"required_data_count异常: {e}")
+
+        return {
+            "ok": len(issues) == 0,
+            "strategy": strategy_name,
+            "message": "通过" if not issues else "；".join(issues),
+        }
     
     def set_callbacks(
         self,
@@ -353,6 +399,121 @@ class LiveTrader:
         
         logger.info("交易已停止")
     
+    def _is_orderflow_strategy(self) -> bool:
+        if not self._strategy:
+            return False
+        return self._strategy.__class__.__name__ in {"OrderFlowPullbackStrategy", "OrderFlowWoolStrategy"}
+
+    def _get_loop_sleep_seconds(self) -> float:
+        if self._is_orderflow_strategy():
+            return 1.0
+
+        interval = str(self.config.interval).lower()
+        if interval.endswith("s"):
+            try:
+                return max(0.5, float(interval[:-1]))
+            except Exception:
+                return 1.0
+        return 1.0
+
+    def _get_orderflow_snapshot(self, symbol: str) -> dict[str, float] | None:
+        """实时订单流快照（测试模式使用随机撮合模拟）"""
+        try:
+            if self.config.mode == TradingMode.TEST:
+                import random
+                imbalance = random.uniform(-1.0, 1.0)
+                noise = random.uniform(-0.06, 0.06)
+                drift = imbalance * 0.08 + noise
+                self._sim_price = max(100.0, self._sim_price * (1 + drift / 100))
+                bid = self._sim_price * (1 - 0.0002)
+                ask = self._sim_price * (1 + 0.0002)
+                buy_vol = random.uniform(200, 1200) * (1 + max(0, imbalance))
+                sell_vol = random.uniform(200, 1200) * (1 + max(0, -imbalance))
+                return {
+                    "price": self._sim_price,
+                    "bid": bid,
+                    "ask": ask,
+                    "buy_volume": buy_vol,
+                    "sell_volume": sell_vol,
+                    "imbalance": imbalance,
+                }
+
+            book = requests.get(
+                f"{self._base_url}/fapi/v1/ticker/bookTicker",
+                params={"symbol": symbol},
+                timeout=5,
+            )
+            trades = requests.get(
+                f"{self._base_url}/fapi/v1/trades",
+                params={"symbol": symbol, "limit": 200},
+                timeout=5,
+            )
+            if book.status_code != 200 or trades.status_code != 200:
+                return None
+
+            book_j = book.json()
+            trades_j = trades.json()
+            bid = float(book_j.get("bidPrice", 0))
+            ask = float(book_j.get("askPrice", 0))
+            price = (bid + ask) / 2 if bid > 0 and ask > 0 else max(bid, ask)
+
+            buy_volume = 0.0
+            sell_volume = 0.0
+            for t in trades_j:
+                qty = float(t.get("qty", 0))
+                # isBuyerMaker=True 代表主动卖
+                if t.get("isBuyerMaker", False):
+                    sell_volume += qty
+                else:
+                    buy_volume += qty
+
+            total = buy_volume + sell_volume
+            imbalance = (buy_volume - sell_volume) / total if total > 0 else 0.0
+
+            return {
+                "price": price,
+                "bid": bid,
+                "ask": ask,
+                "buy_volume": buy_volume,
+                "sell_volume": sell_volume,
+                "imbalance": imbalance,
+            }
+        except Exception as e:
+            logger.warning(f"订单流快照获取失败: {e}")
+            return None
+
+    def _execute_orderflow_realtime(self) -> None:
+        """订单流策略实时检测执行（基于成交流，不依赖标准K线轮询）"""
+        symbol = self.config.symbol
+        snapshot = self._get_orderflow_snapshot(symbol)
+        if not snapshot:
+            return
+
+        ts = datetime.now()
+        price = float(snapshot["price"])
+        spread = max(0.0, float(snapshot["ask"]) - float(snapshot["bid"])) if snapshot.get("ask") and snapshot.get("bid") else 0.0
+        synthetic_high = price + spread * 0.5
+        synthetic_low = max(0.0001, price - spread * 0.5)
+        synthetic_volume = float(snapshot.get("buy_volume", 0)) + float(snapshot.get("sell_volume", 0))
+
+        if symbol not in self._realtime_buffers:
+            self._realtime_buffers[symbol] = deque(maxlen=600)
+
+        self._realtime_buffers[symbol].append({
+            "timestamp": ts,
+            "open": price,
+            "high": synthetic_high if synthetic_high > 0 else price,
+            "low": synthetic_low,
+            "close": price,
+            "volume": max(1e-9, synthetic_volume),
+        })
+
+        if len(self._realtime_buffers[symbol]) < 60:
+            return
+
+        df = pd.DataFrame(list(self._realtime_buffers[symbol])).set_index("timestamp")
+        self._execute_base_strategy(df)
+
     def _trading_loop(self) -> None:
         """交易循环"""
         while self._running and not self._stop_event.is_set():
@@ -364,7 +525,7 @@ class LiveTrader:
                 
                 self._update_positions()
                 
-                time.sleep(1)
+                time.sleep(self._get_loop_sleep_seconds())
                 
             except Exception as e:
                 logger.error(f"交易循环错误: {e}")
@@ -393,6 +554,10 @@ class LiveTrader:
                 if selected_symbol and selected_symbol != self.config.symbol:
                     self.config.symbol = selected_symbol
                     logger.info(f"订单流策略自动选币: {selected_symbol}")
+
+            if self._is_orderflow_strategy() and hasattr(self._strategy, "on_bar"):
+                self._execute_orderflow_realtime()
+                return
 
             data = self._get_klines(self.config.symbol, limit=200)
             
@@ -546,7 +711,13 @@ class LiveTrader:
                     change = np.random.uniform(-0.02, 0.02)
                     prices.append(prices[-1] * (1 + change))
                 
-                dates = pd.date_range(end=datetime.now(), periods=n, freq='30min')
+                freq_map = {
+                    "1s": "1s", "5s": "5s", "15s": "15s",
+                    "1min": "1min", "3min": "3min", "5min": "5min", "15min": "15min", "30min": "30min",
+                    "1h": "1h", "4h": "4h", "1d": "1d",
+                }
+                freq = freq_map.get(self.config.interval, "30min")
+                dates = pd.date_range(end=datetime.now(), periods=n, freq=freq)
                 return pd.DataFrame({
                     'open': prices,
                     'high': [p * 1.005 for p in prices],

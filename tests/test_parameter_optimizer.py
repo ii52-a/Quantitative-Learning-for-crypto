@@ -259,3 +259,14 @@ class TestGetParameterRangesFromStrategy:
         
         range_names = [r.name for r in ranges]
         assert "vote_threshold" in range_names
+
+
+def test_orderflow_float_params_use_finer_step():
+    from Strategy.templates import get_strategy
+
+    strategy = get_strategy("OrderFlowWoolStrategy")
+    ranges = get_parameter_ranges_from_strategy(strategy)
+    step_map = {r.name: r.step for r in ranges}
+
+    assert step_map["pullback_take_profit_pct"] <= 0.1
+    assert step_map["momentum_gap_boost"] <= 0.1

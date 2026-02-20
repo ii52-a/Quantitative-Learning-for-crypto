@@ -616,12 +616,13 @@ class TradingUI(QMainWindow):
     
     SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "TRXUSDT", "LINKUSDT", "LTCUSDT", "BCHUSDT", "MATICUSDT", "WIFUSDT", "PEPEUSDT", "1000BONKUSDT", "SUIUSDT", "APTUSDT", "ARBUSDT", "OPUSDT"]
     
-    INTERVALS = ["1min", "5min", "15min", "30min", "1h", "4h", "1d"]
+    INTERVALS = ["1s", "5s", "15s", "1min", "5min", "15min", "30min", "1h", "4h", "1d"]
     
     INDICATOR_OPTIONS = ["MACD", "RSI", "BollingerBands", "MA"]
     
     def __init__(self):
         super().__init__()
+        self._compact_mode = False
         self._worker = None
         self._optimizer_worker = None
         self._last_result = None
@@ -641,6 +642,7 @@ class TradingUI(QMainWindow):
     def _init_ui(self):
         self.setWindowTitle("量化交易系统 v2.0")
         self.setGeometry(80, 80, 1500, 900)
+        self.setMinimumSize(980, 620)
         self.setStyleSheet(self._stylesheet())
         
         central = QWidget()
@@ -665,6 +667,38 @@ class TradingUI(QMainWindow):
         self._ui_log_timer = QTimer(self)
         self._ui_log_timer.timeout.connect(self._flush_ui_logs)
         self._ui_log_timer.start(150)
+
+        self._apply_window_mode()
+
+    def _toggle_compact_mode(self):
+        """切换小窗模式"""
+        self._compact_mode = not self._compact_mode
+        self._apply_window_mode()
+
+    def _apply_window_mode(self):
+        """应用窗口尺寸与标签显示模式"""
+        if not hasattr(self, "main_tabs"):
+            return
+
+        tab_texts = [
+            "📊 回测",
+            "🔍 参数探索",
+            "⚙️ 策略参数",
+            "💹 实盘交易",
+            "📈 资产曲线",
+            "📝 版本更新",
+        ]
+        compact_texts = ["📊", "🔍", "⚙️", "💹", "📈", "📝"]
+        for i in range(min(self.main_tabs.count(), len(tab_texts))):
+            self.main_tabs.setTabText(i, compact_texts[i] if self._compact_mode else tab_texts[i])
+
+        if hasattr(self, "compact_btn"):
+            self.compact_btn.setText("🖥️ 标准窗口" if self._compact_mode else "🪟 小窗模式")
+
+        if self._compact_mode:
+            self.resize(1080, 680)
+        else:
+            self.resize(1500, 900)
     
     def _show_env_load_result(self) -> None:
         """显示API密钥加载结果"""
@@ -3166,7 +3200,21 @@ class TradingUI(QMainWindow):
         layout.addWidget(title)
         
         layout.addStretch()
-        
+
+        self.compact_btn = QPushButton("🪟 小窗模式")
+        self.compact_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2e39;
+                color: #eaecef;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            QPushButton:hover { background-color: #363a45; }
+        """)
+        self.compact_btn.clicked.connect(self._toggle_compact_mode)
+        layout.addWidget(self.compact_btn)
+
         self.status = QLabel("● 就绪")
         self.status.setStyleSheet("color: #0ecb81; font-size: 13px;")
         layout.addWidget(self.status)
@@ -3419,7 +3467,21 @@ class TradingUI(QMainWindow):
         layout.addWidget(title)
         
         layout.addStretch()
-        
+
+        self.compact_btn = QPushButton("🪟 小窗模式")
+        self.compact_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2e39;
+                color: #eaecef;
+                border-radius: 6px;
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            QPushButton:hover { background-color: #363a45; }
+        """)
+        self.compact_btn.clicked.connect(self._toggle_compact_mode)
+        layout.addWidget(self.compact_btn)
+
         self.status = QLabel("● 就绪")
         self.status.setStyleSheet("color: #0ecb81;")
         layout.addWidget(self.status)
