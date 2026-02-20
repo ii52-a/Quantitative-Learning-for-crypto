@@ -597,9 +597,10 @@ class TradingUI(QMainWindow):
         "布林带策略": "BollingerBandsStrategy",
         "多指标组合策略": "MultiIndicatorStrategy",
         "自适应多指标策略": "AdaptiveMultiIndicatorStrategy",
+        "订单流回调策略": "OrderFlowPullbackStrategy",
     }
     
-    SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT"]
+    SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "BTCUSDC", "ETHUSDC", "SOLUSDC", "BNBUSDC"]
     
     INTERVALS = ["1min", "5min", "15min", "30min", "1h", "4h", "1d"]
     
@@ -615,7 +616,16 @@ class TradingUI(QMainWindow):
         self._last_config = None
         self._selected_indicators = ["MACD", "MA"]
         self._params_file = Path(__file__).parent.parent / "saved_params" / "last_session.json"
+        self._custom_strategy_dir = Path(__file__).parent.parent / "saved_params" / "custom_strategies"
+        self._equity_history_file = Path(__file__).parent.parent / "saved_params" / "equity_history.json"
+        self._live_strategy_params_store: dict[str, dict[str, Any]] = {}
+        self._log_buffers: dict[str, list[str]] = {"live": [], "backtest": [], "opt": []}
+        self._equity_dirty_count = 0
+        self._last_equity_persist_ts = 0.0
+        self._chart_redraw_pending = False
+        self._last_chart_redraw_ts = 0.0
         self._init_ui()
+        self._load_local_equity_history()
         self._load_last_session_params()
     
     def _init_ui(self):
@@ -640,6 +650,10 @@ class TradingUI(QMainWindow):
         layout.addWidget(self.main_tabs, 1)
         
         self._show_env_load_result()
+
+        self._ui_flush_timer = QTimer(self)
+        self._ui_flush_timer.timeout.connect(self._flush_log_buffers)
+        self._ui_flush_timer.start(200)
     
     def _show_env_load_result(self) -> None:
         """显示API密钥加载结果"""
@@ -906,13 +920,22 @@ class TradingUI(QMainWindow):
         
         strategy_layout.addWidget(QLabel("交易对"), 0, 0)
         self.live_symbol = QComboBox()
-        self.live_symbol.addItems(self.SYMBOLS[:10])
+        self.live_symbol.addItems(self.SYMBOLS)
         strategy_layout.addWidget(self.live_symbol, 0, 1)
         
         strategy_layout.addWidget(QLabel("策略"), 0, 2)
         self.live_strategy = QComboBox()
         self.live_strategy.addItems(list(self.STRATEGIES.keys()))
+        self.live_strategy.currentTextChanged.connect(self._on_live_strategy_changed)
         strategy_layout.addWidget(self.live_strategy, 0, 3)
+
+        strategy_layout.addWidget(QLabel("自定义策略"), 1, 2)
+        self.live_custom_strategy = QComboBox()
+        strategy_layout.addWidget(self.live_custom_strategy, 1, 3)
+
+        self.live_load_custom_btn = QPushButton("加载")
+        self.live_load_custom_btn.clicked.connect(self._load_custom_strategy_to_live)
+        strategy_layout.addWidget(self.live_load_custom_btn, 1, 4)
         
         strategy_layout.addWidget(QLabel("交易模式"), 1, 0)
         self.live_trade_mode = QComboBox()
@@ -950,6 +973,8 @@ class TradingUI(QMainWindow):
         mode_layout.addStretch()
         strategy_layout.addLayout(mode_layout, 4, 0, 1, 4)
         
+        self._reload_custom_strategy_profiles()
+
         self._load_api_from_env()
         self.live_mode_live.toggled.connect(self._on_mode_changed)
         
@@ -1012,143 +1037,131 @@ class TradingUI(QMainWindow):
     def _show_strategy_config_dialog(self):
         """显示策略参数配置弹窗"""
         from PyQt5.QtWidgets import QDialog, QVBoxLayout, QDialogButtonBox, QScrollArea
-        
+        from Strategy.templates import get_strategy
+
         dialog = QDialog(self)
         dialog.setWindowTitle("策略参数配置")
-        dialog.setMinimumWidth(450)
-        dialog.setMinimumHeight(400)
+        dialog.setMinimumWidth(500)
+        dialog.setMinimumHeight(430)
         dialog.setStyleSheet("""
             QDialog { background-color: #1e222d; }
             QLabel { color: #eaecef; }
-            QSpinBox, QDoubleSpinBox, QComboBox { 
-                background-color: #0b0e11; 
-                border: 1px solid #2a2e39; 
-                border-radius: 4px; 
+            QSpinBox, QDoubleSpinBox, QComboBox {
+                background-color: #0b0e11;
+                border: 1px solid #2a2e39;
+                border-radius: 4px;
                 padding: 4px;
                 color: #eaecef;
-                min-width: 80px;
+                min-width: 120px;
             }
-            QGroupBox { 
-                color: #f0b90b; 
-                border: 1px solid #2a2e39; 
-                border-radius: 4px; 
+            QGroupBox {
+                color: #f0b90b;
+                border: 1px solid #2a2e39;
+                border-radius: 4px;
                 margin-top: 10px;
                 padding-top: 10px;
             }
             QGroupBox::title { subcontrol-origin: margin; left: 10px; }
             QScrollArea { border: none; background-color: transparent; }
         """)
-        
+
         main_layout = QVBoxLayout(dialog)
-        
+
         strategy_group = QGroupBox("策略选择")
         strategy_layout = QVBoxLayout(strategy_group)
-        
         strategy_combo = QComboBox()
         strategy_combo.addItems(list(self.STRATEGIES.keys()))
-        if hasattr(self, 'live_strategy'):
-            idx = strategy_combo.findText(self.live_strategy.currentText())
-            if idx >= 0:
-                strategy_combo.setCurrentIndex(idx)
+        idx = strategy_combo.findText(self.live_strategy.currentText())
+        if idx >= 0:
+            strategy_combo.setCurrentIndex(idx)
         strategy_layout.addWidget(strategy_combo)
         main_layout.addWidget(strategy_group)
-        
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
-        
+
         param_group = QGroupBox("策略参数")
-        self._dialog_param_layout = QGridLayout(param_group)
-        self._dialog_param_widgets = {}
+        param_layout = QGridLayout(param_group)
         scroll_layout.addWidget(param_group)
-        
         scroll.setWidget(scroll_widget)
         main_layout.addWidget(scroll, 1)
-        
-        def update_params():
-            strategy_name = strategy_combo.currentText()
-            strategy_class = self.STRATEGIES.get(strategy_name)
-            
-            while self._dialog_param_layout.count():
-                item = self._dialog_param_layout.takeAt(0)
+
+        temp_widgets: dict[str, QWidget] = {}
+
+        def _collect_temp_values() -> dict[str, Any]:
+            values = {}
+            for n, w in temp_widgets.items():
+                if isinstance(w, QComboBox):
+                    values[n] = w.currentText()
+                else:
+                    values[n] = w.value()
+            return values
+
+        def _render_params(strategy_display: str):
+            while param_layout.count():
+                item = param_layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
-            self._dialog_param_widgets.clear()
-            
-            if strategy_class:
-                try:
-                    temp_strategy = strategy_class({})
-                    param_ranges = temp_strategy.get_param_ranges()
-                    
-                    for i, pr in enumerate(param_ranges):
-                        label = QLabel(pr.name)
-                        label.setStyleSheet("color: #eaecef;")
-                        self._dialog_param_layout.addWidget(label, i, 0)
-                        
-                        if pr.values:
-                            combo = QComboBox()
-                            combo.addItems([str(v) for v in pr.values])
-                            self._dialog_param_layout.addWidget(combo, i, 1)
-                            self._dialog_param_widgets[pr.name] = combo
-                        else:
-                            spinbox = QDoubleSpinBox()
-                            spinbox.setRange(pr.min_value, pr.max_value)
-                            spinbox.setValue(pr.min_value)
-                            spinbox.setSingleStep(pr.step if pr.step > 0 else 1)
-                            self._dialog_param_layout.addWidget(spinbox, i, 1)
-                            self._dialog_param_widgets[pr.name] = spinbox
-                        
-                        range_label = QLabel(f"[{pr.min_value} ~ {pr.max_value}]")
-                        range_label.setStyleSheet("color: #848e9c; font-size: 10px;")
-                        self._dialog_param_layout.addWidget(range_label, i, 2)
-                        
-                except Exception as e:
-                    pass
-        
-        strategy_combo.currentTextChanged.connect(update_params)
-        update_params()
-        
+            temp_widgets.clear()
+
+            strategy_key = self.STRATEGIES.get(strategy_display, strategy_display)
+            info = get_strategy(strategy_key).get_info()
+            saved = self._live_strategy_params_store.get(strategy_display, {})
+
+            for i, p in enumerate(info.get("parameters", [])):
+                param_layout.addWidget(QLabel(p["display_name"]), i, 0)
+                if p.get("options"):
+                    w = QComboBox()
+                    w.addItems([str(x) for x in p["options"]])
+                    w.setCurrentText(str(saved.get(p["name"], p.get("default", p["options"][0]))))
+                elif p.get("type") == "float":
+                    w = QDoubleSpinBox()
+                    w.setRange(float(p.get("min", 0)), float(p.get("max", 1000000)))
+                    w.setValue(float(saved.get(p["name"], p.get("default", 0))))
+                    w.setSingleStep(0.1)
+                else:
+                    w = QSpinBox()
+                    w.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
+                    w.setValue(int(saved.get(p["name"], p.get("default", 0))))
+                temp_widgets[p["name"]] = w
+                param_layout.addWidget(w, i, 1)
+
+        strategy_combo.currentTextChanged.connect(_render_params)
+        _render_params(strategy_combo.currentText())
+
         risk_group = QGroupBox("风险参数")
         risk_layout = QGridLayout(risk_group)
-        
         stop_loss = QDoubleSpinBox()
         stop_loss.setRange(0, 50)
-        stop_loss.setValue(self.live_stop_loss.value() if hasattr(self, 'live_stop_loss') else 5)
-        risk_layout.addWidget(QLabel("止损%"), 0, 0)
-        risk_layout.addWidget(stop_loss, 0, 1)
-        
+        stop_loss.setValue(self.live_stop_loss.value())
         take_profit = QDoubleSpinBox()
         take_profit.setRange(0, 100)
-        take_profit.setValue(self.live_take_profit.value() if hasattr(self, 'live_take_profit') else 10)
+        take_profit.setValue(self.live_take_profit.value())
+        risk_layout.addWidget(QLabel("止损%"), 0, 0)
+        risk_layout.addWidget(stop_loss, 0, 1)
         risk_layout.addWidget(QLabel("止盈%"), 0, 2)
         risk_layout.addWidget(take_profit, 0, 3)
-        
         main_layout.addWidget(risk_group)
-        
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         main_layout.addWidget(buttons)
-        
+
         if dialog.exec_() == QDialog.Accepted:
-            if hasattr(self, 'live_strategy'):
-                idx = strategy_combo.findText(strategy_combo.currentText())
-                if idx >= 0:
-                    self.live_strategy.setCurrentIndex(idx)
-            
-            if hasattr(self, 'live_stop_loss'):
-                self.live_stop_loss.setValue(stop_loss.value())
-            if hasattr(self, 'live_take_profit'):
-                self.live_take_profit.setValue(take_profit.value())
-            
-            params_str = ", ".join(f"{k}={v.currentText() if isinstance(v, QComboBox) else v.value()}" 
-                                   for k, v in self._dialog_param_widgets.items())
+            chosen = strategy_combo.currentText()
+            self.live_strategy.setCurrentText(chosen)
+            self._live_strategy_params_store[chosen] = _collect_temp_values()
+            self.live_stop_loss.setValue(stop_loss.value())
+            self.live_take_profit.setValue(take_profit.value())
+            params_str = ", ".join(f"{k}={v}" for k, v in self._live_strategy_params_store[chosen].items())
             self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚙️ 策略参数已更新")
-            self.live_log.append(f"   策略: {strategy_combo.currentText()}")
-            self.live_log.append(f"   参数: {params_str}")
+            self.live_log.append(f"   策略: {chosen}")
+            self.live_log.append(f"   参数: {params_str if params_str else '默认'}")
             self.live_log.append(f"   止损: {stop_loss.value()}% | 止盈: {take_profit.value()}%")
-    
+
     def _create_live_position_panel(self) -> QWidget:
         """创建持仓面板"""
         panel = QFrame()
@@ -1460,7 +1473,7 @@ class TradingUI(QMainWindow):
         
         trade_layout.addWidget(QLabel("交易对"), 0, 0)
         self.live_symbol = QComboBox()
-        self.live_symbol.addItems(self.SYMBOLS[:5])
+        self.live_symbol.addItems(self.SYMBOLS)
         trade_layout.addWidget(self.live_symbol, 0, 1)
         
         trade_layout.addWidget(QLabel("杠杆"), 0, 2)
@@ -1662,16 +1675,7 @@ class TradingUI(QMainWindow):
         stats = self._trader.get_statistics()
         total_equity = stats.get('balance', 0) + stats.get('unrealized_pnl', 0)
         
-        if not hasattr(self, '_equity_full_history'):
-            self._equity_full_history = []
-            self._equity_full_times = []
-        
-        self._equity_full_history.append(total_equity)
-        self._equity_full_times.append(datetime.now())
-        
-        if len(self._equity_full_history) > 300:
-            self._equity_full_history = self._equity_full_history[-300:]
-            self._equity_full_times = self._equity_full_times[-300:]
+        self._persist_equity_point(total_equity)
         
         if hasattr(self, '_equity_total_label'):
             self._equity_total_label.setText(f"总资产: {total_equity:.2f} USDT")
@@ -1703,70 +1707,61 @@ class TradingUI(QMainWindow):
             self._equity_avg_label.setText(f"平均: {avg_equity:.2f}")
             self._equity_time_label.setText(f"更新: {datetime.now():%H:%M:%S}")
         
-        self._draw_equity_chart_full()
+        self._request_equity_redraw()
         self._update_equity_history_table()
     
     def _draw_equity_chart_full(self):
-        """绘制完整资产曲线图"""
+        """绘制完整资产曲线图（缺失区间按水平线填补）"""
         if not hasattr(self, '_equity_full_history') or len(self._equity_full_history) < 2:
             return
-        
+
         if not hasattr(self, '_equity_figure'):
             return
-        
+
         try:
             self._equity_figure.clear()
-            
             ax = self._equity_figure.add_subplot(111)
             ax.set_facecolor('#1e222d')
-            
-            x = range(len(self._equity_full_history))
-            y = self._equity_full_history
-            
-            first_equity = self._equity_full_history[0]
-            last_equity = self._equity_full_history[-1]
+
+            times = pd.to_datetime(self._equity_full_times)
+            values = pd.Series(self._equity_full_history, index=times).sort_index()
+            full_index = pd.date_range(start=values.index.min(), end=values.index.max(), freq='1s')
+            values = values.reindex(full_index).ffill().bfill()
+
+            x = range(len(values))
+            y = values.values.tolist()
+
+            first_equity = float(y[0])
+            last_equity = float(y[-1])
             change_pct = ((last_equity - first_equity) / first_equity * 100) if first_equity != 0 else 0
-            
-            if change_pct >= 0:
-                line_color = '#0ecb81'
-                fill_color = '#0ecb81'
-            else:
-                line_color = '#f6465d'
-                fill_color = '#f6465d'
-            
+
+            line_color = '#0ecb81' if change_pct >= 0 else '#f6465d'
             ax.plot(x, y, color=line_color, linewidth=2, label='Equity')
-            ax.fill_between(x, y, alpha=0.3, color=fill_color)
-            
+            ax.fill_between(x, y, alpha=0.25, color=line_color)
+
             ax.axhline(y=first_equity, color='#848e9c', linestyle='--', linewidth=1, alpha=0.5, label='Initial')
-            
-            max_equity = max(self._equity_full_history)
-            min_equity = min(self._equity_full_history)
-            ax.axhline(y=max_equity, color='#0ecb81', linestyle=':', linewidth=1, alpha=0.5)
-            ax.axhline(y=min_equity, color='#f6465d', linestyle=':', linewidth=1, alpha=0.5)
-            
+            ax.axhline(y=max(y), color='#0ecb81', linestyle=':', linewidth=1, alpha=0.4)
+            ax.axhline(y=min(y), color='#f6465d', linestyle=':', linewidth=1, alpha=0.4)
+
             ax.set_xlabel('Time', color='#848e9c', fontsize=10)
             ax.set_ylabel('Equity (USDT)', color='#848e9c', fontsize=10)
-            ax.set_title(f'Equity Curve | Current: {last_equity:.2f} USDT ({change_pct:+.2f}%)', 
-                        color='#eaecef', fontsize=12, fontweight='bold')
-            
+            ax.set_title(f'Equity Curve | Current: {last_equity:.2f} USDT ({change_pct:+.2f}%)', color='#eaecef', fontsize=12, fontweight='bold')
+
             ax.tick_params(colors='#848e9c', labelsize=8)
-            ax.spines['top'].set_color('#2a2e39')
-            ax.spines['right'].set_color('#2a2e39')
-            ax.spines['bottom'].set_color('#2a2e39')
-            ax.spines['left'].set_color('#2a2e39')
-            
+            for side in ('top', 'right', 'bottom', 'left'):
+                ax.spines[side].set_color('#2a2e39')
             ax.grid(True, alpha=0.2, color='#2a2e39')
-            
+
             legend = ax.legend(loc='upper left', fontsize=8, facecolor='#1e222d', edgecolor='#2a2e39')
             for text in legend.get_texts():
                 text.set_color('#848e9c')
-            
+
             self._equity_figure.tight_layout()
             self._equity_canvas.draw()
-            
-        except Exception as e:
+
+        except Exception:
             pass
-    
+
     def _update_equity_history_table(self):
         """更新资产历史表格"""
         if not hasattr(self, '_equity_full_history') or len(self._equity_full_history) < 2:
@@ -2064,7 +2059,7 @@ class TradingUI(QMainWindow):
     
     def _on_live_error(self, error: str):
         """错误回调"""
-        self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新错误: {error}")
+        self._enqueue_log("live", f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新错误: {error}")
     
     def _update_equity_tab_from_stats(self, stats: dict):
         """从统计数据更新资产曲线"""
@@ -2073,16 +2068,7 @@ class TradingUI(QMainWindow):
         
         total_equity = stats.get('balance', 0) + stats.get('unrealized_pnl', 0)
         
-        if not hasattr(self, '_equity_full_history'):
-            self._equity_full_history = []
-            self._equity_full_times = []
-        
-        self._equity_full_history.append(total_equity)
-        self._equity_full_times.append(datetime.now())
-        
-        if len(self._equity_full_history) > 300:
-            self._equity_full_history = self._equity_full_history[-300:]
-            self._equity_full_times = self._equity_full_times[-300:]
+        self._persist_equity_point(total_equity)
         
         if hasattr(self, '_equity_total_label'):
             self._equity_total_label.setText(f"总资产: {total_equity:.2f} USDT")
@@ -2114,9 +2100,98 @@ class TradingUI(QMainWindow):
             self._equity_avg_label.setText(f"平均: {avg_equity:.2f}")
             self._equity_time_label.setText(f"更新: {datetime.now():%H:%M:%S}")
         
-        self._draw_equity_chart_full()
+        self._request_equity_redraw()
         self._update_equity_history_table()
     
+    def _load_local_equity_history(self):
+        """从本地加载资产曲线数据"""
+        try:
+            if not self._equity_history_file.exists():
+                self._equity_full_history = []
+                self._equity_full_times = []
+                return
+            with open(self._equity_history_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            points = data.get('points', [])
+            self._equity_full_times = [datetime.fromisoformat(p['time']) for p in points if 'time' in p and 'equity' in p]
+            self._equity_full_history = [float(p['equity']) for p in points if 'time' in p and 'equity' in p]
+        except Exception:
+            self._equity_full_history = []
+            self._equity_full_times = []
+
+    def _persist_equity_point(self, total_equity: float):
+        """写入一条资产点并持久化到本地"""
+        if not hasattr(self, '_equity_full_history'):
+            self._equity_full_history = []
+            self._equity_full_times = []
+
+        now = datetime.now()
+        self._equity_full_history.append(float(total_equity))
+        self._equity_full_times.append(now)
+
+        if len(self._equity_full_history) > 2000:
+            self._equity_full_history = self._equity_full_history[-2000:]
+            self._equity_full_times = self._equity_full_times[-2000:]
+
+        self._equity_dirty_count += 1
+        import time as _time
+        now_ts = _time.time()
+        if self._equity_dirty_count >= 20 or (now_ts - self._last_equity_persist_ts) >= 10:
+            self._flush_equity_history()
+
+    def _flush_equity_history(self):
+        try:
+            import time as _time
+            self._equity_history_file.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                'updated_at': datetime.now().isoformat(),
+                'points': [
+                    {'time': t.isoformat(), 'equity': e}
+                    for t, e in zip(self._equity_full_times, self._equity_full_history)
+                ]
+            }
+            with open(self._equity_history_file, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, ensure_ascii=False)
+            self._equity_dirty_count = 0
+            self._last_equity_persist_ts = _time.time()
+        except Exception:
+            pass
+
+    def _request_equity_redraw(self):
+        import time as _time
+        now_ts = _time.time()
+        min_gap = 1.5
+        if now_ts - self._last_chart_redraw_ts >= min_gap:
+            self._draw_equity_chart_full()
+            self._last_chart_redraw_ts = now_ts
+            self._chart_redraw_pending = False
+            return
+        if not self._chart_redraw_pending:
+            self._chart_redraw_pending = True
+            delay = int(max(50, (min_gap - (now_ts - self._last_chart_redraw_ts)) * 1000))
+            QTimer.singleShot(delay, self._request_equity_redraw)
+
+    def _enqueue_log(self, channel: str, message: str):
+        if channel not in self._log_buffers:
+            self._log_buffers[channel] = []
+        self._log_buffers[channel].append(str(message))
+        if len(self._log_buffers[channel]) > 2000:
+            self._log_buffers[channel] = self._log_buffers[channel][-2000:]
+
+    def _flush_log_buffers(self):
+        try:
+            if self._log_buffers.get('live') and hasattr(self, 'live_log'):
+                self.live_log.append('\n'.join(self._log_buffers['live'][:50]))
+                self._log_buffers['live'] = self._log_buffers['live'][50:]
+            if self._log_buffers.get('backtest') and hasattr(self, 'log_output'):
+                self.log_output.append('\n'.join(self._log_buffers['backtest'][:80]))
+                self._log_buffers['backtest'] = self._log_buffers['backtest'][80:]
+            if self._log_buffers.get('opt') and hasattr(self, 'opt_result_text'):
+                self.opt_result_text.append('\n'.join(self._log_buffers['opt'][:80]))
+                self._log_buffers['opt'] = self._log_buffers['opt'][80:]
+        except Exception:
+            pass
+
     def _auto_refresh_account(self):
         """自动刷新账户信息"""
         if not hasattr(self, '_trader') or not self._trader:
@@ -2128,7 +2203,7 @@ class TradingUI(QMainWindow):
             self._update_position_table()
             self._update_equity_tab()
         except Exception as e:
-            self.live_log.append(f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新失败: {e}")
+            self._enqueue_log("live", f"[{datetime.now():%H:%M:%S}] ⚠️ 刷新失败: {e}")
     
     def _start_live_trading(self) -> None:
         """启动实盘交易"""
@@ -2136,7 +2211,8 @@ class TradingUI(QMainWindow):
             from Strategy.templates import get_strategy
             
             strategy_name = self.live_strategy.currentText()
-            strategy = get_strategy(strategy_name, {})
+            strategy_params = self._collect_live_strategy_params()
+            strategy = get_strategy(self.STRATEGIES.get(strategy_name, strategy_name), strategy_params)
             
             self._trader.set_strategy(strategy)
             
@@ -2484,6 +2560,11 @@ class TradingUI(QMainWindow):
         self.sync_to_live_btn.clicked.connect(self._sync_to_live_trading)
         self.sync_to_live_btn.setEnabled(False)
         btn_layout.addWidget(self.sync_to_live_btn)
+
+        self.save_custom_btn = QPushButton("💾 保存为自定义策略")
+        self.save_custom_btn.clicked.connect(self._save_as_custom_strategy)
+        self.save_custom_btn.setEnabled(False)
+        btn_layout.addWidget(self.save_custom_btn)
         
         self.enhanced_btn = QPushButton("🔬 强化回测")
         self.enhanced_btn.clicked.connect(self._run_enhanced_backtest)
@@ -3171,23 +3252,12 @@ class TradingUI(QMainWindow):
         self.live_stop_loss.setValue(float(config.stop_loss_pct))
         self.live_take_profit.setValue(float(config.take_profit_pct))
         
-        strategy_name = result.strategy_name
-        idx = self.live_strategy.findText(strategy_name)
+        strategy_key = next((k for k, v in self.STRATEGIES.items() if v == result.strategy_name), result.strategy_name)
+        idx = self.live_strategy.findText(strategy_key)
         if idx >= 0:
             self.live_strategy.setCurrentIndex(idx)
-        
-        if hasattr(self, '_param_widgets'):
-            for name, widget in self._param_widgets.items():
-                if name in result.strategy_params:
-                    value = result.strategy_params[name]
-                    if isinstance(widget, QDoubleSpinBox):
-                        widget.setValue(float(value))
-                    elif isinstance(widget, QSpinBox):
-                        widget.setValue(int(value))
-                    elif isinstance(widget, QComboBox):
-                        idx = widget.findText(str(value))
-                        if idx >= 0:
-                            widget.setCurrentIndex(idx)
+
+        self._apply_live_strategy_params(result.strategy_params or {})
         
         self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📋 已同步回测参数到实盘交易")
         self.live_log.append(f"   交易对: {symbol}")
@@ -3205,6 +3275,107 @@ class TradingUI(QMainWindow):
         else:
             QMessageBox.information(self, "成功", "参数已同步到实盘交易\n请在实盘页面配置API后启动")
     
+    def _on_live_strategy_changed(self, name: str):
+        """策略切换时确保参数有默认缓存"""
+        from Strategy.templates import get_strategy
+
+        if name not in self._live_strategy_params_store:
+            strategy_key = self.STRATEGIES.get(name, name)
+            info = get_strategy(strategy_key).get_info()
+            defaults = {}
+            for p in info.get("parameters", []):
+                defaults[p["name"]] = p.get("default")
+            self._live_strategy_params_store[name] = defaults
+
+    def _collect_live_strategy_params(self) -> dict:
+        strategy_name = self.live_strategy.currentText()
+        self._on_live_strategy_changed(strategy_name)
+        return self._live_strategy_params_store.get(strategy_name, {}).copy()
+
+    def _apply_live_strategy_params(self, params: dict):
+        strategy_name = self.live_strategy.currentText()
+        self._on_live_strategy_changed(strategy_name)
+        merged = self._live_strategy_params_store.get(strategy_name, {}).copy()
+        merged.update(params or {})
+        self._live_strategy_params_store[strategy_name] = merged
+
+    def _save_as_custom_strategy(self):
+        if self._last_result is None or self._last_config is None:
+            QMessageBox.warning(self, "提示", "请先运行回测")
+            return
+
+        from PyQt5.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self, "保存自定义策略", "请输入策略名称")
+        if not ok or not name.strip():
+            return
+
+        self._custom_strategy_dir.mkdir(parents=True, exist_ok=True)
+        save_file = self._custom_strategy_dir / f"{name.strip()}.json"
+
+        data = {
+            "name": name.strip(),
+            "saved_at": datetime.now().isoformat(),
+            "symbol": self._last_config.symbol,
+            "interval": self._last_config.interval,
+            "strategy_display": next((k for k, v in self.STRATEGIES.items() if v == self._last_result.strategy_name), self._last_result.strategy_name),
+            "strategy": self._last_result.strategy_name,
+            "strategy_params": self._last_result.strategy_params or {},
+            "leverage": self._last_config.leverage,
+            "position_size": self._last_config.position_size,
+            "stop_loss_pct": self._last_config.stop_loss_pct,
+            "take_profit_pct": self._last_config.take_profit_pct,
+        }
+
+        with open(save_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        self._reload_custom_strategy_profiles()
+        self.live_log.append(f"[{datetime.now():%H:%M:%S}] 💾 已保存自定义策略: {save_file.name}")
+        QMessageBox.information(self, "成功", f"已保存为自定义策略\n{save_file}")
+
+    def _reload_custom_strategy_profiles(self):
+        if not hasattr(self, "live_custom_strategy"):
+            return
+        self.live_custom_strategy.clear()
+        self.live_custom_strategy.addItem("(未选择)")
+
+        self._custom_strategy_dir.mkdir(parents=True, exist_ok=True)
+        for f in sorted(self._custom_strategy_dir.glob("*.json")):
+            self.live_custom_strategy.addItem(f.stem)
+
+    def _load_custom_strategy_to_live(self):
+        name = self.live_custom_strategy.currentText()
+        if not name or name == "(未选择)":
+            return
+        file = self._custom_strategy_dir / f"{name}.json"
+        if not file.exists():
+            QMessageBox.warning(self, "提示", "自定义策略文件不存在")
+            return
+
+        with open(file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        idx = self.live_symbol.findText(data.get("symbol", ""))
+        if idx >= 0:
+            self.live_symbol.setCurrentIndex(idx)
+
+        strategy_display = data.get("strategy_display") or next((k for k, v in self.STRATEGIES.items() if v == data.get("strategy")), "")
+        idx = self.live_strategy.findText(strategy_display)
+        if idx >= 0:
+            self.live_strategy.setCurrentIndex(idx)
+
+        if "leverage" in data:
+            self.live_leverage.setValue(int(data["leverage"]))
+        if "position_size" in data:
+            self.live_position_size.setValue(float(data["position_size"]) * 100)
+        if "stop_loss_pct" in data:
+            self.live_stop_loss.setValue(float(data["stop_loss_pct"]))
+        if "take_profit_pct" in data:
+            self.live_take_profit.setValue(float(data["take_profit_pct"]))
+
+        self._apply_live_strategy_params(data.get("strategy_params", {}))
+        self.live_log.append(f"[{datetime.now():%H:%M:%S}] 📥 已加载自定义策略: {name}")
+
     def _check_live_trading_issues(self, result) -> list[str]:
         """检测实盘交易潜在问题"""
         issues = []
@@ -3275,8 +3446,8 @@ class TradingUI(QMainWindow):
         
         self._optimizer_worker = OptimizerWorker(config)
         self._optimizer_worker.progress.connect(self._on_optimization_progress)
-        self._optimizer_worker.log_message.connect(lambda m: self.opt_result_text.append(m))
-        self._optimizer_worker.iteration_log.connect(lambda m: self.opt_result_text.append(m))
+        self._optimizer_worker.log_message.connect(lambda m: self._enqueue_log("opt", m))
+        self._optimizer_worker.iteration_log.connect(lambda m: self._enqueue_log("opt", m))
         self._optimizer_worker.finished.connect(self._on_optimization_finished)
         self._optimizer_worker.error.connect(self._on_optimization_error)
         self._optimizer_worker.start()
@@ -3656,8 +3827,8 @@ class TradingUI(QMainWindow):
         self.status.setStyleSheet("color: #f0b90b;")
         
         self._worker = BacktestWorker(config)
-        self._worker.progress.connect(lambda m: self.log_output.append(m))
-        self._worker.trade_log.connect(lambda m: self.log_output.append(m))
+        self._worker.progress.connect(lambda m: self._enqueue_log("backtest", m))
+        self._worker.trade_log.connect(lambda m: self._enqueue_log("backtest", m))
         self._worker.finished.connect(self._on_finished)
         self._worker.error.connect(self._on_error)
         self._worker.start()
@@ -3698,6 +3869,7 @@ class TradingUI(QMainWindow):
         self.export_btn.setEnabled(True)
         self.sync_to_live_btn.setEnabled(True)
         self.enhanced_btn.setEnabled(True)
+        self.save_custom_btn.setEnabled(True)
         self.progress.setVisible(False)
         self.status.setText("● 完成")
         self.status.setStyleSheet("color: #0ecb81;")
@@ -3735,6 +3907,7 @@ class TradingUI(QMainWindow):
     
     def closeEvent(self, event):
         self._save_session_params()
+        self._flush_equity_history()
         
         if hasattr(self, '_status_timer') and self._status_timer:
             self._status_timer.stop()
@@ -3787,6 +3960,7 @@ class TradingUI(QMainWindow):
                     'position_size': self.live_position_size.value() if hasattr(self, 'live_position_size') else 10,
                     'max_trades': self.live_max_trades.value() if hasattr(self, 'live_max_trades') else 10,
                     'mode_test': self.live_mode_test.isChecked() if hasattr(self, 'live_mode_test') else True,
+                    'strategy_params': self._collect_live_strategy_params() if hasattr(self, '_collect_live_strategy_params') else {},
                 }
             
             if hasattr(self, 'opt_strategy_combo'):
@@ -3875,6 +4049,7 @@ class TradingUI(QMainWindow):
                     self.live_max_trades.setValue(lv.get('max_trades', 10))
                 if hasattr(self, 'live_mode_test'):
                     self.live_mode_test.setChecked(lv.get('mode_test', True))
+                self._apply_live_strategy_params(lv.get('strategy_params', {}))
             
             if 'optimization' in params:
                 opt = params['optimization']

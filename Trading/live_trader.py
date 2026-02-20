@@ -12,6 +12,8 @@ import requests
 import pandas as pd
 
 from app_logger.logger_setup import Logger
+from core.constants import PositionSide, SignalType
+from Strategy.base import Bar, Position as StrategyPosition, StrategyContext
 
 logger = Logger(__name__)
 
@@ -384,24 +386,36 @@ class LiveTrader:
             return
         
         try:
+            strategy_params = self._strategy.get_parameters() if hasattr(self._strategy, "get_parameters") else {}
+            auto_select = str(strategy_params.get("auto_select_symbol", "true")).lower() == "true"
+            if self._strategy.__class__.__name__ == "OrderFlowPullbackStrategy" and auto_select:
+                selected_symbol = self._pick_volatile_symbol()
+                if selected_symbol and selected_symbol != self.config.symbol:
+                    self.config.symbol = selected_symbol
+                    logger.info(f"订单流策略自动选币: {selected_symbol}")
+
             data = self._get_klines(self.config.symbol, limit=200)
             
             if data is None or len(data) < 50:
                 return
             
+            if hasattr(self._strategy, "on_bar"):
+                self._execute_base_strategy(data)
+                return
+
             signal = self._strategy.generate_signal(data)
-            
+
             if signal is None:
                 return
-            
+
             current_position = self._positions.get(self.config.symbol)
-            
+
             if signal == 1:
                 if current_position and current_position.side == "short":
                     self._close_position(self.config.symbol)
                 if not current_position or current_position.side != "long":
                     self._open_position(self.config.symbol, "long")
-                    
+
             elif signal == -1:
                 if current_position and current_position.side == "long":
                     self._close_position(self.config.symbol)
@@ -412,7 +426,116 @@ class LiveTrader:
             logger.error(f"策略执行错误: {e}")
             if self._error_callback:
                 self._error_callback(f"策略执行错误: {e}")
+
+    def _execute_base_strategy(self, data: pd.DataFrame) -> None:
+        """执行 BaseStrategy 接口策略"""
+        strategy = self._strategy
+        symbol = self.config.symbol
+
+        if not hasattr(strategy, "_live_initialized"):
+            strategy._live_initialized = False
+
+        current_position = self._positions.get(symbol)
+        if current_position is None:
+            strategy_position = StrategyPosition(
+                side=PositionSide.EMPTY,
+                quantity=0.0,
+                entry_price=0.0,
+                entry_time=datetime.now(),
+            )
+        else:
+            side_map = {"long": PositionSide.LONG, "short": PositionSide.SHORT}
+            strategy_position = StrategyPosition(
+                side=side_map.get(current_position.side, PositionSide.EMPTY),
+                quantity=current_position.quantity,
+                entry_price=current_position.entry_price,
+                entry_time=datetime.now(),
+                unrealized_pnl=current_position.unrealized_pnl,
+            )
+
+        row = data.iloc[-1]
+        bar = Bar(
+            timestamp=data.index[-1].to_pydatetime() if hasattr(data.index[-1], "to_pydatetime") else datetime.now(),
+            open=float(row["open"]),
+            high=float(row["high"]),
+            low=float(row["low"]),
+            close=float(row["close"]),
+            volume=float(row["volume"]),
+            symbol=symbol,
+            interval=self.config.interval,
+        )
+
+        context = StrategyContext(
+            symbol=symbol,
+            interval=self.config.interval,
+            position=strategy_position,
+            equity=self._account.balance + self._account.unrealized_pnl,
+            available_capital=self._account.available,
+            current_price=bar.close,
+            timestamp=bar.timestamp,
+            data_count=len(data),
+        )
+
+        if not strategy._live_initialized:
+            strategy.initialize(context)
+            strategy._live_initialized = True
+
+        result = strategy.on_bar(bar, context)
+        signal = result.signal if result else None
+        if not signal:
+            return
+
+        if signal.type == SignalType.OPEN_LONG:
+            if current_position and current_position.side == "short":
+                self._close_position(symbol)
+            size_factor = float(signal.extra.get("size_factor", 1.0)) if getattr(signal, "extra", None) else 1.0
+            self._open_position(symbol, "long", size_factor=size_factor)
+        elif signal.type == SignalType.OPEN_SHORT:
+            if current_position and current_position.side == "long":
+                self._close_position(symbol)
+            size_factor = float(signal.extra.get("size_factor", 1.0)) if getattr(signal, "extra", None) else 1.0
+            self._open_position(symbol, "short", size_factor=size_factor)
+        elif signal.type == SignalType.CLOSE_LONG and current_position and current_position.side == "long":
+            self._close_position(symbol)
+        elif signal.type == SignalType.CLOSE_SHORT and current_position and current_position.side == "short":
+            self._close_position(symbol)
     
+    def _pick_volatile_symbol(self) -> str | None:
+        """自动选择高波动USDT交易对"""
+        try:
+            if self.config.mode == TradingMode.TEST:
+                return self.config.symbol
+
+            response = requests.get(f"{self._base_url}/fapi/v1/ticker/24hr", timeout=10)
+            if response.status_code != 200:
+                return None
+
+            tickers = response.json()
+            candidates = []
+            for t in tickers:
+                symbol = t.get("symbol", "")
+                if not (symbol.endswith("USDT") or symbol.endswith("USDC")):
+                    continue
+                if any(x in symbol for x in ("UP", "DOWN", "BULL", "BEAR")):
+                    continue
+                try:
+                    change_pct = abs(float(t.get("priceChangePercent", 0)))
+                    quote_volume = float(t.get("quoteVolume", 0))
+                except Exception:
+                    continue
+                if quote_volume < 5_000_000:
+                    continue
+                candidates.append((change_pct, quote_volume, symbol))
+
+            if not candidates:
+                return None
+
+            candidates.sort(reverse=True)
+            return candidates[0][2]
+        except Exception as e:
+            logger.warning(f"自动选币失败: {e}")
+            return None
+
     def _get_klines(self, symbol: str, limit: int = 200) -> pd.DataFrame | None:
         """获取K线数据"""
         try:
@@ -468,13 +591,14 @@ class LiveTrader:
             logger.error(f"获取K线数据失败: {e}")
             return None
     
-    def _open_position(self, symbol: str, side: str) -> bool:
+    def _open_position(self, symbol: str, side: str, size_factor: float = 1.0) -> bool:
         """开仓"""
         try:
             account_balance = self._account.balance + self._account.unrealized_pnl
-            position_value = account_balance * self.config.position_size
+            step_factor = max(0.01, min(float(size_factor), 0.5))
+            position_value = account_balance * self.config.position_size * step_factor
             leverage = self.config.leverage
-            
+
             quantity = position_value * leverage / 100
             
             if quantity <= 0:
@@ -482,19 +606,28 @@ class LiveTrader:
             
             if self.config.mode == TradingMode.TEST:
                 current_price = 100000
-                self._positions[symbol] = Position(
-                    symbol=symbol,
-                    side=side,
-                    quantity=quantity,
-                    entry_price=current_price,
-                    current_price=current_price,
-                    unrealized_pnl=0,
-                    leverage=leverage,
-                    margin=position_value,
-                )
-                
+                existing = self._positions.get(symbol)
+                if existing and existing.side == side:
+                    total_qty = existing.quantity + quantity
+                    weighted_entry = (existing.entry_price * existing.quantity + current_price * quantity) / total_qty
+                    existing.quantity = total_qty
+                    existing.entry_price = weighted_entry
+                    existing.current_price = current_price
+                    existing.margin += position_value
+                else:
+                    self._positions[symbol] = Position(
+                        symbol=symbol,
+                        side=side,
+                        quantity=quantity,
+                        entry_price=current_price,
+                        current_price=current_price,
+                        unrealized_pnl=0,
+                        leverage=leverage,
+                        margin=position_value,
+                    )
+
                 self._daily_trades += 1
-                logger.info(f"测试模式: 开仓 {side} {symbol} 数量={quantity:.4f}")
+                logger.info(f"测试模式: 开仓/加仓 {side} {symbol} 数量={quantity:.4f} 步长={step_factor*100:.1f}%")
                 
                 if self._order_callback:
                     self._order_callback({
@@ -699,9 +832,9 @@ class LiveTrader:
         order.update_time = datetime.now()
         
         if order.side == OrderSide.BUY:
-            self._open_position(order)
+            self._open_position_from_order(order)
         else:
-            self._close_position(order)
+            self._close_position_from_order(order)
     
     def _submit_order(self, order: Order) -> None:
         """提交订单到交易所"""
@@ -711,11 +844,11 @@ class LiveTrader:
         order.update_time = datetime.now()
         
         if order.side == OrderSide.BUY:
-            self._open_position(order)
+            self._open_position_from_order(order)
         else:
-            self._close_position(order)
+            self._close_position_from_order(order)
     
-    def _open_position(self, order: Order) -> None:
+    def _open_position_from_order(self, order: Order) -> None:
         """开仓"""
         symbol = order.symbol
         
@@ -739,7 +872,7 @@ class LiveTrader:
         
         logger.info(f"开仓: {symbol} {position.quantity} @ {position.entry_price}")
     
-    def _close_position(self, order: Order) -> None:
+    def _close_position_from_order(self, order: Order) -> None:
         """平仓"""
         symbol = order.symbol
         
