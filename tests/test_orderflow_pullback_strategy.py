@@ -120,3 +120,42 @@ def test_orderflow_pullback_exposes_volume_filter_parameters_for_optimizer():
 
     assert "min_volume_ratio" in param_names
     assert "max_volume_ratio" in param_names
+
+
+def test_orderflow_strategies_expose_auto_select_symbol_param():
+    pullback_params = {p["name"] for p in get_strategy("OrderFlowPullbackStrategy").get_info()["parameters"]}
+    wool_params = {p["name"] for p in get_strategy("OrderFlowWoolStrategy").get_info()["parameters"]}
+
+    assert "auto_select_symbol" in pullback_params
+    assert "auto_select_symbol" in wool_params
+
+
+def test_orderflow_internal_buffers_are_bounded_to_avoid_backtest_freeze():
+    strategy = get_strategy("OrderFlowPullbackStrategy", {
+        "momentum_bars": 3,
+        "overbought_rsi": 50,
+        "min_volume_ratio": 0.5,
+        "max_volume_ratio": 10.0,
+    })
+
+    prices = [100 + i * 0.02 for i in range(1200)]
+    rows = []
+    for i, close in enumerate(prices):
+        rows.append({
+            "open": close,
+            "high": close * 1.001,
+            "low": close * 0.999,
+            "close": close,
+            "volume": 2000 + (i % 50),
+        })
+
+    data = pd.DataFrame(rows, index=pd.date_range(datetime(2024, 4, 1), periods=len(rows), freq="1min"))
+
+    engine = BacktestEngine(
+        strategy,
+        BacktestConfig(symbol="BTCUSDT", interval="1min", initial_capital=10000, position_size=0.2),
+    )
+    engine.run(data)
+
+    assert len(strategy._closes) <= 720
+    assert len(strategy._volumes) <= 720
