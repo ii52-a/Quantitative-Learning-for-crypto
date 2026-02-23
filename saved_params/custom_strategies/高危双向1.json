@@ -1,0 +1,19 @@
+{
+  "name": "高危双向1",
+  "saved_at": "2026-02-23T20:09:27.441903",
+  "symbol": "ETHUSDT",
+  "interval": "30min",
+  "strategy_display": "MACD趋势策略",
+  "strategy": "MACDStrategy",
+  "strategy_params": {
+    "trade_mode": "both",
+    "hist_filter": 0.0,
+    "fast_period": 10,
+    "slow_period": 26,
+    "signal_period": 10
+  },
+  "leverage": 20,
+  "position_size": 0.25,
+  "stop_loss_pct": 0.25,
+  "take_profit_pct": 16.21
+}

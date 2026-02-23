@@ -1241,6 +1241,12 @@ class LiveTrader:
         """获取最近信号原因"""
         return self._last_signal_reason
     
+    def get_pending_orders(self) -> list[dict]:
+        """获取挂单计划"""
+        if self._strategy and hasattr(self._strategy, 'get_pending_orders'):
+            return self._strategy.get_pending_orders()
+        return []
+    
     def place_order(
         self,
         symbol: str,

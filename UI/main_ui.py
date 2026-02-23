@@ -28,7 +28,8 @@ from PyQt5.QtWidgets import (
     QSpinBox, QDoubleSpinBox, QTabWidget, QTableWidget,
     QTableWidgetItem, QHeaderView, QSplitter, QMessageBox,
     QProgressBar, QFrame, QGridLayout, QScrollArea, QSizePolicy,
-    QFileDialog, QRadioButton, QLineEdit, QListWidget, QListWidgetItem
+    QFileDialog, QRadioButton, QLineEdit, QListWidget, QListWidgetItem,
+    QCheckBox
 )
 from PyQt5.QtGui import QFont, QColor, QPalette, QPainter
 from PyQt5.QtCore import Qt as QtCore
@@ -173,17 +174,20 @@ class DetailUpdateWorker(QThread):
             ticker = self._trader.get_ticker_24hr(self._symbol)
             indicators = self._trader.get_indicators()
             signal_reason = self._trader.get_signal_reason()
+            pending_orders = self._trader.get_pending_orders()
             
             self.finished.emit({
                 'ticker': ticker or {},
                 'indicators': indicators or {},
                 'signal_reason': signal_reason or '',
+                'pending_orders': pending_orders or [],
             })
         except Exception as e:
             self.finished.emit({
                 'ticker': {},
                 'indicators': {},
                 'signal_reason': f'获取数据失败: {e}',
+                'pending_orders': [],
             })
 
 
@@ -1469,8 +1473,8 @@ class TradingUI(QMainWindow):
         order_layout.addWidget(order_title)
         
         self._detail_orders_table = QTableWidget()
-        self._detail_orders_table.setColumnCount(5)
-        self._detail_orders_table.setHorizontalHeaderLabels(["时间", "方向", "数量", "价格", "状态"])
+        self._detail_orders_table.setColumnCount(4)
+        self._detail_orders_table.setHorizontalHeaderLabels(["挂单价格", "仓位比例", "价差", "状态"])
         self._detail_orders_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self._detail_orders_table.setEditTriggers(QTableWidget.NoEditTriggers)
         order_layout.addWidget(self._detail_orders_table, 1)
@@ -2537,6 +2541,7 @@ class TradingUI(QMainWindow):
         ticker = data.get('ticker', {})
         indicators = data.get('indicators', {})
         signal_reason = data.get('signal_reason', '')
+        pending_orders = data.get('pending_orders', [])
         
         if ticker:
             current_price = float(ticker.get('lastPrice', 0))
@@ -2566,6 +2571,27 @@ class TradingUI(QMainWindow):
         
         if signal_reason and hasattr(self, '_detail_signal'):
             self._detail_signal.setText(signal_reason)
+        
+        # 更新挂单表格
+        if hasattr(self, '_detail_orders_table') and pending_orders:
+            self._detail_orders_table.setRowCount(len(pending_orders))
+            for i, order in enumerate(pending_orders):
+                price_item = QTableWidgetItem(f"{order.get('price', 0):.4f}")
+                price_item.setTextAlignment(Qt.AlignCenter)
+                self._detail_orders_table.setItem(i, 0, price_item)
+                
+                pct_item = QTableWidgetItem(f"{order.get('position_pct', 0)*100:.1f}%")
+                pct_item.setTextAlignment(Qt.AlignCenter)
+                self._detail_orders_table.setItem(i, 1, pct_item)
+                
+                gap_item = QTableWidgetItem(f"{order.get('gap_pct', 0):.2f}%")
+                gap_item.setTextAlignment(Qt.AlignCenter)
+                self._detail_orders_table.setItem(i, 2, gap_item)
+                
+                status_item = QTableWidgetItem("等待触发")
+                status_item.setTextAlignment(Qt.AlignCenter)
+                status_item.setForeground(QColor("#f0b90b"))
+                self._detail_orders_table.setItem(i, 3, status_item)
     
     def _on_order_update(self, order: dict) -> None:
         """订单更新回调"""
@@ -3790,18 +3816,21 @@ class TradingUI(QMainWindow):
                 w = QComboBox()
                 w.addItems([str(x) for x in p["options"]])
                 w.setCurrentText(str(p.get("default", p["options"][0])))
+            elif p["type"] == "bool":
+                w = QCheckBox()
+                w.setChecked(bool(p.get("default", False)))
             elif p["type"] == "float":
                 w = QDoubleSpinBox()
-                w.setRange(float(p.get("min", 0)), float(p.get("max", 1000000)))
-                w.setValue(float(p.get("default", 0)))
+                w.setRange(float(p.get("min", 0) or 0), float(p.get("max", 1000000) or 1000000))
+                w.setValue(float(p.get("default", 0) or 0))
                 w.setSingleStep(0.1)
                 w.setDecimals(4)
-                w.wheelEvent = lambda event: None  # 禁用滚轮事件
+                w.wheelEvent = lambda event: None
             else:
                 w = QSpinBox()
-                w.setRange(int(p.get("min", 0)), int(p.get("max", 1000000)))
-                w.setValue(int(p.get("default", 0)))
-                w.wheelEvent = lambda event: None  # 禁用滚轮事件
+                w.setRange(int(p.get("min", 0) or 0), int(p.get("max", 1000000) or 1000000))
+                w.setValue(int(p.get("default", 0) or 0))
+                w.wheelEvent = lambda event: None
 
             w.setMinimumWidth(120)
             self._live_param_widgets[p["name"]] = w
@@ -3812,6 +3841,8 @@ class TradingUI(QMainWindow):
         for name, w in getattr(self, "_live_param_widgets", {}).items():
             if isinstance(w, QComboBox):
                 params[name] = w.currentText()
+            elif isinstance(w, QCheckBox):
+                params[name] = w.isChecked()
             else:
                 params[name] = w.value()
         return params
@@ -3825,6 +3856,8 @@ class TradingUI(QMainWindow):
                 idx = w.findText(str(value))
                 if idx >= 0:
                     w.setCurrentIndex(idx)
+            elif isinstance(w, QCheckBox):
+                w.setChecked(bool(value))
             elif isinstance(w, QSpinBox):
                 w.setValue(int(value))
             elif isinstance(w, QDoubleSpinBox):
