@@ -141,7 +141,6 @@ class SqliteOper:
         try:
             for _, row in data.iterrows():
                 # cast断言函数,断言类型以避免宽泛编译器hashable类型的自判断
-                # pandas.timestamp会默认使用纳秒时间戳，需要转换为毫秒时间戳同步数据库和接口返回数据
                 timestamp_obj = cast(pd.Timestamp, row.name)
                 insert_values.append((
                     int(timestamp_obj.value / 10 ** 6),

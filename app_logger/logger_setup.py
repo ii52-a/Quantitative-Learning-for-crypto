@@ -99,33 +99,21 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def format(self, record):
-        """
-        每当有一条日志（record）需要打印时，系统都会自动调用这个方法。
-        我们在这里给日志穿上“彩色马甲”。
-        """
 
-        # 1.
-        # 如果以后你用了个没定义过的日志级别（比如 logging.CRITICAL），
-        # 也会默认给它一个灰色（self.GREY），防止代码直接报错崩掉。
+
+
         color = self.LEVEL_COLORS.get(record.levelno, self.WHITE)
 
-        # 2. 【暂存模板】记录下当前 Formatter 原始的显示格式（即不带颜色的那串文字）。
-        # 因为这个类实例是共享的，我们得先记住“原样”，方便一会儿还原。
+
         original_fmt = self._style._fmt
 
-        # 3. 【借梁换柱】动态合成带颜色的新模板。
-        # 比如把 " (file:74): Hello <INFO> " 变成 "\033[32m (file:74): Hello <INFO> \033[0m"。
-        # 我们直接修改 self._style._fmt，这是底层真正存格式的地方。
+
         self._style._fmt = f"{color}{self.FORMAT}{self.RESET}"
 
-        # 4. 【核心执行】调用父类（logging.Formatter）原本的 format 方法。
-        # 它已经写好了如何计算时间戳、提取文件名、计算行号等复杂逻辑。
+
         result = super().format(record)
 
-        # 5
-        # 否则，如果其他 Handler（比如写文件的 Handler）也共用了这个属性，
-        # 你的日志文件里就会出现一堆乱七八糟的颜色代码（\033...）。
+
         self._style._fmt = original_fmt
 
-        # 6. 返回已经渲染好的彩色字符串。
         return result
