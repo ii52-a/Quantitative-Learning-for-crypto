@@ -116,6 +116,7 @@ class SqliteOper:
             logger.exception("time_span is None")
         return f"数据集跨度:[{time_span[0].tz_convert(ApiConfig.LOCAL_DATE_PLACE)} -> {time_span[1].tz_convert(ApiConfig.LOCAL_DATE_PLACE)}] 总量:<{time_span[2]}>"
 
+    #检查是否有表结构
     @classmethod
     def has_table(cls,
                   cursor:sqlite3.Cursor,
@@ -124,6 +125,7 @@ class SqliteOper:
         has=cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()
         return has is not None
 
+    #插入或更新数据
     @classmethod
     def insert_or_update_data(
             cls,
@@ -140,7 +142,7 @@ class SqliteOper:
         logger.debug(f"[in,2]<SqliteOper-insert_or_update_data>:{symbol}_{kline}数据开始转换为列表")
         try:
             for _, row in data.iterrows():
-                # cast断言函数,断言类型以避免宽泛编译器hashable类型的自判断
+                # cast断言函数
                 timestamp_obj = cast(pd.Timestamp, row.name)
                 insert_values.append((
                     int(timestamp_obj.value / 10 ** 6),
@@ -189,6 +191,7 @@ class SqliteOper:
             logger.warning(f"[in,5error]<SqliteOper-insert_or_update_data>:最新数据集时间戳获取错误")
         logger.debug(f"[in,end]<SqliteOper-insert_or_update_data>{symbol}_{kline}数据库操作完毕")
 
+    #读取数据范围
     @classmethod
     @catch_and_log(logger=logger,return_default=None)
     def read_range_kline(cls,
@@ -249,6 +252,8 @@ class SqliteOper:
                                         'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
                                         'taker_buy_quote_asset_volume'])
         return data_df
+
+
 
 
 

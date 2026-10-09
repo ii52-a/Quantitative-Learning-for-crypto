@@ -48,14 +48,17 @@ class Api:
     @catch_and_log(logger=logger)
     def get_futures_data(self,start_time=None,end_time=None,symbol:str='BTCUSDT',interval:str=Client.KLINE_INTERVAL_30MINUTE,limit:int=ApiConfig.LIMIT) -> pd.DataFrame | None:
          logger.debug(f"获取期货数据 start_time={start_time}, end_time={end_time}, symbol={symbol}, interval={interval}, limit={limit}")
+         #有起始时间无结束时间
          if start_time and not end_time:
              start_ms = int(pd.to_datetime(start_time).timestamp()*1000)
              klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
                                                  startTime=start_ms, timeout=2000)
+        #有结束时间无起始时间
          elif end_time and not start_time:
              end_ms=int(pd.to_datetime(end_time).timestamp()*1000)
              klines = self.client.futures_klines(symbol=symbol, interval=interval, limit=limit,
                                                  endTime=end_ms,timeout=2000)
+        #都有
          else:
              start_ms = int(pd.to_datetime(start_time).timestamp() * 1000)
              end_ms = int(pd.to_datetime(end_time).timestamp() * 1000)
