@@ -143,3 +143,11 @@
 - 将仓位模块接入策略模块进行CTA-macd30min回测测试，发现部分问题。
 - TODO：修改API模块的k线组合逻辑，使得k线open为整点数而非错误点数
 - TODO：写出一个含有CTA_MACD_FILTER的优化CTA策略
+
+### 2026/11/11 修复硬错误与卡死（问题1，不做策略优化）
+- 回测数字可信化：接入开/平仓手续费（0.04%/边）；修正反手 2 倍敞口、空仓平仓信号误开仓、`SHORT` 被当成开多、部分平仓符号反向、0 余额除零；逐笔结果落 `Strategy/CTA/backtest_result_*.csv`
+- 数据层：读写统一到 `Data/LocalData`（原来写 `./LocalData` 读 `Data/LocalData`）；查询强制升序（`start_time` 分支原来返回倒序，MACD 是在时间反序序列上算的）；`start+end` 遵守 `number`；空表/空库不再 `NameError/TypeError`；聚合丢弃未完成的 K 线桶
+- 指标：MACD 改为纯 pandas 实现（不再依赖 TA-Lib），EMA 用 SMA 播种，口径与 `talib.MACD` 一致；去掉硬编码的 300 根切片
+- UI：修复导入（`data`→`Data`）与重复布局；回测/数据更新全部进 `QThread`（进度、取消、异常兜底），主线程不再联网；关闭窗口安全回收线程
+- 测试：`pytest` 31 项通过（仓位数学 / 数据层 / 指标 / 聚合 / UI / 端到端）
+- 结论：ETHUSDT 30min 2 万根、746 笔，毛利 +52.96 USDT，手续费 1000.90 USDT，净 **-947.94 USDT（-94.79%）**。原来的“+5%”来自没有计手续费

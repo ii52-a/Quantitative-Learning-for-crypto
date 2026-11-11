@@ -44,25 +44,37 @@ class PositionStatus:
 @dataclass
 class PositionSet:
     """
-    signal<PositionSignal>: 多 / 空   \n
-    margin_used:变动金额   \n
+    signal<PositionChange>: 动作类型   \n
+    changed_usdt:变动保证金   \n
     price:价格   \n
+    direction: 本次开仓/反手方向, +1 多 / -1 空 / 0 沿用当前仓位方向   \n
 
     """
     signal: PositionChange
     changed_usdt: float
     price: float
-    open_time:Hashable
+    open_time: Hashable
+    direction: int = 0
 
 
 @dataclass
 class PositionResult:
     """
-       pnl:平仓盈利   \n
+       pnl: 本次执行对余额的净影响（含手续费）   \n
+       trade_pnl: 本笔交易累计净盈亏（平仓时有效）   \n
+       fee: 本次执行手续费   \n
     """
-    if_full:bool
+    if_full: bool
     win: bool
-    pnl: float=0
+    pnl: float = 0
+    trade_pnl: float = 0
+    fee: float = 0
+    trade_fee: float = 0
+    open_price: float | None = None
+    close_price: float | None = None
+    open_time: Hashable | None = None
+    close_time: Hashable | None = None
+    pnl_percent: float = 0
 
 
 

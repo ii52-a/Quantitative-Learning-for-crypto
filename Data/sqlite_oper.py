@@ -1,4 +1,6 @@
 import sqlite3
+from contextlib import closing
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 
@@ -12,18 +14,46 @@ from decorator import catch_and_log
 
 logger = Logger("sqlite_oper")
 
+# 数据库列顺序，所有读函数共用
+COLUMNS = [
+    'timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
+    'quote_asset_volume', 'number_of_trades',
+    'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume',
+]
+# 建表 / 写入需要的数值列
+VALUE_COLUMNS = [
+    'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume',
+    'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume',
+]
+
+
+def to_ms(value) -> int:
+    """把 Timestamp / 毫秒数值 / 时间字符串统一成 UTC 毫秒。"""
+    if isinstance(value, (int, float)):
+        return int(value)
+    # tz-aware 用绝对时间；naive 沿用 pandas 的本地时间解释，保持与旧代码一致
+    return int(pd.Timestamp(value).timestamp() * 1000)
+
+
+def _index_ms(index) -> list[int]:
+    """DatetimeIndex -> UTC 毫秒。
+
+    pandas 3.x 的 DatetimeIndex 可能是 s/us/ns 分辨率，asi8 不保证是纳秒，
+    必须先 as_unit('ns') 再除以 1e6。
+    """
+    return (pd.DatetimeIndex(index).as_unit('ns').asi8 // 10 ** 6).tolist()
+
 
 class SqliteBase:
     base_path = Path(ApiConfig.LOCAL_DATA_SQLITE_DIR)
 
-
     # 初始化数据库base
     @classmethod
     def init_sqlite(cls,
-                    cursor:sqlite3.Cursor,
-                    kline:str='kline'
+                    cursor: sqlite3.Cursor,
+                    kline: str = 'kline'
                     ) -> None:
-        logger.debug(f"检查表结构")
+        logger.debug(f"检查表结构 {kline}")
         cursor.execute(f"""
                        CREATE TABLE IF NOT EXISTS {kline}
                        (
@@ -40,26 +70,24 @@ class SqliteBase:
                            taker_buy_quote_asset_volume REAL
                        )
                        """)
-        logger.debug(f"{cursor}路径：{kline}数据集初始化完成")
+        logger.debug(f"{kline} 数据集初始化完成")
 
     # 更新一分钟基准线
     @classmethod
     def update_base_kline(
             cls,
             data: pd.DataFrame,
-            symbol:str
-    )->None:
-        path = Path(cls.base_path / f"{symbol}_base.db")
-
-        with sqlite3.connect(path) as conn:
+            symbol: str
+    ) -> int:
+        path = Path(cls.base_path) / f"{symbol}_base.db"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with closing(sqlite3.connect(path)) as conn:
             cursor = conn.cursor()
-            logger.debug(f"{symbol}数据库不存在，进入初始化程序")
             cls.init_sqlite(cursor=cursor)
-            logger.debug(f"进入数据插入或更新环节")
-            SqliteOper.insert_or_update_data(symbol=symbol, data=data, cursor=cursor)
+            count = SqliteOper.insert_or_update_data(symbol=symbol, data=data, cursor=cursor)
+            conn.commit()
             logger.info(SqliteOper.read_time_span_str(cursor=cursor))
-
-
+        return count
 
 
 class SqliteOper:
@@ -67,9 +95,12 @@ class SqliteOper:
     @classmethod
     def read_newest_timestamp(
             cls,
-            cursor:sqlite3.Cursor,
-            kline:str='kline'
-    )-> None | str:
+            cursor: sqlite3.Cursor,
+            kline: str = 'kline'
+    ) -> int | None:
+        if not cls.has_table(cursor, kline):
+            logger.error(f"{kline} 表不存在，无法读取最新时间戳")
+            return None
         cursor.execute(
             f"""
             SELECT timestamp
@@ -78,188 +109,178 @@ class SqliteOper:
             LIMIT 1
             """
         )
-        caback: tuple[str] = cursor.fetchone()
-        if not caback:
-            logger.exception(f"{path}无基础数据集，程序错误")
+        row = cursor.fetchone()
+        if not row or row[0] is None:
+            logger.warning(f"{kline} 无数据，返回 None")
             return None
 
-        logger.debug(f"最新时间戳:{caback[0]}")
-        return caback[0]
+        newest = int(row[0])
+        logger.debug(f"最新时间戳:{newest}")
+        return newest
 
     # 获取时间跨度
     @classmethod
     def read_time_span(cls,
                        cursor: sqlite3.Cursor,
-                       kline:str='kline'
+                       kline: str = 'kline'
                        ) -> tuple[pd.Timestamp, pd.Timestamp, int] | None:
-            start_t = cursor.execute(f"SELECT timestamp FROM {kline} LIMIT 1").fetchone()
+            if not cls.has_table(cursor, kline):
+                logger.warning(f"{kline} 表不存在，无法获取时间跨度")
+                return None
+            start_t = cursor.execute(f"SELECT timestamp FROM {kline} ORDER BY timestamp ASC LIMIT 1").fetchone()
             end_t = cursor.execute(f"SELECT timestamp FROM {kline} ORDER BY timestamp DESC LIMIT 1").fetchone()
             if start_t is None or end_t is None:
                 logger.warning(f"无法获取时间跨度,判断是否为None:start_t:{start_t is None},end_t:{end_t is None}")
                 return None
-            start_time = start_t[0]
-            end_time = end_t[0]
-            count = cursor.execute("SELECT count(*) FROM kline").fetchone()[0]
-            logger.debug(f"路径:{cursor} 数据集,最旧时间:{start_time},最新时间:{end_time},总量:{count}")
+            count = cursor.execute(f"SELECT count(*) FROM {kline}").fetchone()[0]
             return (
-                pd.to_datetime(start_time, unit='ms', utc=True),
-                pd.to_datetime(end_time, unit='ms', utc=True),
-                count
+                pd.to_datetime(float(start_t[0]), unit='ms', utc=True),
+                pd.to_datetime(float(end_t[0]), unit='ms', utc=True),
+                int(count)
             )
 
     # 时间跨度字符串,用于数据更新完的logging
     @classmethod
-    def read_time_span_str(cls, cursor:sqlite3.Cursor,kline:str='kline') -> str:
-        time_span: tuple[pd.Timestamp, pd.Timestamp, int] = cls.read_time_span(cursor=cursor,kline=kline)
+    def read_time_span_str(cls, cursor: sqlite3.Cursor, kline: str = 'kline') -> str:
+        time_span = cls.read_time_span(cursor=cursor, kline=kline)
         if time_span is None:
-            logger.warning(f"数据集跨度获取失败,指向路径:{cursor}")
-            logger.exception("time_span is None")
-        return f"数据集跨度:[{time_span[0].tz_convert(ApiConfig.LOCAL_DATE_PLACE)} -> {time_span[1].tz_convert(ApiConfig.LOCAL_DATE_PLACE)}] 总量:<{time_span[2]}>"
+            return f"{kline} 数据集为空"
+        start, end, count = time_span
+        return (f"数据集跨度:[{start.tz_convert(ApiConfig.LOCAL_DATE_PLACE)} -> "
+                f"{end.tz_convert(ApiConfig.LOCAL_DATE_PLACE)}] 总量:<{count}>")
 
     #检查是否有表结构
     @classmethod
     def has_table(cls,
-                  cursor:sqlite3.Cursor,
-                  table_name:str
+                  cursor: sqlite3.Cursor,
+                  table_name: str
                   ) -> bool:
-        has=cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()
+        has = cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()
         return has is not None
 
     #插入或更新数据
     @classmethod
     def insert_or_update_data(
             cls,
-            symbol:str,
-            data:pd.DataFrame,
-            cursor:sqlite3.Cursor,
+            symbol: str,
+            data: pd.DataFrame,
+            cursor: sqlite3.Cursor,
             kline: str = 'kline'
-    ) -> None:
-        logger.debug(f"[in,1]<SqliteOper-insert_or_update_data>:symbol={symbol}开始插入或更新")
-        insert_values = []
+    ) -> int:
+        if data is None or data.empty:
+            logger.warning(f"[in,0]<insert_or_update_data>: {symbol}_{kline} 待写入数据为空，跳过")
+            return 0
         if not cls.has_table(cursor=cursor, table_name=kline):
-            logger.warning(f"[in,1error]<SqliteOper-insert_or_update_data>:{kline}表不存在！")
-            return
-        logger.debug(f"[in,2]<SqliteOper-insert_or_update_data>:{symbol}_{kline}数据开始转换为列表")
-        try:
-            for _, row in data.iterrows():
-                # cast断言函数
-                timestamp_obj = cast(pd.Timestamp, row.name)
-                insert_values.append((
-                    int(timestamp_obj.value / 10 ** 6),
-                    float(row['open']),
-                    float(row['high']),
-                    float(row['low']),
-                    float(row['close']),
-                    float(row['volume']),
-                    float(row['close_time'].value / 10 ** 6),
-                    float(row['quote_asset_volume']),
-                    float(row['number_of_trades']),
-                    float(row['taker_buy_base_asset_volume']),
-                    float(row['taker_buy_quote_asset_volume']),
-                ))
-        except Exception as e:
-            logger.exception(f"[in,2error]<<SqliteOper-insert_or_update_data>:数据处理失败!{e}")
+            logger.error(f"[in,1]<insert_or_update_data>:{kline}表不存在！")
+            return 0
 
-        logger.debug(f"[in,3]<SqliteOper-insert_or_update_data>:{symbol}基础数据开始写入数据库")
+        missing = [c for c in VALUE_COLUMNS if c not in data.columns]
+        if missing:
+            raise ValueError(f"{symbol}_{kline} 缺少列: {missing}")
+
+        df = data.sort_index()
+        if df.index.name != 'timestamp':
+            raise ValueError(f"{symbol}_{kline} 索引必须是 timestamp")
+        if df[VALUE_COLUMNS].isna().any().any():
+            raise ValueError(f"{symbol}_{kline} 存在空值，拒绝写入以免污染数据")
+
+        # 一次构造所有行，避免 iterrows 逐行转换：既慢又可能在异常时丢数据
+        rows = list(zip(
+            _index_ms(df.index),
+            df['open'].astype(float).tolist(),
+            df['high'].astype(float).tolist(),
+            df['low'].astype(float).tolist(),
+            df['close'].astype(float).tolist(),
+            df['volume'].astype(float).tolist(),
+            _index_ms(df['close_time']),
+            df['quote_asset_volume'].astype(float).tolist(),
+            df['number_of_trades'].astype(float).tolist(),
+            df['taker_buy_base_asset_volume'].astype(float).tolist(),
+            df['taker_buy_quote_asset_volume'].astype(float).tolist(),
+        ))
+
+        logger.debug(f"[in,2]<insert_or_update_data>:{symbol}_{kline} 写入 {len(rows)} 行")
         try:
             cursor.executemany(
-                f"""
-                INSERT OR REPLACE INTO {kline} Values(?,?,?,?,?,?,?,?,?,?,?)
-                """,
-                insert_values
+                f"INSERT OR REPLACE INTO {kline} VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                rows
             )
         except Exception as e:
-            logger.Exception(f"[in,3error]<SqliteOper-insert_or_update_data>:数据写入错误:{e}]")
-        logger.debug(f"[in,3success]<SqliteOper-insert_or_update_data>:{symbol}_{kline}写入成功！")
-        # INSERT OR REPLACE 无法用pd.to_sql因为if_exists=append无法处理主键重复，会报错，而原生代码则会执行replace替代
-        # Data.to_sql('kline',conn,if_exists='append',index=True)
-        logger.debug(f"[in,4]<SqliteOper-insert_or_update_data>:检查最新数据")
-        cursor.execute(f"SELECT * FROM {kline} ORDER BY timestamp DESC LIMIT 1")
-        last_entry = cursor.fetchone()
-        if last_entry is None or len(last_entry) == 0:
-            logger.warning(f"[in,4error]<SqliteOper-insert_or_update_data>{symbol}_{kline}数据集返回最新失败!")
-            logger.Exception(f"{last_entry} is None")
-        logger.debug(f"[in,5]<SqliteOper-insert_or_update_data>:{symbol}检查时间差]")
-        try:
-            now = pd.to_datetime('now', utc=True).tz_convert(ApiConfig.LOCAL_DATE_PLACE)
-            new = pd.to_datetime(last_entry[0], unit='ms', utc=True).tz_convert(ApiConfig.LOCAL_DATE_PLACE)
+            logger.exception(f"[in,3error]<insert_or_update_data>:数据写入错误:{e}")
+            raise
 
-            logger.debug(f"当前时间戳:{now}")
-            logger.debug(f"数据集最新时间:{new}")
-            logger.debug(f"数据集时间差:{now - new},状态(True/False):{(now - new).total_seconds() < 120}")
-        except Exception as e:
-            logger.warning(f"[in,5error]<SqliteOper-insert_or_update_data>:最新数据集时间戳获取错误")
-        logger.debug(f"[in,end]<SqliteOper-insert_or_update_data>{symbol}_{kline}数据库操作完毕")
+        logger.debug(f"[in,3success]<insert_or_update_data>:{symbol}_{kline}写入成功！")
+        return len(rows)
 
     #读取数据范围
     @classmethod
-    @catch_and_log(logger=logger,return_default=None)
     def read_range_kline(cls,
-                         cursor:sqlite3.Cursor,
+                         cursor: sqlite3.Cursor,
                          number: int,
                          kline: str = 'kline',
-                         start_time:pd.Timestamp = None,
-                         endtime:pd.Timestamp=None,
-                         ) -> pd.DataFrame | None :
-        logger.info(f"[in,1]<read_kline_range>读取表结构{kline}")
+                         start_time: pd.Timestamp = None,
+                         endtime: pd.Timestamp = None,
+                         ) -> pd.DataFrame | None:
+        """
+        统一按时间升序返回最近 number 根 K 线。
+        - 只给 start_time：从 start_time 起向后取 number 根
+        - 只给 endtime  ：向 endtime 之前回溯取 number 根
+        - 两者都给      ：区间内取 number 根
+        """
         if not cls.has_table(cursor=cursor, table_name=kline):
-            logger.exception(f"[in,1error]<read_kline_range>没有找到{kline}表结构!")
-        if not start_time and not endtime:
-            endstr=cls.read_newest_timestamp(cursor=cursor,kline=kline)
-            endtime=pd.to_datetime(float(endstr),unit='ms', utc=True)
-            logger.info(f"[in,2set]<read_kline_range>默认end为最新数据{endtime.tz_convert('Asia/Shanghai')}")
-        if start_time:
-            if endtime:
-                start_time=int(start_time.value/10 ** 6)
-                endtime=int(endtime.value/10 ** 6)
-                logger.info(f"[in,2set]<read_kline_range>start_time:{start_time} end_time:{endtime}")
-                cursor.execute(f"SELECT * FROM {kline} WHERE timestamp >= {start_time} and timestamp <= {endtime};")
-                data_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
-                                                'taker_buy_quote_asset_volume'])
-            else:
-                start_time=int(start_time.value/10 ** 6)
-                cursor.execute(f"SELECT * FROM {kline} WHERE timestamp >= {start_time} ORDER BY timestamp DESC LIMIT {number};")
-                data_df = pd.DataFrame(cursor.fetchall(),
-                                       columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                                'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
-                                                'taker_buy_quote_asset_volume'])
+            raise ValueError(f"{kline} 表不存在")
+        number = int(number)
+        if number <= 0:
+            raise ValueError(f"number 必须为正整数，收到 {number}")
 
+        if start_time is not None and endtime is not None:
+            sql = (f"SELECT * FROM {kline} WHERE timestamp >= ? AND timestamp <= ? "
+                   f"ORDER BY timestamp ASC LIMIT ?")
+            params = (to_ms(start_time), to_ms(endtime), number)
+            rows = cursor.execute(sql, params).fetchall()
+        elif start_time is not None:
+            sql = f"SELECT * FROM {kline} WHERE timestamp >= ? ORDER BY timestamp ASC LIMIT ?"
+            rows = cursor.execute(sql, (to_ms(start_time), number)).fetchall()
         else:
-            endtime=int(endtime.value / 10 ** 6)
-            cursor.execute(f"SELECT * FROM {kline}  WHERE TIMESTAMP <= ? ORDER BY timestamp DESC LIMIT ?", (endtime, number,))
-            data_df=pd.DataFrame(cursor.fetchall(), columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume'])
-            data_df= data_df.sort_values("timestamp").reset_index(drop=True)
+            end_ms = to_ms(endtime) if endtime is not None else cls.read_newest_timestamp(cursor, kline)
+            if end_ms is None:
+                logger.warning(f"{kline} 无最新时间戳，返回空数据")
+                return cls._empty_frame()
+            sql = f"SELECT * FROM {kline} WHERE timestamp <= ? ORDER BY timestamp DESC LIMIT ?"
+            rows = cursor.execute(sql, (end_ms, number)).fetchall()
+
+        if not rows:
+            logger.warning(f"{kline} 查询区间无数据")
+            return cls._empty_frame()
+
+        data_df = pd.DataFrame(rows, columns=COLUMNS).sort_values('timestamp')
         return urlibs.FormatUrlibs.standard_timestamp(data_df)
 
+    @staticmethod
+    def _empty_frame() -> pd.DataFrame:
+        df = pd.DataFrame({c: pd.Series(dtype='float64') for c in COLUMNS})
+        return urlibs.FormatUrlibs.standard_timestamp(df)
+
     @classmethod
-    @catch_and_log(logger=logger,return_default=None)
-    def read_all_kline(cls,symbol:str,cursor:sqlite3.Cursor):
+    @catch_and_log(logger=logger, return_default=None)
+    def read_all_kline(cls, symbol: str, cursor: sqlite3.Cursor):
         """
 
         :param symbol:
         :param cursor: 统一光标
         :return: 该类型的所有数据
         """
-        logger.info(f"[in,1]<read_all_kline>尝试获取所有{symbol}数据",stacklevel=2)
+        logger.info(f"[in,1]<read_all_kline>尝试获取所有{symbol}数据")
         if not cls.has_table(cursor=cursor, table_name=symbol):
             logger.error(f"[in,2] {symbol}数据获取失败，表结构不存在！")
+            return None
 
-        cursor.execute(f"SELECT * FROM {symbol}")
-        data_df = pd.DataFrame(cursor.fetchall(),
-                               columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
-                                        'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',
-                                        'taker_buy_quote_asset_volume'])
+        cursor.execute(f"SELECT * FROM {symbol} ORDER BY timestamp ASC")
+        data_df = pd.DataFrame(cursor.fetchall(), columns=COLUMNS)
         return data_df
 
-
-
-
-
     @classmethod
-    @catch_and_log(logger=logger,return_default=None)
-    def with_open_and_func(cls,symbol,kline_str:str,func,*args,**kwargs) -> any:
+    def with_open_and_func(cls, symbol, kline_str: str, func, *args, **kwargs) -> any:
         """
         使用统一的数据库操作光标，防止出现同时访问的lock问题
         :param symbol: 期货类型
@@ -269,31 +290,20 @@ class SqliteOper:
         :param kwargs: 函数参数
         :return:
         """
-        patht=None
-        ROOT_DIR = Path(__file__).resolve().parent.parent
-        if kline_str=="1m":
-            patht=Path(f"Data/LocalData/{symbol}_base.db")
-            logger.info(f"[in,1base]<with_open_and_func>路径:{patht}")
-        else:
-            patht=Path(f"Data/LocalData/{symbol}_aggerate.db")
-            # urlibs.FileUrlibs.check_local_path(patht)
-            logger.info(f"[in,1aggerate]<with_open_and_func>路径:{patht}")
-        patht = Path(ApiConfig.PROJECT_ROOT) / "Data" / "LocalData" / f"{symbol}_aggerate.db"
-        with sqlite3.connect(patht) as conn:
+        db_dir = Path(ApiConfig.LOCAL_DATA_SQLITE_DIR)
+        name = f"{symbol}_base.db" if kline_str in ('1m', '1min') else f"{symbol}_aggerate.db"
+        path = db_dir / name
+        if not path.exists():
+            raise FileNotFoundError(f"本地数据库不存在: {path}")
+        logger.info(f"[in,1]<with_open_and_func>路径:{path}")
+        with closing(sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)) as conn:
             cursor = conn.cursor()
-            return func(cursor,*args,**kwargs)
-
+            return func(cursor, *args, **kwargs)
 
 
 if __name__ == '__main__':
-    sql = SqliteOper()
-    path=Path("LocalData/ETHUSDT_aggerate.db")
-    with sqlite3.connect(path) as conn:
+    path = Path(ApiConfig.LOCAL_DATA_SQLITE_DIR) / "ETHUSDT_aggerate.db"
+    with closing(sqlite3.connect(path)) as conn:
         cursor = conn.cursor()
-        data=sql.read_range_kline(cursor=cursor,number=20,kline='kline_30min')
+        data = SqliteOper.read_range_kline(cursor=cursor, number=20, kline='kline_30min')
         print(data)
-
-
-
-
-

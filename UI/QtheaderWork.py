@@ -1,47 +1,70 @@
-import pandas as pd
+from pathlib import Path
+
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from urlibs import FileUrlibs
+from Strategy.CTA.cta_macd_strategy import StrategyMacd
+from app_logger.logger_setup import Logger
 
-"""API线程"""
-class ApiWorker(QThread):
-    # 设置信号
-    data_ready = pyqtSignal(pd.DataFrame)
+logger = Logger(__name__)
 
-    def __init__(self, api, data_number, interval, symbol):
+
+class BacktestWorker(QThread):
+    """后台回测线程：绝不阻塞 GUI 线程。"""
+
+    progress = pyqtSignal(int)
+    log = pyqtSignal(str)
+    finished_ok = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, symbol: str, k_line: str, number: int, usdt: float = 1000,
+                 csv_path: str | Path | None = None):
         super().__init__()
-        self.api = api
-        self.data_number = data_number
-        self.interval = interval
+        self.symbol = symbol
+        self.k_line = k_line
+        self.number = int(number)
+        self.usdt = float(usdt)
+        self.csv_path = csv_path
+        self._stop = False
+
+    def cancel(self) -> None:
+        self._stop = True
+
+    def run(self) -> None:
+        try:
+            self.log.emit(f"开始回测 {self.symbol} {self.k_line} {self.number} 根 ...")
+            strategy = StrategyMacd(self.symbol, self.k_line, self.number, self.usdt)
+            self.log.emit(f"有效数据 {strategy.core.data_count} 根，开始逐根撮合")
+            summary = strategy.main(
+                progress=self.progress.emit,
+                should_stop=lambda: self._stop,
+                output_csv=self.csv_path,
+            )
+            self.finished_ok.emit(summary)
+        except Exception as exc:  # 线程内异常必须转成信号，不能逃逸
+            logger.exception(f"回测失败: {exc}")
+            self.failed.emit(f"{type(exc).__name__}: {exc}")
+
+
+class DataSyncWorker(QThread):
+    """后台更新本地数据库（网络请求全部在子线程）。"""
+
+    log = pyqtSignal(str)
+    finished_ok = pyqtSignal(bool)
+    failed = pyqtSignal(str)
+
+    def __init__(self, symbol: str):
+        super().__init__()
         self.symbol = symbol
 
-    def run(self):
+    def run(self) -> None:
         try:
-            data = self.api.get_backtest_data(symbol=self.symbol, number=self.data_number, interval=self.interval)
-            self.data_ready.emit(data)  # 发出信号
-        except Exception as e:
-            print(f"API 获取数据失败: {e}")
-            self.data_ready.emit(pd.DataFrame())  # 数据空
+            from Data.Api import Api
 
-
-"""本地加载线程"""
-class LoaclWorker(QThread):
-    data_ready = pyqtSignal(pd.DataFrame)
-
-    def __init__(self, api, data_number, interval, symbol, file_path):
-        super().__init__()
-        self.api = api
-        self.data_number = data_number
-        self.symbol = symbol
-        self.interval = interval
-        self.path = file_path
-
-    def run(self):
-        try:
-            self.api.update_local_csv(symbol=self.symbol, number=self.data_number, interval=self.interval, file_path=self.path)
-            data_qp=FileUrlibs.get_csv_data(number=self.data_number, file_path=self.path)
-            self.data_ready.emit(data_qp)
-        except Exception as e:
-            print(f"API 本地数据更新失败: {e}")
-            self.data_ready.emit(pd.DataFrame())
-
+            self.log.emit(f"开始更新本地数据库: {self.symbol}")
+            api = Api(ping=False)
+            api.local_data_main(self.symbol)
+            self.log.emit("本地数据库更新完成")
+            self.finished_ok.emit(True)
+        except Exception as exc:
+            logger.exception(f"数据更新失败: {exc}")
+            self.failed.emit(f"{type(exc).__name__}: {exc}")

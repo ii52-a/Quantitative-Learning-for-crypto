@@ -1,0 +1,18 @@
+{
+  "symbol": "ETHUSDT",
+  "k_line": "30min",
+  "bars": 20000,
+  "initial": 1000.0,
+  "final": 52.063992,
+  "net_pnl": -947.936008,
+  "gross_pnl": 52.962853,
+  "fees": 1000.898861,
+  "return_pct": -94.7936,
+  "trades": 746,
+  "win": 257,
+  "lose": 489,
+  "breakeven": 0,
+  "win_rate": 34.4504,
+  "avg_trade": -1.270692,
+  "stopped": false
+}

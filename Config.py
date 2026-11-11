@@ -25,11 +25,12 @@ class ApiConfig:
     API_BASE_GET_INTERVAL:float=0.3
 
     """LocalData模块参数"""
-    # 本地数据存储的文件夹地址
-    #csv废弃
-    LOCAL_DATA_CSV_DIR: str = 'data_csv'
-    LOCAL_DATA_SQLITE_DIR: str = 'LocalData'
-    PROJECT_ROOT=os.path.dirname(os.path.abspath(__file__))
+    # 项目根目录（绝对路径）
+    PROJECT_ROOT: str = os.path.dirname(os.path.abspath(__file__))
+    # 本地数据统一目录：绝对路径，读写共用同一份数据库
+    LOCAL_DATA_SQLITE_DIR: str = os.path.join(PROJECT_ROOT, 'Data', 'LocalData')
+    # csv 已废弃，仅保留路径定义兼容旧代码
+    LOCAL_DATA_CSV_DIR: str = os.path.join(PROJECT_ROOT, 'data_csv')
 
     # 最大本地csv保存值,废弃
     LOCAL_MAX_CSV_NUMBER: int = 1000

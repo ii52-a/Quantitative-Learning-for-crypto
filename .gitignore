@@ -14,9 +14,15 @@ Logs/
 #数据文件co
 *.csv
 *.db
+*.db-wal
+*.db-shm
 *.txt
 
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# 审查/修复产物
+acl-recovery/
+audit/ui_after_fix.png
 EOF
